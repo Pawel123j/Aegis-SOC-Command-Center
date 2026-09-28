@@ -1,6 +1,14 @@
 # Model bezpieczeństwa aplikacji
 
-Status: **projekt PHASE 0, bez implementacji**. Poniższe mechanizmy są wymaganiami dla kolejnych faz i nie stanowią deklaracji, że obecne repozytorium je realizuje. Zakres pierwszego wydania to jedna organizacja SOC i lokalne demo Docker Compose. Wystawienie do Internetu, SSO, MFA, wielodostępność i formalna zgodność nie są objęte tym modelem.
+Status: **model docelowy z ukończonym zakresem PHASE 1 (2026-09-28)**.
+Kod obejmuje Argon2id, krótkie JWT, zapis i rotację sesji, CSRF/origin, permissions,
+audyt, limitowanie auth, walidację konfiguracji i bezpieczne błędy. Przeszło 230
+testów jednostkowych i 33 integracyjne, obejmujące auth/RBAC, cofanie sesji,
+granty audytu i współbieżne refresh/zmiany konta z rzeczywistą bazą. Szczegóły zawiera
+[raport walidacji](validation.md). Pozostałe kontrole pipeline, UI i SOAR pozostają
+wymaganiami przyszłych faz. Zakres pierwszego wydania to jedna organizacja SOC
+i lokalne demo Docker Compose. Wystawienie do Internetu, SSO, MFA, wielodostępność
+i formalna zgodność nie są objęte tym modelem.
 
 ## Zasoby i granice zaufania
 
@@ -38,6 +46,11 @@ Przeglądarka rozpoczyna sesję od `GET /api/v1/auth/csrf`. API tworzy krótkotr
 
 Nie zezwalamy na credentialed CORS z dowolnych domen ani na mutacje przez GET. Endpointy JSON odrzucają form-urlencoded/text/plain. `SameSite` stanowi dodatkową warstwę, a nie jedyny warunek. Model tokena synchronizowanego i weryfikacja origin wynikają z [OWASP CSRF Prevention](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html).
 
+W PHASE 1 `POST /api/v1/auth/refresh` i `POST /api/v1/auth/logout` dopuszczają
+puste body bez nagłówka `Content-Type`. Cookie sesji, dokładny `Origin` oraz
+`X-CSRF-Token` pozostają wymagane. Niepuste żądania JSON, także na tych dwóch
+trasach, wymagają `Content-Type: application/json`; login przesyła dane jako JSON.
+
 Domyślna konfiguracja bezpieczeństwa wymaga HTTPS. Jawnie wybrany profil lokalnego demo może korzystać z HTTP wyłącznie na loopback `127.0.0.1`/`localhost`, z `Secure=false` i osobną nazwą cookie. Profil nie jest konfiguracją wdrożeniową; start z tym wyjątkiem i originem innym niż loopback musi zakończyć się błędem. HSTS włączamy w profilu HTTPS, nie w lokalnym HTTP. Dokładne działanie cookie musi być zweryfikowane E2E w przeglądarce.
 
 ## RBAC
@@ -74,7 +87,19 @@ Kontrolowany scenariusz tworzy osobny `dataset_id` z `mode=replay` przez uprawni
 
 Kontrakty Pydantic odrzucają nieznane pola konfiguracji, niepoprawne typy i nadmierne długości. Batch ingestion ma planowany limit 500 eventów, 1 MiB całego requestu i 64 KiB pojedynczego eventu. Są to wartości startowe do pomiarów, a nie wynik benchmarku. Limity egzekwują proxy i API; odrzucenie zbyt dużego body następuje przed kosztownym parsowaniem. Archiwa i skompresowane body pozostają poza pierwszym zakresem.
 
-Startowe limity: logowanie 5 prób/minutę na parę konto/IP i 30/minutę na IP, refresh 30/minutę na sesję, ingestion 10 requestów/s na źródło, wyszukiwanie 30/minutę i 2 równoległe zapytania na użytkownika, SOAR 5 uruchomień/minutę na operatora. Odpowiedź 429 zawiera `Retry-After`. Identyfikator konta w kluczu limitera jest normalizowany i hashowany. Proxy ufa tylko własnemu proxy nadrzędnemu; dowolny `X-Forwarded-For` klienta nie resetuje limitów. Niedostępny limiter skutkuje 503 na kosztownych i auth endpointach, nie przejściem do trybu bez limitów.
+Startowe limity: logowanie 5 prób/minutę na parę konto/IP i 30/minutę na IP, refresh 30/minutę na sesję, ingestion 10 requestów/s na źródło, wyszukiwanie 30/minutę i 2 równoległe zapytania na użytkownika, SOAR 5 uruchomień/minutę na operatora. Odpowiedź 429 zawiera `Retry-After`. Identyfikator konta w kluczu limitera jest normalizowany i hashowany. Niedostępny limiter skutkuje 503 na kosztownych i auth endpointach, nie przejściem do trybu bez limitów. Limity ingestion, hunting i SOAR dotyczą przyszłych modułów.
+
+Lokalny runtime PHASE 1 uruchamia Uvicorn z `--no-proxy-headers`. Za reverse proxy
+limiter IP widzi wspólne IP proxy: klienci demo dzielą jego limit, a próby logowania
+na to samo konto dzielą również limit konto/IP. Dowolny `X-Forwarded-For` klienta
+nie zmienia klucza limitera. Limity rodziny sesji pozostają odrębne. Jest to jawne
+ograniczenie przepustowości lokalnego demo; wdrożenie z limitami per rzeczywisty
+klient wymaga osobnego ustalenia zaufanych proxy i testów granicy zaufania.
+
+Listy `/api/v1/users` i `/api/v1/audit` w PHASE 1 mają limit domyślny 50 i maksymalny
+100 rekordów. Stanowią wyjątek od ogólnego docelowego limitu 100/500 w
+[kontrakcie API](api-contract.md). Integracja fundamentu auth, limitera i baz
+przeszła w PHASE 1; przyszłe moduły wymagają własnych testów bezpieczeństwa.
 
 SQL w PostgreSQL i ClickHouse używa parametrów; nazwy kolumn, operatory, sortowanie i funkcje pochodzą z rejestru serwera. [Hunting](threat-hunting.md) opisuje AST i limity. Import Sigma przyjmuje wyłącznie bezpieczny podzbiór YAML: brak tagów obiektów, aliasów/anchors, zduplikowanych kluczy, dołączania plików i zdalnych odwołań; limit 64 KiB, głębokość 16. Nieznany modifier/condition jest błędem, nigdy cichym poszerzeniem detekcji.
 

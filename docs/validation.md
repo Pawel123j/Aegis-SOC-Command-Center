@@ -1,61 +1,90 @@
-# Raport walidacji PHASE 0
+# Raport walidacji PHASE 1
 
-Data: 2026-09-24. Zakres: dokumentacja, kontrakty, struktura katalogów i bootstrap CI.
-Nie jest to final audit całej aplikacji z PHASE 20.
+Data kontroli: 2026-09-28. Zakres: fundament backendu, auth/RBAC, audyt,
+konfiguracja, migracje, obserwowalność i infrastruktura lokalna.
+Poprzedni przyrost opisuje [historyczny raport PHASE 0](validation-phase0.md).
+
+## Stan bramki
+
+**PHASE 1: bramka funkcjonalna i jakościowa zaliczona.** Obrazy zbudowano,
+stos wystartował, migracje i 33 integracje przeszły na rzeczywistych usługach.
+Przyrost obejmuje 230 pozytywnych unit i 33 pozytywne integracje; PHASE 2
+pozostaje zaplanowana. Nie jest to final audit platformy z PHASE 20.
 
 ## Wykonane kontrole
 
 | Kontrola | Wynik / zakres |
 | --- | --- |
-| Inspekcja początkowa | Pusty katalog, brak Git i funkcjonalności do nadpisania |
-| Inicjalizacja Git | Utworzono lokalną gałąź main; brak remote |
-| Pierwsze uruchomienie walidatora | Wykryło brak niniejszego raportu i dwa prowadzące do niego linki; uzupełniono |
-| `py scripts/validate_repository.py` | PASS: 38 plików tekstowych, 43 wymagane katalogi, 21 faz, 37 wymagań, 6 ADR; linki, format, AST/JSON |
-| `git diff --cached --check` | PASS, brak błędów whitespace w przygotowanym indeksie |
-| Przegląd kontraktów | Poprawiono rozbieżne limity query, statusy ETag, endpointy, scope ingestu, pola encji, retencję evidence i semantykę replay |
+| Python i zależności | Python 3.12.14 x64; instalacja dev lockfile z `--require-hashes` oraz `pip check` zakończone powodzeniem; wspólne piny runtime/dev zgodne |
+| Audyt zależności runtime | `pip_audit -r backend/requirements.lock --strict --require-hashes`: exit 0, brak znanych podatności według źródła audytu w dniu kontroli; nie obejmuje obrazów OS ani pakietów dev |
+| Testy jednostkowe | `pytest -m "not integration" -p no:cacheprovider --cov=app`: **230 passed, 32 deselected in 16.40s**; po tym pomiarze dodano kolejny test integracyjny |
+| Coverage jednostkowe | **65%** łącznie z gałęziami; nie jest to coverage całego stosu ani dowód poprawności transakcji |
+| Ruff | `ruff check .` oraz `ruff format --check .`: PASS, 45 plików zgodnych z formatowaniem |
+| Typy | `mypy --cache-dir ../.local/mypy`: PASS, 29 plików aplikacji |
+| Migracja offline | `alembic upgrade head --sql`: PASS; generuje SQL PostgreSQL, nie zastępuje wykonania na bazie |
+| Konfiguracja Compose | `docker compose config --quiet`: PASS, bez wypisywania sekretów |
+| Docker Engine | `docker info`: serwer 29.7.2, uruchomiony po naprawie lokalnej ścieżki instalacji |
+| Obrazy | `docker compose build api` oraz `docker compose --profile test build tests`: PASS na Linux/Python 3.12.14, hashe zależności zweryfikowane |
+| Pierwszy start usług | `docker compose up -d --wait --wait-timeout 180`: PASS na nowych wolumenach; PostgreSQL, Redis, ClickHouse i API gotowe; migrator exit 0 |
+| Integracje | `pytest -m integration -p no:cacheprovider --cov=app`: **33 passed, 230 deselected in 32.30s** w kontenerze, na rzeczywistych usługach |
+| Coverage integracyjne | **82%** procesu testowego; mierzone oddzielnie od unit, bez sumowania procentów; wykonanie `aegis.ping` w osobnym workerze potwierdza test transportu, nie pomiar coverage tego procesu |
+| Proxy i żywe API | `/health` 200, `/ready` 200, `/metrics` 404, `/api/v1/openapi.json` 200, `/api/v1/users` bez auth 401; nagłówki bezpieczeństwa API obecne |
+| Struktura i tekst | Walidator repozytorium: PASS, 97 plików tekstowych, 43 wymagane katalogi, 21 faz, 37 wymagań i 6 ADR; linki, format i składnia |
+| Stan po testach | 0 pozostałych baz `aegis_test_%`; 0 użytkowników w głównej bazie, więc interaktywny bootstrap pierwszego administratora pozostaje dostępny |
+| Poufne pliki lokalne | `.env`, `.venv`, `.local` i plik coverage są ignorowane przez Git |
 
-Lokalny walidator działa na Python 3.14.6 (32-bit), bez zewnętrznych bibliotek.
-Sprawdza wymagane katalogi/pliki, 21 faz, 37 wymagań, sześć ADR, lokalne linki,
-UTF-8/LF, whitespace, domknięcie fenced blocks, Python AST zgodny ze składnią 3.11
-oraz JSON. Nie wykonuje testów domeny ani pomiarów coverage.
+Testy unit obejmują konfigurację fail-closed, macierz permissions, JWT,
+Argon2id, limiter, redakcję logów, sondy i granice HTTP. Wykorzystują kontrolowane
+zależności, dlatego nie zamykają testów auth z PostgreSQL ani transportu Celery.
+Brak cache pytest na Windows omija błąd uprawnień do pliku cache; ostrzeżenia
+nadal są traktowane jako błędy.
 
-Najważniejszy wynik przeglądu: ograniczony replay z halo nie gwarantuje odtworzenia
-wcześniejszego membership korelacji. Rozdzielono reanalysis od reconstruct z pełnym
-checkpointem. Dodano też jawny verdict dla previous activity w risk engine i
-scope source/dataset/mode/run dla idempotencji. Te przypadki są zapisane jako
-wymagania późniejszych testów, nie jako już wykonane testy silnika.
+Zestaw integracyjny używa odrębnych baz `aegis_test_<UUID>`, prawdziwego Redis,
+ClickHouse i workera. Sprawdza migracje w obie strony, zgodność modeli, granty
+runtime, atomowość audytu, bootstrap, sesje, role, paginację, awarie i równoległy
+refresh z cofnięciem uprawnień. Wymagane integracje nie są automatycznie pomijane,
+gdy konfiguracja lub usługa są niedostępne.
 
-## CI i źródła konfiguracji
+## Poprawki wynikające z kontroli
 
-[Workflow](../.github/workflows/phase0.yml) ma tylko read permissions, nie zachowuje
-Git credentials i uruchamia kontrole PHASE 0. Akcje przypięto do pełnych SHA
-zweryfikowanych na oficjalnych stronach:
-[checkout v7.0.1](https://github.com/actions/checkout/commit/3d3c42e5aac5ba805825da76410c181273ba90b1),
-[setup-python v7.0.0](https://github.com/actions/setup-python/commit/5fda3b95a4ea91299a34e894583c3862153e4b97).
-Próba odczytu publicznych refs przez lokalny Git nie powiodła się z powodu proxy;
-wersje zweryfikowano przez odczyt oficjalnych stron WWW. Nie pobrano repozytoriów.
+- Dodano odczyt `alembic_version` dla roli aplikacji, wymagany przez `/ready`.
+- Uzupełniono dev lockfile o `httpx2`, wymagane przez aktualny TestClient Starlette.
+- Odrzucono nieprawidłowe typy identyfikatorów JWT i pól logowania przed ich użyciem.
+- Middleware dopuszcza puste żądania refresh/logout; niepuste body nadal wymaga
+  JSON i mieści się w 64 KiB, niezależnie od deklarowanego Content-Length.
+- Zmiany użytkownika blokują rekord przez `FOR NO KEY UPDATE`, aby nie tworzyć
+  cyklu blokad z sesją i kluczem obcym audytu przy refresh/logout. SQLAlchemy
+  wygenerowało oczekiwany SQL; test rzeczywistej współbieżności przeszedł.
+  Kontrolowana zamiana na poprzednie `FOR UPDATE` wyłącznie w jednorazowym
+  procesie testowym odtworzyła odmowę PATCH 503 i negatywny wynik tego testu.
+  Ponowne uruchomienie z poprawką dało **1 passed in 1.39s**.
+  Kod ani obraz aplikacji nie zostały cofnięte.
+- Pierwszy start Compose wykrył rozbicie opcji `tmpfs` na osobne elementy YAML.
+  Ujęto ciągi opcji w cudzysłowy; po poprawce pełny start przeszedł.
 
-Workflow nie został wykonany na GitHub: brak zdalnego repozytorium. Nie deklarujemy
-zielonego CI, branch protection ani dependency scan aplikacji. Nie ma zależności
-runtime do skanowania w PHASE 0; skany wejdą wraz z ich manifestami.
+Semantykę blokad potwierdzają [PostgreSQL](https://www.postgresql.org/docs/17/explicit-locking.html)
+i [SQLAlchemy](https://docs.sqlalchemy.org/en/20/core/selectable.html#sqlalchemy.sql.expression.GenerativeSelect.with_for_update).
 
-## Kontrole niedostępne lub nienależące do etapu
+## Środowisko lokalne i ograniczenia
 
-- Testy backendu/API/RBAC/detekcji/integracji/E2E: brak implementacji, nieuruchomione.
-- Lint Ruff/ESLint i build: nie ma jeszcze kodu tych aplikacji ani ich toolchainu.
-  Obecna bramka formatowania dotyczy dokumentacji i skryptu walidacji.
-- Docker Compose i testy baz: brak deploymentu, dodatkowo Docker Engine nie odpowiada.
-- Render Mermaid i screenshoty dashboardu: brak wizualnego testu diagramów; aplikacja
-  nie istnieje, więc nie utworzono screenshotów udających działający produkt.
-- Benchmark, restore drill i security audit runtime: wymagają kolejnych faz.
+Docker Desktop nie startował przez stare gniazda i wirtualną ścieżkę instalacji
+MSIX niewidoczną dla WSL. Odtworzono katalogi gniazd, a następnie skorygowano
+pojedynczą wartość `HKCU/.../Uninstall/Docker Desktop/InstallLocation` na istniejącą
+fizyczną lokalizację. Poprzednią wartość zachowano w pliku
+`%TEMP%/aegis-docker-installlocation-20260928.json`. Nie resetowano danych silnika
+ani nie przeinstalowano systemu. Jest to naprawa tego hosta, nie krok instalacji
+wymagany od każdego użytkownika projektu.
+
+[Workflow backendu](../.github/workflows/backend.yml) zawiera osobne zadania jakości
+i integracji. Repozytorium nie ma remote, więc GitHub Actions nie został wykonany.
+Nie deklarujemy zielonego hostowanego CI ani pełnego audytu bezpieczeństwa platformy.
+UI, ingestion, detekcje, korelacje i pozostałe moduły należą do kolejnych faz.
+
+Instrukcja odtworzenia i polecenia: [obsługa PHASE 1](phase1-operations.md).
 
 ## Rejestr przyrostu
 
-Przyrost PHASE 0 ma Conventional Commit `docs: establish SOC architecture and phase zero foundation`.
-Identyfikator zweryfikowanej rewizji można odczytać przez `git log -1 --oneline`.
-Ponieważ użytkownik nie miał skonfigurowanego autora Git, commit używa jawnej
-tożsamości automatyzacji `Codex <codex@openai.com>` ustawionej tylko dla tej komendy,
-bez zmian konfiguracji globalnej. Nie utworzono remote ani nie wykonano push.
-
-Pełna DoD platformy pozostaje otwarta. Następna bramka to PHASE 1, w tym działający
-Docker Engine, zweryfikowane zależności, migracje, auth/RBAC i pierwsze integracje.
+Conventional Commit: `feat: add verified backend foundation and local infrastructure`.
+Identyfikator rewizji można odczytać przez `git log -1 --oneline`.
+Commit korzysta z tożsamości `Codex <codex@openai.com>` tylko dla tej komendy,
+bez zmiany globalnych ustawień Git. Nie utworzono remote ani nie wykonano push.

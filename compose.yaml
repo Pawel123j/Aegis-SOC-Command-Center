@@ -1,0 +1,172 @@
+name: aegis-soc
+
+x-app-environment: &app-environment
+  AEGIS_DATABASE_URL: postgresql+psycopg://aegis_app:${POSTGRES_APP_PASSWORD:?Run python scripts/bootstrap_env.py}@postgres:5432/aegis
+  AEGIS_REDIS_URL: redis://:${REDIS_PASSWORD:?Run python scripts/bootstrap_env.py}@redis:6379/0
+  AEGIS_CLICKHOUSE_URL: http://clickhouse:8123
+  AEGIS_CLICKHOUSE_USER: aegis
+  AEGIS_CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:?Run python scripts/bootstrap_env.py}
+  AEGIS_JWT_SECRET: ${AEGIS_JWT_SECRET:?Run python scripts/bootstrap_env.py}
+  AEGIS_PUBLIC_ORIGIN: ${AEGIS_PUBLIC_ORIGIN:?Run python scripts/bootstrap_env.py}
+  AEGIS_LOCAL_HTTP: ${AEGIS_LOCAL_HTTP:?Run python scripts/bootstrap_env.py}
+
+x-app: &app
+  image: aegis-soc-backend:phase1
+  build:
+    context: ./backend
+    target: runtime
+  environment: *app-environment
+  networks: [backend]
+  read_only: true
+  tmpfs: ["/tmp:rw,noexec,nosuid,size=64m"]
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+
+services:
+  postgres:
+    image: postgres:17.11-bookworm
+    user: "999:999"
+    environment:
+      POSTGRES_DB: aegis
+      POSTGRES_USER: aegis_owner
+      POSTGRES_PASSWORD: ${POSTGRES_OWNER_PASSWORD:?Run python scripts/bootstrap_env.py}
+      POSTGRES_APP_PASSWORD: ${POSTGRES_APP_PASSWORD:?Run python scripts/bootstrap_env.py}
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256 --auth-local=trust
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./infra/postgres/010-runtime-role.sh:/docker-entrypoint-initdb.d/010-runtime-role.sh:ro
+    networks: [backend]
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+      - /var/run/postgresql:rw,nosuid,uid=999,gid=999,mode=0775
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U aegis_owner -d aegis"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.4.11-bookworm
+    user: "999:999"
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Run python scripts/bootstrap_env.py}
+      REDISCLI_AUTH: ${REDIS_PASSWORD:?Run python scripts/bootstrap_env.py}
+    command: [sh, -c, 'exec redis-server --appendonly yes --requirepass "$$REDIS_PASSWORD"']
+    volumes: [redis-data:/data]
+    networks: [backend]
+    read_only: true
+    tmpfs: ["/tmp:rw,noexec,nosuid,size=16m"]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:26.8.6.5
+    user: "101:101"
+    environment:
+      CLICKHOUSE_USER: aegis
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:?Run python scripts/bootstrap_env.py}
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: "0"
+    volumes: [clickhouse-data:/var/lib/clickhouse]
+    networks: [backend]
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+      - /var/log/clickhouse-server:rw,nosuid,uid=101,gid=101,size=128m
+      - /etc/clickhouse-server/users.d:rw,noexec,nosuid,uid=101,gid=101,size=1m
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    healthcheck:
+      test: [CMD-SHELL, "wget -q -O - http://127.0.0.1:8123/ping | grep -q 'Ok.'"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
+    restart: unless-stopped
+
+  migrator:
+    <<: *app
+    environment:
+      <<: *app-environment
+      AEGIS_DATABASE_URL: postgresql+psycopg://aegis_owner:${POSTGRES_OWNER_PASSWORD:?Run python scripts/bootstrap_env.py}@postgres:5432/aegis
+    command: [alembic, upgrade, head]
+    depends_on:
+      postgres: {condition: service_healthy}
+    restart: "no"
+
+  api:
+    <<: *app
+    depends_on:
+      migrator: {condition: service_completed_successfully}
+      redis: {condition: service_healthy}
+      clickhouse: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/ready', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+  worker:
+    <<: *app
+    command: [celery, -A, "app.worker:celery_app", worker, --loglevel=WARNING, --concurrency=2]
+    depends_on:
+      migrator: {condition: service_completed_successfully}
+      redis: {condition: service_healthy}
+      clickhouse: {condition: service_healthy}
+    restart: unless-stopped
+
+  proxy:
+    image: nginx:1.30.5-alpine
+    user: "101:101"
+    entrypoint: [nginx, -g, "daemon off;"]
+    ports: [127.0.0.1:8080:8080]
+    volumes: [./infra/proxy/nginx.conf:/etc/nginx/nginx.conf:ro]
+    networks: [edge, backend]
+    depends_on:
+      api: {condition: service_healthy}
+    read_only: true
+    tmpfs: ["/tmp:rw,noexec,nosuid,size=64m"]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+
+  tests:
+    <<: *app
+    image: aegis-soc-backend-test:phase1
+    build:
+      context: ./backend
+      target: test
+    profiles: [test]
+    environment:
+      <<: *app-environment
+      AEGIS_TEST_DATABASE_URL: postgresql+psycopg://aegis_owner:${POSTGRES_OWNER_PASSWORD:?Run python scripts/bootstrap_env.py}@postgres:5432/aegis
+      AEGIS_INTEGRATION_TESTS: "1"
+    depends_on:
+      migrator: {condition: service_completed_successfully}
+      redis: {condition: service_healthy}
+      clickhouse: {condition: service_healthy}
+      worker: {condition: service_started}
+
+networks:
+  edge: {}
+  backend:
+    internal: true
+
+volumes:
+  postgres-data: {}
+  redis-data: {}
+  clickhouse-data: {}

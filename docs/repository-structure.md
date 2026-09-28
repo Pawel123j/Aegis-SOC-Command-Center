@@ -1,6 +1,8 @@
 # Struktura repozytorium
 
-Status: PHASE 0. Katalogi są przygotowane fizycznie i zachowane przez `.gitkeep`.
+Status: układ docelowy z PHASE 0. Fundament backendu, testy i infrastruktura PHASE 1
+są ukończone i zweryfikowane w Compose (2026-09-28); wyniki zawiera
+[raport walidacji](validation.md). Katalogi przyszłych modułów zachowują `.gitkeep`.
 Nie zawierają pustych funkcji lub fałszywych endpointów. Poniżej ścieżki istniejącego
 szkieletu i odpowiedzialności planowanego kodu.
 

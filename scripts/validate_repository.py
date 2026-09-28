@@ -1,4 +1,4 @@
-"""Read-only Phase 0 checks; this is not an application test or security scanner."""
+"""Read-only repository checks; not an application test or security scanner."""
 
 from __future__ import annotations
 
@@ -15,8 +15,8 @@ SKIP = {
     ".git", ".venv", "node_modules", "__pycache__", ".local", "dist",
     "coverage", ".pytest_cache", ".ruff_cache", ".mypy_cache", ".codex", ".agents",
 }
-TEXT_SUFFIXES = {".md", ".py", ".json", ".yml", ".yaml"}
-TEXT_NAMES = {".gitignore", ".gitattributes", ".editorconfig"}
+TEXT_SUFFIXES = {".md", ".py", ".json", ".yml", ".yaml", ".toml", ".ini", ".sh", ".conf", ".lock"}
+TEXT_NAMES = {".gitignore", ".gitattributes", ".editorconfig", ".env.example", ".dockerignore", "Dockerfile"}
 LINK = re.compile(r"!?\[[^\]\n]*\]\((<[^>]+>|[^\s)]+)(?:\s+\"[^\"]*\")?\)")
 
 
@@ -140,7 +140,7 @@ def main() -> int:
         f"PASS: {len(files)} text files, {len(required_directories)} required directories, "
         "21 phases, 37 requirements, 6 ADRs; local links, text format, Python/JSON syntax."
     )
-    print("Scope: Phase 0 documentation/scaffold only; no application or hosted CI tests.")
+    print("Scope: repository structure, text and syntax only; no runtime or hosted CI tests.")
     return 0
 
 

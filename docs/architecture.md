@@ -1,6 +1,10 @@
 # Architektura docelowa
 
-Status: decyzje PHASE 0, przed implementacją. Szczegóły rozstrzygnięć:
+Status: architektura docelowa z PHASE 0; fundament PHASE 1 ukończony 2026-09-28.
+API, migracje i worker przeszły integrację z rzeczywistymi usługami w Compose.
+Pozostałe moduły są projektem; PHASE 2 jest kolejnym zaplanowanym etapem.
+Dowody: [raport walidacji](validation.md).
+Szczegóły rozstrzygnięć:
 [ADR](adr/README.md). Poziom produkcyjny oznacza świadome kontrakty, odporność i testy,
 nie deklarację wysokiej dostępności klastra uruchamianego na jednym laptopie.
 

@@ -1,7 +1,12 @@
 # Observability i metryki SOC
 
-Status: projekt PHASE 0. Fundament powstaje w PHASE 1, instrumentacja z modułami,
-dashboard operacyjny i benchmark w PHASE 15. Poniższe liczby nie są wynikami pomiarów.
+Status: projekt docelowy z ukończonym fundamentem PHASE 1 (2026-09-28).
+Sondy, metryki HTTP i logi JSON przeszły testy jednostkowe i integrację; przez
+proxy `/health` i `/ready` zwracają 200, a wewnętrzne `/metrics` pozostaje
+niedostępne z zewnątrz (404). Osobno potwierdzono zadanie Celery przez rzeczywisty
+broker, worker i result backend. Dowody: [raport walidacji](validation.md).
+Instrumentacja kolejnych modułów, dashboard operacyjny i benchmark należą
+do przyszłych faz. Poniższe wskaźniki domenowe nie są wynikami pomiarów.
 
 ## Health i logi
 

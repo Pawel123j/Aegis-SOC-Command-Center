@@ -3,10 +3,13 @@
 Projekt portfolio Security Engineering: docelowo lokalna platforma mini-SIEM, SOAR,
 Incident Response i Threat Hunting, z demonstracją opartą na prawdziwym pipeline logów.
 
-**Stan: PHASE 0 — architektura i szkielet repozytorium.** Nie ma jeszcze działającego
-API, UI, generatora ani wdrożenia Docker Compose. Opis funkcji poniżej to projekt
-docelowy, a nie deklaracja ich implementacji. Nie publikujemy fikcyjnych screenshotów
-ani odznaki zielonego CI. Raport z lokalnych kontroli: [walidacja](docs/validation.md).
+**Stan: PHASE 1 — fundament backendu ukończony i zweryfikowany 2026-09-28.**
+Repozytorium zawiera API auth/users/audit, migrację PostgreSQL, role, konfigurację
+Compose i Celery worker. Przeszło 230 testów jednostkowych i 33 testy integracyjne
+z rzeczywistymi PostgreSQL, Redis, ClickHouse i workerem. Potwierdzono budowę
+obrazów Linux/Python 3.12.14, start świeżego stosu Compose i migrację bazy.
+Hostowane GitHub CI nie było uruchamiane. Nie ma UI, generatora ani pipeline SIEM.
+Pełny zakres i aktualne wyniki kontroli: [walidacja](docs/validation.md).
 
 ## Najpierw przeczytaj
 
@@ -43,20 +46,22 @@ Diagram pokazuje zależności logiczne. Mechanikę transakcji, projektowany stan
 
 | Warstwa | Decyzja | Powód |
 | --- | --- | --- |
-| API i domena | Python, FastAPI, Pydantic, SQLAlchemy | Typowane kontrakty i testowalna logika domenowa |
+| API i domena | Python 3.12.14, FastAPI, Pydantic, SQLAlchemy | Typowane kontrakty i testowalna logika domenowa |
 | Frontend | React, TypeScript, Vite | Aplikacja analityczna SPA; SSR nie jest potrzebny |
 | Stan operacyjny | PostgreSQL, Alembic | Transakcje, audyt, inbox/outbox, migracje |
 | Archiwum zdarzeń | ClickHouse | Wyszukiwanie i agregacje dużych zbiorów logów |
 | Praca asynchroniczna | Celery, Redis | Oddzielny worker, retry i ograniczanie ruchu |
 | Uruchomienie | Docker Compose | Powtarzalne lokalne demo bez kont w chmurze |
 
-Dokładne wersje i lockfile powstaną z pierwszą działającą zależnością w PHASE 1
-(frontend w PHASE 13), po kontroli kompatybilności i podatności. Docelowe środowisko
-backendu: Linux/Python 3.13; frontend: Node 24. PHASE 0 nie instaluje bibliotek aplikacji.
+Wersje backendu i hashe dystrybucji zapisano w [requirements.lock](backend/requirements.lock)
+i [requirements-dev.lock](backend/requirements-dev.lock). Lokalny Python, obraz
+kontenera i CI są przypięte do **3.12.14**. Zmianę wcześniejszego planu 3.13 uzasadnia
+[ADR 0001](docs/adr/0001-modular-monolith.md). Frontend pozostaje planowany na PHASE 13
+z Node 24; jego zależności nie są jeszcze instalowane.
 
-## Co można uruchomić teraz
+## Kontrole lokalne
 
-Wymaganie: Python 3.11+; bez bibliotek zewnętrznych.
+Walidacja struktury i dokumentacji wymaga Python 3.11+ bez bibliotek zewnętrznych:
 
 ```sh
 python scripts/validate_repository.py
@@ -67,15 +72,37 @@ Na Windows z Python Launcher zamiast `python` można użyć `py`.
 Walidator sprawdza strukturę, lokalne odnośniki, format tekstu i kompletność planu.
 Nie zastępuje testów backendu, integracji ani bezpieczeństwa.
 
-## Instalacja i Docker — plan
+Testy backendu wymagają Python 3.12.14 i zależności z dev lockfile.
+Instrukcję przygotowania środowiska, lint, kontroli typów i testów zawiera
+[obsługa PHASE 1](docs/phase1-operations.md).
 
-Docelowo bootstrap wygeneruje lokalne sekrety, migrator wykona Alembic i migracje
-ClickHouse, a `docker compose up --build` uruchomi platformę. **Ta komenda nie jest
-jeszcze dostępna w tym etapie.** Nie ma domyślnego hasła administratora. Pierwsze
-konto powstanie przez jednorazowy bootstrap, nie przez seed z hasłem w Git.
-Usługi baz i kolejki pozostaną wewnątrz sieci Compose.
+## Instalacja i Docker — fundament backendu
 
-## Funkcje zaplanowane
+Wymagane są działający Docker Engine i Compose v2 z kontenerami Linux.
+Z katalogu głównego repozytorium:
+
+```sh
+python scripts/bootstrap_env.py
+docker compose config --quiet
+docker compose build api
+docker compose up -d --wait
+docker compose exec api python -m app.bootstrap --username admin
+```
+
+Bootstrap tworzy lokalny `.env` z losowymi sekretami i odmawia nadpisania istniejącego
+pliku. Migrator wykonuje Alembic przed startem API. Pierwszy administrator podaje
+hasło w ukrytym monicie terminala; nie ma stałego hasła demo. Reverse proxy udostępnia
+API pod `http://localhost:8080/api/v1`; bazy i Redis pozostają w sieci Compose.
+ClickHouse ma sondę gotowości, a jego schemat zdarzeń powstanie w PHASE 3.
+
+**Pełny start i testy integracyjne PHASE 1 przeszły 2026-09-28.** Szczegóły
+uruchomienia, profilu lokalnego HTTP oraz izolowanego stosu testowego opisuje
+[instrukcja operacyjna](docs/phase1-operations.md).
+
+## Dokumentacja funkcji i dalszy plan
+
+Auth, RBAC, audyt oraz podstawowa obserwowalność działają w zakresie PHASE 1.
+Pozostałe moduły i rozszerzenia opisane poniżej należą do kolejnych faz.
 
 - [API i kontrakty błędów](docs/api-contract.md), [model i normalizacja](docs/data-model.md).
 - [Detekcje, Sigma i testowanie reguł](docs/detection-engine.md).
@@ -95,8 +122,8 @@ logowanie po ataku, PowerShell, eskalację uprawnień, trafienie IOC, account co
 i nowe konto administratora. Każdy scenariusz zostanie powiązany z testami regresji.
 
 Screenshoty rzeczywistego dashboardu trafią do `docs/assets/` w PHASE 13/18.
-Pełna definicja ukończenia pozostaje otwarta do PHASE 20. Następny etap:
-**PHASE 1 — fundament backendu, konfiguracja, migracje, auth/RBAC i infrastruktura**.
+Pełna definicja ukończenia pozostaje otwarta do PHASE 20. PHASE 1 jest ukończona;
+następny zaplanowany etap to **PHASE 2 — event ingestion** z trwałym inbox/outbox.
 
 ## Zasady rozwoju
 

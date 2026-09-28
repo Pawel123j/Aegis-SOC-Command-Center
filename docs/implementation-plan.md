@@ -2,15 +2,15 @@
 
 ## Zakres i stan planu
 
-Plan odpowiada fazom 0–20 wskazanym w wymaganiach. Pierwszy przyrost obejmuje analizę stanu, decyzje architektoniczne, szkielet repozytorium i dokumentację fazy 0. Nie obejmuje działającego SIEM, backendu, frontendu ani wdrożenia.
+Plan odpowiada fazom 0–20 wskazanym w wymaganiach. Faza 0 dostarczyła analizę stanu, decyzje architektoniczne, szkielet repozytorium i dokumentację. Faza 1 dostarczyła zweryfikowany fundament backendu z integracją rzeczywistych usług (2026-09-28). SIEM, frontend i generator wymagają dalszych faz.
 
 Punktem wyjścia jest puste repozytorium opisane w [raporcie stanu](current-state-report.md). Docelową architekturę i odpowiedzialności komponentów opisuje [architecture.md](architecture.md), a układ plików [repository-structure.md](repository-structure.md). Pełne pokrycie wymagań użytkownika zawiera [macierz wymagań](requirements-traceability.md).
 
-**Stan przyrostu:** faza 0 obejmuje ukończony projekt i zweryfikowany szkielet; wyniki oraz Conventional Commit zapisuje [raport walidacji](validation.md). Fazy 1–20 są zaplanowane. Obecność pliku GitHub Actions nie oznacza uruchomienia ani sukcesu CI. Aplikacyjne kryteria Definition of Done pozostają otwarte.
+**Stan przyrostu:** fazy 0 i 1 są ukończone. Fundament API, migracji, auth/RBAC, audytu, obserwowalności, workera i Compose przeszedł 230 testów jednostkowych oraz 33 integracyjne. Potwierdzono build obrazów, start świeżego stosu, instalację zależności z hashami, `pip check` i audyt runtime lock. Fazy 2–20 pozostają zaplanowane. Wyniki i Conventional Commits zapisuje [raport walidacji](validation.md). Brak zdalnego repozytorium i przebiegu GitHub Actions oznacza niezweryfikowane hostowane CI. Końcowe kryteria Definition of Done całej platformy pozostają otwarte.
 
 ## Ustalenia wspólne
 
-- Backend będzie modularnym monolitem FastAPI/Pydantic/SQLAlchemy; frontend React/TypeScript/Vite korzysta z rzeczywistego API.
+- Backend jest modularnym monolitem FastAPI/Pydantic/SQLAlchemy na Python 3.12.14; lokalne środowisko, kontener i CI używają tej samej wersji. Uzasadnienie aktualizacji wcześniejszego planu 3.13 zapisano w [ADR 0001](adr/0001-modular-monolith.md). Planowany frontend React/TypeScript/Vite korzysta z rzeczywistego API.
 - PostgreSQL przechowuje stan biznesowy, użytkowników, reguły, zdarzenia audytowe oraz trwałe inbox/outbox, postęp przetwarzania i kopie dowodów. ClickHouse służy do analityki i archiwum eventów. Redis jest transportem Celery, cache i mechanizmem ograniczania ruchu; nie jest jedynym miejscem zapisu stanu detekcji.
 - Worker przetwarza co najmniej raz. Idempotencja etapów, klucze deduplikacji i możliwość odtworzenia pracy są wymaganiami od pierwszego pionowego przyrostu.
 - MVP działa lokalnie dla jednej organizacji. Role ograniczają czynności; nie deklarujemy izolacji wielu klientów ani gotowości do publicznego Internetu bez dodatkowego przeglądu.
@@ -64,6 +64,22 @@ Główna kolejność pozostaje zgodna z żądaniem: `0 → 1 → 2 → … → 2
 ## PHASE 1 — Backend foundation
 
 **Zależności:** 0; zatwierdzone granice modułów i model trwałości.
+
+**Stan: COMPLETE — ukończona i zweryfikowana 2026-09-28.** Pliki wykonawcze obejmują
+`backend/app`, migrację `backend/migrations/versions/0001_foundation.py`, lockfile
+z hashami, `backend/Dockerfile`, `compose.yaml` i `.github/workflows/backend.yml`.
+Testy jednostkowe: **230 passed in 16.40s**, coverage 65%. Osobny przebieg integracyjny
+z PostgreSQL/Redis/ClickHouse/Celery: **33 passed, 230 deselected in 32.30s**, coverage
+82%. Są to dwa odrębne pomiary coverage; nie wyznaczają łącznego pokrycia.
+Przeszły build obrazów Linux/Python 3.12.14, `docker compose up -d --wait` na świeżym
+stosie, migrator (exit 0), sondy przez proxy i zadanie Celery. Test współbieżnego
+refresh i zmiany konta wykrył kontrolowane przywrócenie błędnego `FOR UPDATE`
+(odpowiedź 503), a poprawiona blokada przeszła integrację. Instalacja dev lockfile
+z `--require-hashes`, `pip check` i audyt runtime lock przeszły.
+Uruchomienie i kryteria operacyjne opisuje
+[instrukcja PHASE 1](phase1-operations.md); dokładne wyniki zapisuje
+[raport walidacji](validation.md). Hostowane CI pozostaje niezweryfikowane.
+PHASE 2 jest następnym zaplanowanym etapem.
 
 **Zadania:**
 
