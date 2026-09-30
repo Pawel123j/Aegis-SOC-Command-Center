@@ -1,4 +1,8 @@
 .venv
+.local
+.wheelhouse/*
+!.wheelhouse/.gitkeep
+!.wheelhouse/*.whl
 __pycache__
 **/__pycache__
 *.pyc

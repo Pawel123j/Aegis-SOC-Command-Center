@@ -10,6 +10,29 @@ Stan `staged` oznacza gotowość surowego zdarzenia do normalizacji w PHASE 3.
 Nie ma jeszcze normalizacji, detekcji, wyszukiwania zdarzeń, UI ani generatora.
 Zakres i wyniki kontroli: [walidacja](docs/validation.md).
 
+## Start z folderu na Windows
+
+Uruchom Docker Desktop w trybie kontenerów Linux, a następnie kliknij dwukrotnie
+[Uruchom Aegis.cmd](Uruchom%20Aegis.cmd). Skrypt przygotuje konfigurację,
+zbuduje backend i uruchomi lokalne usługi. Przy pierwszym starcie poprosi
+o ustawienie hasła administratora `admin` w ukrytym monicie. Kolejne uruchomienia
+zachowują konta, hasła, konfigurację i dane. Zwykły start online nie wymaga
+instalacji Pythona na Windows.
+
+Sprawdź przyjmowanie zdarzeń. W PowerShell, w tym folderze:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\aegis.ps1 -Action check
+```
+
+Kontrola prosi o hasło istniejącego administratora i sprawdza trwały zapis,
+idempotencję oraz relay/worker. API działa pod
+`http://localhost:8080/api/v1`. Obecny zakres to backend PHASE 1–2; dashboard
+powstanie w kolejnych etapach.
+
+Start, stan usług, zatrzymanie, tryb offline i rozwiązywanie problemów:
+[lokalna instrukcja krok po kroku](docs/local-start.md).
+
 ## Najpierw przeczytaj
 
 1. [Raport stanu początkowego i brakujące komponenty](docs/current-state-report.md).
@@ -78,7 +101,8 @@ Instrukcję przygotowania środowiska, lint, kontroli typów i testów zawiera
 ## Instalacja i Docker
 
 Wymagane są działający Docker Engine i Compose v2 z kontenerami Linux.
-Z katalogu głównego repozytorium:
+Na Windows użyj [lokalnego launchera](docs/local-start.md). Ręczny start
+z katalogu głównego repozytorium:
 
 ```sh
 python scripts/bootstrap_env.py

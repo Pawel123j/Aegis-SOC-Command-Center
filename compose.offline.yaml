@@ -1,0 +1,20 @@
+x-offline-build: &offline-build
+  context: ./backend
+  target: runtime
+  platforms: [linux/amd64]
+  args:
+    AEGIS_OFFLINE_BUILD: "1"
+
+services:
+  migrator:
+    build: *offline-build
+  api:
+    build: *offline-build
+  worker:
+    build: *offline-build
+  relay:
+    build: *offline-build
+  tests:
+    build:
+      <<: *offline-build
+      target: test

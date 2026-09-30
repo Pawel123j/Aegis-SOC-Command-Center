@@ -12,11 +12,42 @@ from urllib.parse import unquote, urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
 SKIP = {
-    ".git", ".venv", "node_modules", "__pycache__", ".local", "dist",
-    "coverage", ".pytest_cache", ".ruff_cache", ".mypy_cache", ".codex", ".agents",
+    ".git",
+    ".venv",
+    "node_modules",
+    "__pycache__",
+    ".local",
+    "dist",
+    "coverage",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".mypy_cache",
+    ".codex",
+    ".agents",
+    ".wheelhouse",
 }
-TEXT_SUFFIXES = {".md", ".py", ".json", ".yml", ".yaml", ".toml", ".ini", ".sh", ".conf", ".lock"}
-TEXT_NAMES = {".gitignore", ".gitattributes", ".editorconfig", ".env.example", ".dockerignore", "Dockerfile"}
+TEXT_SUFFIXES = {
+    ".md",
+    ".py",
+    ".json",
+    ".yml",
+    ".yaml",
+    ".toml",
+    ".ini",
+    ".sh",
+    ".conf",
+    ".lock",
+    ".ps1",
+    ".cmd",
+}
+TEXT_NAMES = {
+    ".gitignore",
+    ".gitattributes",
+    ".editorconfig",
+    ".env.example",
+    ".dockerignore",
+    "Dockerfile",
+}
 LINK = re.compile(r"!?\[[^\]\n]*\]\((<[^>]+>|[^\s)]+)(?:\s+\"[^\"]*\")?\)")
 
 
@@ -25,7 +56,8 @@ def text_files() -> list[Path]:
     result = []
     for parent, directories, names in os.walk(ROOT, followlinks=False):
         directories[:] = sorted(
-            name for name in directories
+            name
+            for name in directories
             if name not in SKIP and not (Path(parent) / name).is_symlink()
         )
         for name in sorted(names):

@@ -5,6 +5,10 @@ credentiale, single/batch, idempotencja, inbox/outbox, relay, worker, status,
 retry i backpressure. Historyczne wyniki fundamentu zachowuje
 [raport PHASE 1](validation-phase1.md).
 
+Późniejszy przyrost uruchamiania z folderu i obsługiwanej budowy offline opisuje
+[walidacja lokalnego startu](validation-startup.md). Poniższe liczby regresji
+oraz opis pierwotnego wariantu build zachowują przebieg zamknięcia PHASE 2.
+
 ## Stan bramki
 
 **PHASE 2: bramka funkcjonalna i jakościowa zaliczona.** Końcowy wspólny przebieg
@@ -95,6 +99,10 @@ Kontrole jakości z katalogu `backend`:
 ```
 
 ## Odstępstwo lokalnego build i ograniczenia
+
+Ta sekcja rejestruje pierwotną kontrolę PHASE 2. Obsługiwany Dockerfile ma teraz
+tryb offline z `compose.offline.yaml` i sprawdzanym wheelhouse; jego dowody
+oraz aktualne komendy zawiera [walidacja startu](validation-startup.md).
 
 Na tym hoście bezpośredni download PyPI wewnątrz standardowego Docker build
 zatrzymał błąd zaufania certyfikatu. Nie wyłączano TLS i nie zmieniano pinów.
