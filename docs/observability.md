@@ -8,6 +8,19 @@ broker, worker i result backend. Dowody: [raport walidacji](validation.md).
 Instrumentacja kolejnych modułów, dashboard operacyjny i benchmark należą
 do przyszłych faz. Poniższe wskaźniki domenowe nie są wynikami pomiarów.
 
+## Dostępny status ingestii PHASE 2
+
+`GET /api/v1/system/ingestion` wymaga roli Admin lub SOC Manager. Zwraca liczbę
+zachowanych raw events, rekordów potwierdzeń, logicznych bajtów kopert, zadania
+według stanu, wiek najstarszej oczekującej pracy i skonfigurowane limity.
+Poszczególne odczyty są bieżącą obserwacją, a nie atomowym snapshotem całego systemu.
+`GET /api/v1/events/batches/{id}` pokazuje stan każdej pozycji batcha; powtórzone
+pozycje mogą wskazywać ten sam event. `staged` nie oznacza analizy ani projekcji.
+Licznik `normalized`, `processed` i `projected` wynosi w tym etapie jawnie zero.
+Szczegóły i reakcje na limity: [PHASE 2](phase2-operations.md).
+
+Poniższe domenowe metryki Prometheus i worker heartbeat są nadal planowane.
+
 ## Health i logi
 
 `/health`: żyje proces. `/ready`: aplikacja ma zgodny schemat i wymagane połączenia;

@@ -6,7 +6,7 @@ Plan odpowiada fazom 0–20 wskazanym w wymaganiach. Faza 0 dostarczyła analiz�
 
 Punktem wyjścia jest puste repozytorium opisane w [raporcie stanu](current-state-report.md). Docelową architekturę i odpowiedzialności komponentów opisuje [architecture.md](architecture.md), a układ plików [repository-structure.md](repository-structure.md). Pełne pokrycie wymagań użytkownika zawiera [macierz wymagań](requirements-traceability.md).
 
-**Stan przyrostu:** fazy 0 i 1 są ukończone. Fundament API, migracji, auth/RBAC, audytu, obserwowalności, workera i Compose przeszedł 230 testów jednostkowych oraz 33 integracyjne. Potwierdzono build obrazów, start świeżego stosu, instalację zależności z hashami, `pip check` i audyt runtime lock. Fazy 2–20 pozostają zaplanowane. Wyniki i Conventional Commits zapisuje [raport walidacji](validation.md). Brak zdalnego repozytorium i przebiegu GitHub Actions oznacza niezweryfikowane hostowane CI. Końcowe kryteria Definition of Done całej platformy pozostają otwarte.
+**Stan przyrostu:** fazy 0–2 są ukończone. PHASE 2 zweryfikowano 2026-09-30: wspólny przebieg 341 testów jednostkowych i 113 integracyjnych dał **454 passed**, z coverage 91% procesu testowego. Potwierdzono trwałość, role, limity, migracje, realny przepływ HTTP → relay → prefork worker oraz wznowienie po zatrzymaniu workera. Fazy 3–20 pozostają zaplanowane. Wyniki, odstępstwo lokalnego build oraz Conventional Commit zapisuje [raport walidacji](validation.md). Historyczny dowód fundamentu pozostaje w [raporcie PHASE 1](validation-phase1.md). Brak zdalnego repozytorium i przebiegu GitHub Actions oznacza niezweryfikowane hostowane CI. Końcowe kryteria Definition of Done całej platformy pozostają otwarte.
 
 ## Ustalenia wspólne
 
@@ -79,7 +79,7 @@ z `--require-hashes`, `pip check` i audyt runtime lock przeszły.
 Uruchomienie i kryteria operacyjne opisuje
 [instrukcja PHASE 1](phase1-operations.md); dokładne wyniki zapisuje
 [raport walidacji](validation.md). Hostowane CI pozostaje niezweryfikowane.
-PHASE 2 jest następnym zaplanowanym etapem.
+Wyniki historyczne PHASE 1 zachowuje [raport PHASE 1](validation-phase1.md).
 
 **Zadania:**
 
@@ -96,6 +96,15 @@ PHASE 2 jest następnym zaplanowanym etapem.
 **Ukończenie:** lokalny start według instrukcji, migracje zamiast `create_all`, działające uwierzytelnienie, kontrola ról po stronie serwera i audyt operacji. Kolejne API korzystają z tych mechanizmów od początku.
 
 ## PHASE 2 — Event ingestion
+
+**Stan: COMPLETE — ukończona i zweryfikowana 2026-09-30.** Zakres: migracja `0002_ingestion`,
+API źródeł i credentiali, atomowe single/batch, deduplikacja, inbox/outbox, relay,
+worker, status operatora i ręczne retry. Raw staging jest odrębne od normalizacji.
+Kontrakt i procedury: [obsługa PHASE 2](phase2-operations.md).
+Wspólna regresja: **454 passed in 106.81s**, coverage 91% procesu testowego.
+Testy osobnych procesów potwierdzają HTTP → relay → prefork → `staged` i restart
+workera; 30 dodatkowych prób współbieżnego admission przeszło po poprawce
+inicjalizacji schematów API. Szczegóły i ograniczenia: [walidacja](validation.md).
 
 **Zależności:** 1; uwierzytelniony kontrakt API, PostgreSQL i worker.
 

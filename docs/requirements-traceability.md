@@ -8,6 +8,7 @@ Macierz zachowuje numerację 1–37 z wymagań użytkownika. Łączy każdy punk
 - **Szkielet fazy 0** — istnieją lub są przygotowywane katalogi/pliki startowe; lokalną poprawność należy potwierdzić walidatorem.
 - **Planowane** — implementacja i dowód działania są pracą przyszłych faz.
 - **PHASE 1: ukończona** — fundament przeszedł testy jednostkowe, integrację rzeczywistych usług i start Compose; status dotyczy tylko zakresu fazy 1.
+- **PHASE 2: ukończona** — trwałe ingestion i odzyskiwanie przeszły regresję na rzeczywistych usługach; normalizacja i detekcje pozostają kolejnymi fazami.
 - **Wymóg procesu** — zasada obowiązuje od początku, ale jej zastosowanie musi być potwierdzane w każdym przyroście.
 
 Na tym etapie **żaden status w macierzy nie oznacza ukończenia działającej platformy**. Dotyczy to również obecności workflow: konfiguracja CI i rzeczywisty zielony przebieg na zdalnym repozytorium są odrębnymi dowodami. Po realizacji należy uzupełnić wiersze o konkretne pliki, testy, komendy i identyfikator zweryfikowanej wersji.
@@ -17,7 +18,7 @@ Na tym etapie **żaden status w macierzy nie oznacza ukończenia działającej p
 | Nr | Wymaganie | Fazy odpowiedzialne | Artefakty i kryterium odbioru | Aktualny status |
 | --- | --- | --- | --- | --- |
 | 1 | Architektura production-like | 0, 1; integracja 13, 15 | `docs/architecture.md`, ADR, modularny backend FastAPI/Pydantic/SQLAlchemy, frontend React/TS/Vite, PostgreSQL, ClickHouse, Redis/Celery i Compose. Każdy komponent ma odpowiedzialność i uzasadnienie; uruchomienie, migracje i przepływ między procesami mają test integracyjny. | Projekt fazy 0; PHASE 1 ukończona: backend i Compose zweryfikowane; frontend planowany |
-| 2 | Log ingestion | 2, 3, 14 | `/api/v1/events` single/batch, RawEvent, durable inbox/outbox, status i retry. Obsługiwane Linux auth.log, SSH, sudo, Windows authentication/process, firewall, nginx i generic JSON. Kontrakt obejmuje timestamp, event_id, source/source_type, hostname, username, source/destination IP/port, process_name, command_line, action/result, raw_event i normalized fields. Test akceptacji potwierdza trwałość, limity i idempotencję. | Planowane |
+| 2 | Log ingestion | 2, 3, 14 | `/api/v1/events` single/batch, RawEvent, durable inbox/outbox, status i retry. Obsługiwane Linux auth.log, SSH, sudo, Windows authentication/process, firewall, nginx i generic JSON. Kontrakt obejmuje timestamp, event_id, source/source_type, hostname, username, source/destination IP/port, process_name, command_line, action/result, raw_event i normalized fields. Test akceptacji potwierdza trwałość, limity i idempotencję. | PHASE 2: implementacja trwałego single/batch, source auth, outbox, status i retry; ukończona i zweryfikowana 2026-09-30. Parsery, normalized fields i generator: fazy 3/14 |
 | 3 | Normalization Engine | 0, 3 | Wersjonowany uproszczony schemat inspirowany ECS/OpenTelemetry; `RawEvent → Parser → NormalizedSecurityEvent`, rejestr parserów, golden fixtures, pochodzenie i wersja parsera. Każde źródło przechodzi pozytywne i negatywne przypadki; brakujące pola nie są wymyślane. | Kontrakt projektowany w fazie 0; implementacja planowana |
 | 4 | Event Search | 3; rozszerzenia 4, 8, 11, 13 | Ograniczony query builder/AST i parametryzowane query API; filtry time, user, IP, hostname, process, severity, event type, source, MITRE technique i detection rule. Testy sprawdzają wynik w rzeczywistym ClickHouse, limity, paginację, deduplikację i odrzucenie injection. UI udostępnia działający Event Explorer. | Planowane |
 | 5 | Detection Engine | 4, 14, 17 | Single-event, threshold, time-window, sequence i correlation detections; reguły brute force ≥10/5 min, sukces po porażkach, escalation, suspicious PowerShell, new admin. Wersjonowane wyniki i trwały stan; fixtures sprawdzają granice czasu/liczników, benign input, restart i replay. | Planowane |
@@ -50,7 +51,7 @@ Na tym etapie **żaden status w macierzy nie oznacza ukończenia działającej p
 | 32 | Code Quality | 0–20 | Granice modułów, typy, dependency injection tam, gdzie potrzebne, małe funkcje i lint/type checks; review pod kątem God Classes, secrets, martwego kodu i pozornych implementacji TODO. Szkielet jawnie odróżniony od działającego kodu. | Wymóg procesu; kod i testy PHASE 1 zweryfikowane; dokładne kontrole w raporcie walidacji |
 | 33 | UX | 13, 18, 20 | Dark mode, priorytet czytelności, jasny kontekst ryzyka i nawigacja Alert → Events → User → Host → IOC → Incident; dostępność klawiatury/kontrast, filtry, loading/empty/error. Test przeglądarkowy zadania analityka na rzeczywistych danych. | Planowane |
 | 34 | Senior-level elements | 0–20 | ADR z trade-offami, failure model, trwały pipeline, detekcje/regresja, korelacja, IR, hunting, TI, SOAR, observability i secure SDLC. Prezentacja 30–60 min opiera się na działających scenariuszach i decyzjach, nie na liczbie technologii. | ADR, model awarii i fundament PHASE 1 zweryfikowane; pełny pipeline i demo planowane |
-| 35 | Implementation Strategy | 0–20 | Dokładnie fazy 0–20, mniejsze zadania, jawne zależności i kryteria w `implementation-plan.md`; każdą zamyka test/lint/integracja/poprawki/dokumentacja/Conventional Commit. Nie przechodzimy dalej z uszkodzoną poprzednią fazą. | Wymóg procesu; PHASE 0–1 ukończone, PHASE 2–20 planowane; bramki nadal obowiązują |
+| 35 | Implementation Strategy | 0–20 | Dokładnie fazy 0–20, mniejsze zadania, jawne zależności i kryteria w `implementation-plan.md`; każdą zamyka test/lint/integracja/poprawki/dokumentacja/Conventional Commit. Nie przechodzimy dalej z uszkodzoną poprzednią fazą. | Wymóg procesu; PHASE 0–2 ukończone, PHASE 3–20 planowane; bramki nadal obowiązują |
 | 36 | Git | 0–20 | Conventional Commits, logiczny zakres zmian, kontrola diff i brak force push. Stan Git i tożsamość autora ustalone z rzeczywistego środowiska; brakujące ustawienia nie są zgadywane. Historia commitów jest dowodem realizacji, nie obietnicą. | Wymóg procesu; commit PHASE 0 istnieje; stan przyrostu PHASE 1 w raporcie walidacji |
 | 37 | Definition of Done | 20; dowody z 1–19 | Pełny checklist poniżej, wynik każdego punktu poparty testem, komendą, widokiem lub identyfikatorem CI dla audytowanej wersji. Żaden otwarty punkt nie może być zastąpiony samą dokumentacją lub mockupem. | Otwarte: fundament backendu istnieje, pełna platforma pozostaje nieukończona |
 
@@ -122,7 +123,21 @@ Wyniki uruchomionych kontroli oraz stan commita należy czytać w raporcie fazy 
 - `.github/workflows/backend.yml` istnieje, ale brak zdalnego repozytorium
   i przebiegu GitHub Actions oznacza nadal niezweryfikowane hostowane CI.
 
-**PHASE 1 jest ukończona. PHASE 2 pozostaje zaplanowana.** Nie ma jeszcze frontendu,
+**Historyczny dowód PHASE 1 zachowuje [raport PHASE 1](validation-phase1.md).** Bieżąca PHASE 2 jest ukończona. Nie ma jeszcze frontendu,
 normalizacji, detekcji ani pełnego demo. Polecenia odtworzenia środowiska i testów
 zawiera [instrukcja operacyjna PHASE 1](phase1-operations.md), a dokładne wyniki
 oraz identyfikator wersji zapisuje [raport walidacji](validation.md).
+
+## Przyrost PHASE 2
+
+Kontrakt i procedury operatora: [phase2-operations.md](phase2-operations.md).
+Kod: `backend/app/modules/ingestion`, `backend/app/api/events.py`,
+`backend/app/api/sources.py`, `backend/app/relay.py` i migracja `0002_ingestion`.
+Testy `test_ingestion_api.py`, `test_ingestion_processing.py` oraz
+`test_ingestion_celery.py` sprawdzają atomowość, role, deduplikację, ograniczenia,
+wyścigi, utratę publikacji, ponowienie i kwarantannę. Aktualne wyniki wykonania
+podaje [raport walidacji](validation.md): **454 passed** we wspólnym przebiegu
+341 unit i 113 integracji, coverage 91% procesu testowego. Dodatkowy
+`test_ingestion_deployed.py` sprawdza rzeczywiste HTTP, relay, prefork worker
+i wznowienie po jego zatrzymaniu. `test_app.py` wykrywa wyścig inicjalizacji
+schematów; 30 powtórzeń współbieżnego admission potwierdziło poprawkę.

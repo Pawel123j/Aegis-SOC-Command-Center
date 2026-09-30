@@ -29,6 +29,7 @@ def security_settings() -> Settings:
         clickhouse_password=SecretStr("unit-ch-73c1"),
         jwt_secret=SecretStr(TEST_KEY),
         public_origin="https://soc.example.test",
+        local_http=False,
     )
 
 

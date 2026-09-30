@@ -1,7 +1,54 @@
 """Bound request bytes before parsing; never echo rejected payloads."""
 
+import json
+import math
+from typing import Any
+
 from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
+
+
+def validate_ingest_json(body: bytes) -> None:
+    # Check structural nesting without recursion before handing bytes to a JSON
+    # decoder. Brackets inside strings do not contribute to the depth budget.
+    depth, in_string, escaped = 0, False, False
+    for char in body:
+        if in_string:
+            if escaped:
+                escaped = False
+            elif char == 92:
+                escaped = True
+            elif char == 34:
+                in_string = False
+        elif char == 34:
+            in_string = True
+        elif char in (91, 123):
+            depth += 1
+            if depth > 20:
+                raise ValueError("JSON nesting limit exceeded")
+        elif char in (93, 125):
+            depth -= 1
+
+    def unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+        result: dict[str, Any] = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError("duplicate JSON key")
+            result[key] = value
+        return result
+
+    def finite_number(value: str) -> float:
+        result = float(value)
+        if not math.isfinite(result):
+            raise ValueError("finite JSON numbers required")
+        return result
+
+    json.loads(
+        body.decode("utf-8"),
+        object_pairs_hook=unique_object,
+        parse_constant=finite_number,
+        parse_float=finite_number,
+    )
 
 
 class BodyLimitMiddleware:
@@ -13,6 +60,8 @@ class BodyLimitMiddleware:
             await self.app(scope, receive, send)
             return
         headers = dict(scope["headers"])
+        is_ingest = scope["method"] == "POST" and scope["path"].rstrip("/") == "/api/v1/events"
+        limit = 1048576 if is_ingest else self.limit
         content_type = headers.get(b"content-type", b"").split(b";")[0].strip().lower()
         if content_type not in {b"", b"application/json"} or b"content-encoding" in headers:
             await self.reject(scope, receive, send, 415, "json_required")
@@ -30,19 +79,26 @@ class BodyLimitMiddleware:
             if size and not content_type:
                 await self.reject(scope, receive, send, 415, "json_required")
                 return
-            if size > self.limit:
+            if size > limit:
                 await self.reject(scope, receive, send, 413, "body_too_large")
                 return
             chunks.append(chunk)
             if not message.get("more_body", False):
                 break
+        body = b"".join(chunks)
+        if is_ingest:
+            try:
+                validate_ingest_json(body)
+            except (ValueError, RecursionError):
+                await self.reject(scope, receive, send, 422, "validation_error")
+                return
         delivered = False
 
         async def replay() -> Message:
             nonlocal delivered
             if not delivered:
                 delivered = True
-                return {"type": "http.request", "body": b"".join(chunks), "more_body": False}
+                return {"type": "http.request", "body": body, "more_body": False}
             return await receive()
 
         await self.app(scope, replay, send)

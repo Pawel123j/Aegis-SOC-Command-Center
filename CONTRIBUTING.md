@@ -1,7 +1,10 @@
 # Rozwój i bramki jakości
 
-Status repozytorium: PHASE 0. Dokumenty opisują kontrakty docelowe; nowe funkcje
-oznaczamy jako zaimplementowane dopiero po sprawdzeniu ich działania.
+Status repozytorium: PHASE 2 — trwałe przyjmowanie zdarzeń, ukończona i zweryfikowana 2026-09-30.
+PHASE 1 zweryfikowano 2026-09-28; jej wyniki pozostają historycznym dowodem
+fundamentu. Bieżący zakres i wykonane kontrole opisuje [raport walidacji](docs/validation.md).
+Dokumenty zawierają także kontrakty docelowe; obecność implementacji nie oznacza
+zaliczenia bramki integracyjnej. Fazy zależne rozpoczynamy po zamknięciu wymaganych kontroli.
 
 ## Kolejność
 
@@ -23,13 +26,32 @@ w testach integracyjnych. Nie modyfikuj globalnej tożsamości Git użytkownika.
 `git diff --check` sprawdza whitespace zmian. Workflow `Phase 0` uruchamia walidator
 na PR i push. Uruchomienie lokalne nie potwierdza wyniku GitHub Actions.
 
-## Od PHASE 1
+## Backend od PHASE 1
 
-Planowane narzędzia: pytest/coverage, Ruff lint i format check, sprawdzanie typów,
-Alembic upgrade na czystej i poprzedniej bazie, skan zależności i sekretów.
-Frontend: TypeScript, ESLint, testy komponentów oraz E2E z prawdziwym API.
-Każdy tool/wersja będzie przypięty przy wprowadzeniu; skaner nie dostaje sekretów
-produkcyjnych. Brak ignorowania błędów przez `continue-on-error` na bramkach wymaganych.
+Wprowadzone bramki backendu: pytest/coverage, Ruff lint i format check, mypy,
+audyt runtime lockfile oraz integracje na prawdziwych PostgreSQL, Redis,
+ClickHouse i Celery. Integracje kontrolują migracje, modele, granty i zachowanie
+transakcyjne. Python jest przypięty do 3.12.14, a zależności runtime/dev mają
+osobne lockfile z hashami. Komendy przygotowania i kontroli zawiera
+[obsługa PHASE 1](docs/phase1-operations.md).
+
+PHASE 2 obejmuje źródła i credentiale, single/batch, idempotencję, trwały
+inbox/outbox, relay, worker, ograniczone retry, kwarantannę i limity pojemności.
+Zmiany tego przepływu wymagają adekwatnych testów rzeczywistej współbieżności,
+awarii i odzyskiwania; samo `202` lub `/ready` nie potwierdza przetworzenia
+zadania. Stan `staged` oznacza gotowość surowych danych do PHASE 3.
+Procedury i ograniczenia: [obsługa PHASE 2](docs/phase2-operations.md).
+
+Frontend, skan sekretów oraz dalsze bramki należą do kolejnych etapów.
+Frontend otrzyma TypeScript, ESLint, testy komponentów i E2E z prawdziwym API.
+Każde nowe narzędzie i jego wersję przypinamy przy wprowadzeniu; skaner nie
+dostaje sekretów produkcyjnych. Nie ignorujemy błędów przez `continue-on-error`
+na bramkach wymaganych.
+
+Workflow `Backend foundation` zawiera osobne zadania jakości i integracji.
+Hostowane CI pozostaje niezweryfikowane; lokalny pozytywny wynik nie oznacza
+zielonego GitHub Actions. Wyniki i liczby testów zapisujemy z rzeczywistego
+wykonania, oddzielnie dla unit i integracji oraz każdej fazy.
 
 Wymagany status PR i ochrona gałęzi to ustawienie hostingu Git: sam plik YAML go nie
 włącza. Skonfiguruj regułę ochrony po podłączeniu repozytorium zdalnego. Nie wykonuj

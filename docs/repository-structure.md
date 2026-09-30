@@ -3,7 +3,9 @@
 Status: układ docelowy z PHASE 0. Fundament backendu, testy i infrastruktura PHASE 1
 są ukończone i zweryfikowane w Compose (2026-09-28); wyniki zawiera
 [raport walidacji](validation.md). Katalogi przyszłych modułów zachowują `.gitkeep`.
-Nie zawierają pustych funkcji lub fałszywych endpointów. Poniżej ścieżki istniejącego
+Moduł `ingestion`, API `sources/events`, proces `relay`, migracja `0002_ingestion`
+i testy przyjęcia zdarzeń powstały w PHASE 2. Przyszłe moduły
+nie zawierają pustych funkcji lub fałszywych endpointów. Poniżej ścieżki istniejącego
 szkieletu i odpowiedzialności planowanego kodu.
 
 ```text

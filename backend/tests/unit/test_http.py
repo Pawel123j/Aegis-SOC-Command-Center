@@ -25,13 +25,14 @@ def exchange(
     *,
     method: str = "POST",
     headers: list[tuple[bytes, bytes]] | None = None,
+    path: str = "/unit-body",
 ) -> Exchange:
     """Feed actual ASGI chunks; the downstream parser must never see a rejected body."""
     result = Exchange()
     scope: Scope = {
         "type": "http",
         "method": method,
-        "path": "/unit-body",
+        "path": path,
         "headers": headers if headers is not None else [(b"content-type", b"application/json")],
         "state": {"request_id": "bounded-body-test"},
     }
@@ -148,6 +149,44 @@ def test_disconnected_upload_never_reaches_parser_or_sends_response() -> None:
         ]
     )
     assert result.delivered is None and result.sent == []
+
+
+def test_ingest_has_one_mib_limit_while_other_routes_keep_64_kib() -> None:
+    body = b'{"raw_event":"' + b"x" * (1048576 - len(b'{"raw_event":""}')) + b'"}'
+    assert len(body) == 1048576
+    accepted = exchange([{"type": "http.request", "body": body}], path="/api/v1/events")
+    assert accepted.sent[0]["status"] == 200 and accepted.delivered == body
+    rejected = exchange([{"type": "http.request", "body": body + b" "}], path="/api/v1/events")
+    assert rejected.sent[0]["status"] == 413 and rejected.delivered is None
+    other = exchange([{"type": "http.request", "body": body}], path="/api/v1/sources")
+    assert other.sent[0]["status"] == 413
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        b'{"source_type":"generic_json","source_type":"nginx"}',
+        b'{"raw_event":{"action":"a","action":"b"}}',
+        b'{"raw_event":{"value":NaN}}',
+        b'{"raw_event":{"value":Infinity}}',
+        b'{"raw_event":{"value":-Infinity}}',
+        b'{"raw_event":{"value":1e9999}}',
+        b"[" * 2000 + b"0" + b"]" * 2000,
+        b'{"raw_event":"private-malformed',
+        b'{"raw_event":"\xff"}',
+    ],
+)
+def test_ingest_rejects_ambiguous_nonfinite_deep_or_malformed_json(body: bytes) -> None:
+    result = exchange([{"type": "http.request", "body": body}], path="/api/v1/events")
+    assert result.sent[0]["status"] == 422 and result.delivered is None
+    assert json.loads(result.sent[1]["body"])["code"] == "validation_error"
+    assert b"private" not in result.sent[1]["body"]
+
+
+def test_json_nesting_check_ignores_brackets_and_escapes_inside_strings() -> None:
+    body = json.dumps({"raw_event": '[{"\\' * 100 + '"}'}).encode()
+    result = exchange([{"type": "http.request", "body": body}], path="/api/v1/events")
+    assert result.sent[0]["status"] == 200 and result.delivered == body
 
 
 @pytest.mark.parametrize(

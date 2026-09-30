@@ -1,0 +1,93 @@
+{
+  "events": [
+    {
+      "source_type": "linux_auth",
+      "source_event_id": "sample-linux-ssh-001",
+      "timestamp": "2026-09-30T10:00:00Z",
+      "timezone": "UTC",
+      "raw_event": "Sep 30 10:00:00 linux.example.test sshd[2104]: Failed password for invalid user sample-user from 192.0.2.10 port 50124 ssh2"
+    },
+    {
+      "source_type": "linux_auth",
+      "source_event_id": "sample-linux-sudo-001",
+      "timestamp": "2026-09-30T10:00:01Z",
+      "timezone": "UTC",
+      "raw_event": "Sep 30 10:00:01 linux.example.test sudo[2110]: sample-user : TTY=pts/0 ; PWD=/home/sample-user ; USER=root ; COMMAND=/usr/bin/id"
+    },
+    {
+      "source_type": "windows_auth",
+      "source_event_id": "sample-windows-auth-001",
+      "timestamp": "2026-09-30T10:00:02Z",
+      "timezone": "UTC",
+      "raw_event": {
+        "System": {
+          "Provider": { "Name": "Microsoft-Windows-Security-Auditing" },
+          "EventID": 4625,
+          "Channel": "Security",
+          "Computer": "windows.example.test",
+          "TimeCreated": { "SystemTime": "2026-09-30T10:00:02Z" }
+        },
+        "EventData": {
+          "TargetUserName": "sample-user",
+          "TargetDomainName": "EXAMPLE",
+          "LogonType": 3,
+          "IpAddress": "198.51.100.20",
+          "IpPort": 50125,
+          "Status": "0xC000006D",
+          "SubStatus": "0xC000006A"
+        }
+      }
+    },
+    {
+      "source_type": "windows_process",
+      "source_event_id": "sample-windows-process-001",
+      "timestamp": "2026-09-30T10:00:03Z",
+      "timezone": "UTC",
+      "raw_event": {
+        "System": {
+          "Provider": { "Name": "Microsoft-Windows-Security-Auditing" },
+          "EventID": 4688,
+          "Channel": "Security",
+          "Computer": "windows.example.test",
+          "TimeCreated": { "SystemTime": "2026-09-30T10:00:03Z" }
+        },
+        "EventData": {
+          "SubjectUserName": "sample-user",
+          "SubjectDomainName": "EXAMPLE",
+          "NewProcessId": "0x1040",
+          "NewProcessName": "C:\\Windows\\System32\\whoami.exe",
+          "ParentProcessName": "C:\\Windows\\System32\\cmd.exe",
+          "CommandLine": "whoami.exe /user"
+        }
+      }
+    },
+    {
+      "source_type": "firewall",
+      "source_event_id": "sample-firewall-001",
+      "timestamp": "2026-09-30T10:00:04Z",
+      "timezone": "UTC",
+      "raw_event": "Sep 30 10:00:04 firewall.example.test kernel: [UFW BLOCK] IN=eth0 OUT= SRC=203.0.113.30 DST=192.0.2.40 LEN=60 TOS=0x00 PREC=0x00 TTL=51 ID=4242 DF PROTO=TCP SPT=50126 DPT=443 WINDOW=64240 RES=0x00 SYN URGP=0"
+    },
+    {
+      "source_type": "nginx",
+      "source_event_id": "sample-nginx-001",
+      "timestamp": "2026-09-30T10:00:05Z",
+      "timezone": "UTC",
+      "raw_event": "198.51.100.50 - - [30/Sep/2026:10:00:05 +0000] \"GET /health HTTP/1.1\" 200 16 \"-\" \"SyntheticFixture/1.0\""
+    },
+    {
+      "source_type": "generic_json",
+      "source_event_id": "sample-generic-json-001",
+      "timestamp": "2026-09-30T10:00:06Z",
+      "timezone": "UTC",
+      "raw_event": {
+        "timestamp": "2026-09-30T10:00:06Z",
+        "host": "collector.example.test",
+        "event": "heartbeat",
+        "source_ip": "192.0.2.60",
+        "message": "Synthetic ingestion fixture",
+        "sequence": 1
+      }
+    }
+  ]
+}

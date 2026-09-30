@@ -1,7 +1,8 @@
 # Model danych i normalizacja
 
-Status: kontrakt projektowy PHASE 0. Modele Pydantic, tabele i parsery będą
-implementowane w PHASE 1–3. Nazwy pól nie są deklaracją pełnej zgodności ECS/OTel.
+Status: dane identity/audit oraz trwałego ingestion zaimplementowane w PHASE 1–2.
+Normalizacja i dalsze agregaty poniżej pozostają projektem kolejnych faz.
+Nazwy pól nie są deklaracją pełnej zgodności ECS/OTel.
 
 ## RawEvent
 
@@ -11,11 +12,53 @@ określają `source_id`, dozwolone typy parserów, strefę i `dataset_id`; klien
 ustawia zaufanych pól `received_at`, risk, role ani parser_version.
 
 `POST /events` przyjmuje jeden envelope albo obiekt `events` z listą. Maksymalnie
-500 rekordów, 1 MiB body, 64 KiB raw_event i 16 poziomów JSON (wartości startowe
-do testów). Walidacja envelope odrzuca cały batch; błędy zawartości pojedynczego
+500 rekordów, 1 MiB body, 64 KiB raw_event i 16 poziomów JSON (egzekwowane limity
+startowe, bez deklaracji przepustowości). Walidacja envelope odrzuca cały batch; błędy zawartości pojedynczego
 logu po `202` trafiają do kwarantanny i statusu batcha, nie znikają bez śladu.
 
-## NormalizedSecurityEvent v1
+W PHASE 2 `raw_events.envelope` to kanoniczny, zwalidowany envelope JSONB.
+SHA-256 i `payload_bytes` odnoszą się do jego kanonicznego kodowania UTF-8:
+posortowanych kluczy, zwartego JSON, liczb całkowitych znormalizowanych z
+równoważnych floatów i timestampu envelope sprowadzonego do UTC. Nie jest to
+hash bajtów całego oryginalnego HTTP body. Tekst `raw_event` zachowuje treść;
+obiekt JSON nie zachowuje formatowania i kolejności kluczy nadawcy.
+Nieznane pola envelope są odrzucane. Timestamp envelope wymaga RFC3339 z czasem
+i offsetem, timezone jest nazwą IANA. `received_at` pochodzi z serwera.
+
+## Tabele ingestion — PHASE 2
+
+Migracja `0002_ingestion` tworzy poniższe tabele. Ich relacje mają FK w PostgreSQL.
+
+| Tabela | Dane i ograniczenia |
+| --- | --- |
+| `ingestion_sources` | Unikalna nazwa, UUID source/dataset, mode/run, dozwolone source_types, timezone, enabled, version; publiczne tworzenie wyłącznie live |
+| `source_credentials` | FK źródła, unikalny SHA-256 tokena, scopes, daty utworzenia/wygaśnięcia/odwołania; sekret nie jest przechowywany |
+| `ingestion_batches` | Scope + unikalny idempotency_key, kanoniczny hash listy envelope, request_id, accepted/created/duplicate counts |
+| `raw_events` | Niezmienny envelope, hash/rozmiar, scope, received_at; unikalny source_event_id w source/dataset/mode/run, nullable ID nie deduplikuje |
+| `batch_events` | PK batch_id + position (0–499), FK event_id; zachowuje kolejność i wielokrotne odwołania do jednego raw eventu |
+| `outbox_jobs` | Jeden wiersz na event; state, generation, próby dispatch/processing, terminy oraz oddzielne tokeny i terminy dzierżaw relay/workera |
+| `ingest_capacity` | Singleton id=1; event_count, byte_count, receipt_count; blokada serializuje przyjęcie i ponowne dopuszczenie retry |
+
+Admission zapisuje nowy batch, membership, nowe raw/jobs, liczniki i audyt w jednej
+transakcji. Sama odpowiedź `202` nie wymaga publikacji do Celery. Deduplikacja
+nie tworzy nowego joba dla istniejącego eventu. Status batcha odczytuje aktualne
+zadania przez membership; nie jest oddzielnie aktualizowaną kopią licznika.
+
+Runtime ma SELECT/INSERT do raw, batch i membership, bez UPDATE/DELETE.
+Stan zadania może zmieniać, ale nie usuwać. Jedyny wiersz capacity tworzy migracja;
+runtime ma SELECT/UPDATE, bez INSERT/DELETE. Nie ma automatycznej retencji ani TTL.
+`staged` i `quarantined` pozostają w limitach przechowywania. `receipt_count`
+liczy wszystkie pozycje nowych batchy, również duplikaty; `byte_count` jest
+logicznym rozmiarem envelope, a nie zużyciem dysku PostgreSQL.
+Opis operacyjny i wartości limitów: [PHASE 2 operations](phase2-operations.md).
+
+Worker przechodzi `pending → processing → staged` lub do `quarantined`;
+błąd przejściowy może wrócić do `pending`. Token dzierżawy oraz generation
+warunkują zapis wyniku, więc spóźniona próba nie nadpisuje nowszej generacji.
+Manualny retry zwiększa generation i resetuje stan/próby, zachowując to samo raw.
+Nie powstaje jeszcze `NormalizedSecurityEvent` ani projekcja w ClickHouse.
+
+## NormalizedSecurityEvent v1 — projekt PHASE 3+
 
 | Pole | Typ / semantyka |
 | --- | --- |
@@ -61,7 +104,7 @@ MITRE i rule ID są **adnotacjami po detekcji**, a nie faktami rzekomo pochodzą
 z surowego logu. Event Explorer filtruje je przez projekcję powiązań event-alert
 z rule version i mapping version. Jeden event może wspierać wiele alertów.
 
-## Parsery i niejednoznaczność
+## Parsery i niejednoznaczność — projekt PHASE 3
 
 | Źródło | Kontrakt i testy |
 | --- | --- |
@@ -80,12 +123,10 @@ i najbliższego poprawnego roku względem received_at; przekroczenie granic lub
 niejednoznaczność DST wymaga quality flag/kwarantanny, nie cichego przesunięcia UTC.
 Testy obejmą zmianę roku i czasu, Unicode, brakujące pola i zbyt długie inputy.
 
-## Model operacyjny PostgreSQL
+## Dalszy model operacyjny PostgreSQL — projekt
 
 | Agregat | Planowane encje / constraints |
 | --- | --- |
-| Identity | users, roles/permissions, refresh_sessions, source_credentials; hashes zamiast sekretów |
-| Ingest | sources, batches, inbox_events, outbox, processing_leases, checkpoints, dedupe_registry |
 | Detection | rules, immutable rule_versions, detection_state, matches, alert_revisions, alert_events |
 | Incidents | incidents z version, incident_alerts, notes, evidence_snapshots, incident_iocs, timeline |
 | Context | assets, identities, iocs, enrichment_versions; wejście do risk i match IOC |
@@ -98,7 +139,7 @@ międzybazowego FK, dlatego alert/case utrwala bounded evidence snapshot + check
 Unikalność source_event_id i fingerprintów jest wymuszana w bazie, nie tylko Pythonem.
 Indeksy operational time/status/owner i entity key powstaną z rzeczywistymi zapytaniami.
 
-## ClickHouse
+## ClickHouse — projekt projekcji
 
 Plan: partycja miesięczna po niezmiennym `timestamp`; sortowanie
 `(dataset_id, source_id, toDate(timestamp), timestamp, event_id)`.

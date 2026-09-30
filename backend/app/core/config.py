@@ -55,6 +55,21 @@ class Settings(BaseSettings):
     session_idle_seconds: int = Field(default=43200, ge=300, le=43200)
     session_absolute_seconds: int = Field(default=604800, ge=300, le=604800)
     preauth_seconds: int = Field(default=600, ge=60, le=900)
+    ingest_max_stored_events: int = Field(default=100000, ge=1, le=10000000)
+    ingest_max_receipt_records: int = Field(default=200000, ge=1, le=20000000)
+    ingest_max_stored_bytes: int = Field(default=536870912, ge=1, le=10737418240)
+    ingest_max_pending_events: int = Field(default=10000, ge=1, le=1000000)
+    ingest_max_oldest_pending_seconds: int = Field(default=300, ge=1, le=86400)
+    ingest_dispatch_batch_size: int = Field(default=50, ge=1, le=500)
+    ingest_dispatch_lease_seconds: int = Field(default=30, ge=1, le=300)
+    ingest_redelivery_seconds: int = Field(default=30, ge=1, le=3600)
+    ingest_worker_lease_seconds: int = Field(default=60, ge=31, le=600)
+    ingest_max_dispatch_attempts: int = Field(default=10, ge=1, le=100)
+    ingest_max_processing_attempts: int = Field(default=5, ge=1, le=20)
+    ingest_retry_base_seconds: int = Field(default=2, ge=1, le=60)
+    ingest_retry_max_seconds: int = Field(default=60, ge=1, le=3600)
+    ingest_relay_poll_seconds: float = Field(default=2.0, ge=0.1, le=60)
+    ingest_queue: str = Field(default="ingestion", pattern=r"^[a-zA-Z0-9_.-]{1,64}$")
 
     @field_validator("jwt_secret")
     @classmethod
@@ -149,6 +164,8 @@ class Settings(BaseSettings):
             ) from error
         if self.session_idle_seconds > self.session_absolute_seconds:
             raise ValueError("session idle timeout cannot exceed the absolute timeout")
+        if self.ingest_retry_base_seconds > self.ingest_retry_max_seconds:
+            raise ValueError("ingestion retry base cannot exceed the maximum backoff")
         self.public_origin = self.public_origin.rstrip("/")
         return self
 

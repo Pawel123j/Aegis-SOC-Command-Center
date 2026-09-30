@@ -15,10 +15,12 @@ return {count, redis.call('TTL', KEYS[1])}
 """
 
 
-def rate_limit(request: Request, category: str, identity: str, maximum: int) -> None:
+def rate_limit(
+    request: Request, category: str, identity: str, maximum: int, window_seconds: int = 60
+) -> None:
     key = f"aegis:limit:{category}:{token_hash(identity)}"
     try:
-        result: Any = request.app.state.redis.eval(INCREMENT, 1, key, 60)
+        result: Any = request.app.state.redis.eval(INCREMENT, 1, key, window_seconds)
     except RedisError:
         raise ApiError(503, "limiter_unavailable", "Service temporarily unavailable") from None
     if int(result[0]) > maximum:

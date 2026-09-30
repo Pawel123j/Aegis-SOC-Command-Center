@@ -2,6 +2,7 @@
 
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from threading import Lock
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, Request
@@ -12,7 +13,7 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from starlette.exceptions import HTTPException
 from starlette.responses import JSONResponse
 
-from app.api import audit, auth, health, users
+from app.api import audit, auth, events, health, sources, users
 from app.api.dependencies import Principal, require
 from app.core.config import Settings, get_settings
 from app.core.errors import ApiError
@@ -21,6 +22,8 @@ from app.core.observability import ObservabilityMiddleware, configure_logging
 from app.core.permissions import Permission
 from app.infrastructure.database import Database
 from app.modules.audit.service import append_audit
+
+_APP_BUILD_LOCK = Lock()
 
 
 def error_response(request: Request, status: int, code: str, message: str) -> JSONResponse:
@@ -32,6 +35,13 @@ def error_response(request: Request, status: int, code: str, message: str) -> JS
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
+    # Python 3.12 warning filters used by schema builders are process-global.
+    # Serialize construction across independent applications in this process.
+    with _APP_BUILD_LOCK:
+        return _create_app(settings)
+
+
+def _create_app(settings: Settings | None = None) -> FastAPI:
     @asynccontextmanager
     async def lifespan(application: FastAPI) -> AsyncIterator[None]:
         configuration = settings or get_settings()
@@ -61,7 +71,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     application.add_middleware(
         ObservabilityMiddleware, local_http=settings.local_http if settings else False
     )
-    for router in (auth.router, users.router, audit.router, health.router):
+    for router in (
+        auth.router,
+        users.router,
+        audit.router,
+        health.router,
+        sources.router,
+        events.router,
+        events.system_router,
+    ):
         application.include_router(router)
 
     @application.exception_handler(ApiError)
@@ -114,6 +132,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     ) -> dict[str, object]:
         return health.detailed_status(request)
 
+    # Materialize included-router dependency schemas before serving requests.
+    # This public API also caches OpenAPI without opening infrastructure connections.
+    application.openapi()
     return application
 
 

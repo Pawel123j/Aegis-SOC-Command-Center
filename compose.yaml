@@ -11,7 +11,7 @@ x-app-environment: &app-environment
   AEGIS_LOCAL_HTTP: ${AEGIS_LOCAL_HTTP:?Run python scripts/bootstrap_env.py}
 
 x-app: &app
-  image: aegis-soc-backend:phase1
+  image: aegis-soc-backend:phase2
   build:
     context: ./backend
     target: runtime
@@ -122,11 +122,19 @@ services:
 
   worker:
     <<: *app
-    command: [celery, -A, "app.worker:celery_app", worker, --loglevel=WARNING, --concurrency=2]
+    command: [celery, -A, "app.worker:celery_app", worker, --loglevel=WARNING, --concurrency=2, "--queues=celery,ingestion"]
     depends_on:
       migrator: {condition: service_completed_successfully}
       redis: {condition: service_healthy}
       clickhouse: {condition: service_healthy}
+    restart: unless-stopped
+
+  relay:
+    <<: *app
+    command: [python, -m, app.relay]
+    depends_on:
+      migrator: {condition: service_completed_successfully}
+      redis: {condition: service_healthy}
     restart: unless-stopped
 
   proxy:
@@ -146,7 +154,7 @@ services:
 
   tests:
     <<: *app
-    image: aegis-soc-backend-test:phase1
+    image: aegis-soc-backend-test:phase2
     build:
       context: ./backend
       target: test

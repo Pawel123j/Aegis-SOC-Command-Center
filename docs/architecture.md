@@ -2,7 +2,8 @@
 
 Status: architektura docelowa z PHASE 0; fundament PHASE 1 ukończony 2026-09-28.
 API, migracje i worker przeszły integrację z rzeczywistymi usługami w Compose.
-Pozostałe moduły są projektem; PHASE 2 jest kolejnym zaplanowanym etapem.
+PHASE 2 dodaje trwały ingress surowych danych; jego bramka jest w końcowej walidacji.
+Normalizacja, projekcja ClickHouse i dalsze moduły pozostają projektem.
 Dowody: [raport walidacji](validation.md).
 Szczegóły rozstrzygnięć:
 [ADR](adr/README.md). Poziom produkcyjny oznacza świadome kontrakty, odporność i testy,
@@ -164,3 +165,19 @@ Nie wymuszamy pełnej zgodności ECS/Sigma/OTel. Brak gwarancji forensic WORM wo
 administratora bazy. Nie obiecujemy przepustowości przed benchmarkiem. Wyjścia do
 skalowania to partycjonowanie inbox, grup detekcji i projekcji oraz repliki storage;
 każde wymaga nowego ADR i testów spójności, a nie tylko zwiększenia worker count.
+
+## Wdrożony przyrost PHASE 2
+
+`POST /api/v1/events` używa osobnego tokenu źródła. Jedna transakcja PostgreSQL
+zapisuje raw, batch, uporządkowane członkostwo, outbox, liczniki pojemności i audyt.
+Odpowiedź 202 potwierdza trwałość tej transakcji. API nie publikuje do Celery.
+Proces `relay` publikuje wyłącznie UUID i generację zadania, a sweeper ponawia
+niedokończoną pracę także po skutecznej publikacji, aby odzyskać utraconą kolejkę.
+Worker sprawdza integralność i treść, następnie zapisuje `staged` lub błąd.
+
+Blokada pojedynczego licznika pojemności serializuje admission oraz ręczny retry;
+to świadomy koszt lokalnego, ograniczonego wolumenem systemu. Rekordy raw, batch
+i członkostwa są niemodyfikowalne dla roli runtime. Limity obejmują dane już
+przetworzone i metadane kolejnych batchy z duplikatami. Brak automatycznej retencji
+jest jawny: PHASE 3 wprowadzi cykl życia po normalizacji i projekcji. Aktualne
+limity, stany i obsługę awarii opisuje [instrukcja PHASE 2](phase2-operations.md).

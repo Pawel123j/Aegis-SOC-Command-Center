@@ -3,13 +3,12 @@
 Projekt portfolio Security Engineering: docelowo lokalna platforma mini-SIEM, SOAR,
 Incident Response i Threat Hunting, z demonstracją opartą na prawdziwym pipeline logów.
 
-**Stan: PHASE 1 — fundament backendu ukończony i zweryfikowany 2026-09-28.**
-Repozytorium zawiera API auth/users/audit, migrację PostgreSQL, role, konfigurację
-Compose i Celery worker. Przeszło 230 testów jednostkowych i 33 testy integracyjne
-z rzeczywistymi PostgreSQL, Redis, ClickHouse i workerem. Potwierdzono budowę
-obrazów Linux/Python 3.12.14, start świeżego stosu Compose i migrację bazy.
-Hostowane GitHub CI nie było uruchamiane. Nie ma UI, generatora ani pipeline SIEM.
-Pełny zakres i aktualne wyniki kontroli: [walidacja](docs/validation.md).
+**Stan: PHASE 2 — trwałe przyjmowanie zdarzeń, ukończona i zweryfikowana 2026-09-30.**
+Backend ma API źródeł, osobne tokeny ingestion, single/batch, idempotencję,
+PostgreSQL inbox/outbox, relay i worker z ograniczonym retry oraz kwarantanną.
+Stan `staged` oznacza gotowość surowego zdarzenia do normalizacji w PHASE 3.
+Nie ma jeszcze normalizacji, detekcji, wyszukiwania zdarzeń, UI ani generatora.
+Zakres i wyniki kontroli: [walidacja](docs/validation.md).
 
 ## Najpierw przeczytaj
 
@@ -76,7 +75,7 @@ Testy backendu wymagają Python 3.12.14 i zależności z dev lockfile.
 Instrukcję przygotowania środowiska, lint, kontroli typów i testów zawiera
 [obsługa PHASE 1](docs/phase1-operations.md).
 
-## Instalacja i Docker — fundament backendu
+## Instalacja i Docker
 
 Wymagane są działający Docker Engine i Compose v2 z kontenerami Linux.
 Z katalogu głównego repozytorium:
@@ -95,14 +94,14 @@ hasło w ukrytym monicie terminala; nie ma stałego hasła demo. Reverse proxy u
 API pod `http://localhost:8080/api/v1`; bazy i Redis pozostają w sieci Compose.
 ClickHouse ma sondę gotowości, a jego schemat zdarzeń powstanie w PHASE 3.
 
-**Pełny start i testy integracyjne PHASE 1 przeszły 2026-09-28.** Szczegóły
-uruchomienia, profilu lokalnego HTTP oraz izolowanego stosu testowego opisuje
-[instrukcja operacyjna](docs/phase1-operations.md).
+Fundament zweryfikowano w PHASE 1. Konto administratora i profil lokalnego HTTP
+opisuje [instrukcja fundamentu](docs/phase1-operations.md). Przyjmowanie zdarzeń,
+status, retry i limity opisuje [obsługa PHASE 2](docs/phase2-operations.md).
 
 ## Dokumentacja funkcji i dalszy plan
 
-Auth, RBAC, audyt oraz podstawowa obserwowalność działają w zakresie PHASE 1.
-Pozostałe moduły i rozszerzenia opisane poniżej należą do kolejnych faz.
+Auth, RBAC, audyt i podstawowa obserwowalność działają od PHASE 1. PHASE 2
+dodaje trwałe przyjmowanie surowych zdarzeń. Pozostałe moduły należą do kolejnych faz.
 
 - [API i kontrakty błędów](docs/api-contract.md), [model i normalizacja](docs/data-model.md).
 - [Detekcje, Sigma i testowanie reguł](docs/detection-engine.md).
@@ -122,8 +121,8 @@ logowanie po ataku, PowerShell, eskalację uprawnień, trafienie IOC, account co
 i nowe konto administratora. Każdy scenariusz zostanie powiązany z testami regresji.
 
 Screenshoty rzeczywistego dashboardu trafią do `docs/assets/` w PHASE 13/18.
-Pełna definicja ukończenia pozostaje otwarta do PHASE 20. PHASE 1 jest ukończona;
-następny zaplanowany etap to **PHASE 2 — event ingestion** z trwałym inbox/outbox.
+Pełna definicja ukończenia pozostaje otwarta do PHASE 20. Po zweryfikowaniu PHASE 2
+następny etap to **PHASE 3 — normalizacja i wyszukiwanie zdarzeń**.
 
 ## Zasady rozwoju
 

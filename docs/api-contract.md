@@ -1,9 +1,10 @@
-# API v1 — projekt kontraktu
+# API v1 — zakres wdrożony i projekt dalszych faz
 
-Status: kontrakt docelowy z ukończonym zakresem PHASE 1 (2026-09-28).
-Kod obejmuje `/auth`, `/users`, `/audit`, `/system/health` i techniczne sondy/metryki.
+Status: kod PHASE 1–2, stan 2026-09-30; wyniki wykonanych kontroli w raporcie walidacji.
+Kod obejmuje `/auth`, `/users`, `/audit`, `/system/health`, źródła, przyjęcie
+eventów, status batcha, retry oraz `/system/ingestion` i techniczne sondy/metryki.
 OpenAPI dla zaimplementowanych tras powstaje z modeli pod `/api/v1/openapi.json`.
-Pozostałe zasoby poniżej należą do kolejnych faz; tabela nie oznacza ich dostępności.
+Zasoby oznaczone jako przyszłe poniżej nie są dostępne w tej implementacji.
 Weryfikację działania z rzeczywistymi usługami dokumentuje [raport walidacji](validation.md).
 Wspólny prefiks zasobów: `/api/v1`. Role i scopes: [security](security.md).
 
@@ -11,8 +12,8 @@ Wspólny prefiks zasobów: `/api/v1`. Role i scopes: [security](security.md).
 
 - UTC RFC3339; UUID identyfikatory; cursor pagination ze stabilnym tie-breaker ID.
 - Docelowy limit listy: domyślnie 100, maksymalnie 500. Wyjątek PHASE 1:
-  `/api/v1/users` i `/api/v1/audit` używają domyślnie 50, maksymalnie 100 rekordów.
-  Wyszukiwanie eventów: domyślnie 24 h, max 7 dni na żądanie interaktywne,
+  `/api/v1/users`, `/api/v1/audit` i `/api/v1/sources` używają domyślnie 50,
+  maksymalnie 100 rekordów. Przyszłe wyszukiwanie eventów: domyślnie 24 h, max 7 dni na żądanie interaktywne,
   bez dowolnego SQL. Większy zakres jako kontrolowany job.
 - Mutacja case/rule/playbook wymaga oczekiwanej wersji (ETag/If-Match): brak `428`,
   nieaktualna wersja `412`. Niedozwolone przejście stanu daje `409`.
@@ -36,12 +37,35 @@ Limity przypisane do rodziny sesji zachowują swój odrębny zakres. Integracja
 PHASE 1 potwierdza działanie auth i limitera na rzeczywistych usługach;
 przeglądarkowy przepływ UI należy do PHASE 13.
 
-## Powierzchnia zasobów
+## Dostępne zasoby PHASE 1–2
+
+| Obszar | Metody i ścieżki | Dostęp / zachowanie |
+| --- | --- | --- |
+| Auth | POST `/auth/login`, `/auth/refresh`, `/auth/logout`; GET `/auth/me`, `/auth/csrf` | JWT, rotacja refresh, unieważnienie sesji, CSRF |
+| Users | GET/POST `/users`; PATCH `/users/{id}` | Admin; wersja przy PATCH |
+| Audit | GET `/audit` | Admin/Manager; brak mutacji historii |
+| Sources | GET/POST `/sources`; GET/PATCH `/sources/{id}` | Admin; PATCH zmienia tylko enabled, wymaga If-Match |
+| Source credentials | POST `/sources/{id}/credentials`; DELETE `/sources/{id}/credentials/{credential_id}` | Admin; jednorazowy token przy wydaniu, odwołanie 204 |
+| Admission | POST `/events` | Wyłącznie source credential `events:write`; single/batch, trwały zapis 202 |
+| Batch status | GET `/events/batches/{batch_id}` | Własny source scope `events:status` lub ludzki `events:read` |
+| Retry | POST `/events/{event_id}/retry` | Admin; quarantined + If-Match generacji; limit pending |
+| System | GET `/system/health`, `/system/ingestion` | Admin/Manager; zależności oraz globalne liczniki/limity ingest |
+
+Utworzenie źródła zwraca `{source, credential}` z tokenem widocznym tylko raz.
+Source ma server-generated dataset UUID, `mode=live` i zerowy `run_id`.
+Credential ma scopes `events:write`/`events:status`, ważność 1–90 dni (domyślnie 30).
+GET źródła zwraca konfigurację i metadane do 100 najnowszych credentiali, bez sekretów.
+Wyłączenie źródła odwołuje wszystkie jego credentiale; ponowne włączenie wymaga
+wydania nowych. Odpowiedzi źródeł, ingest i statusu mają `Cache-Control: no-store`.
+
+Przebieg nadawcy, operacje Admina i znaczenie pojemności:
+[PHASE 2 operations](phase2-operations.md).
+
+## Projekt zasobów przyszłych faz
 
 | Obszar | Planowane metody i ścieżki | Zachowanie |
 | --- | --- | --- |
-| Auth | POST `/auth/login`, `/auth/refresh`, `/auth/logout`; GET `/auth/me`, `/auth/csrf` | Access JWT, refresh rotation, unieważnienie sesji, CSRF token |
-| Events | POST `/events`, `/events/search`; GET `/events`, `/events/{id}`, `/events/batches/{batch_id}` | Single/batch ingest, bounded query i status async |
+| Events | POST `/events/search`; GET `/events`, `/events/{id}` | Bounded query i znormalizowany odczyt |
 | Alerts | GET `/alerts`, `/alerts/{id}`, `/alerts/{id}/events` | Explanation, wkłady risk, immutable wersja reguły, pivots |
 | Incidents | GET/POST `/incidents`; GET/PATCH `/incidents/{id}`; POST `/incidents/{id}/transitions` | Przypisanie, opis, verdict i kontrolowane przejście statusu |
 | Case artifacts | POST `/incidents/{id}/notes`, `/evidence`, `/iocs`; GET `/incidents/{id}/timeline` | Audytowana praca analityka i storyline |
@@ -52,9 +76,7 @@ przeglądarkowy przepływ UI należy do PHASE 13.
 | TI | GET/POST `/iocs`; PATCH `/iocs/{id}` | Typowana lokalna reputacja, wersje i audit |
 | Playbooks | GET/POST `/playbooks`; POST `/playbooks/{id}/versions`, `/playbooks/{id}/publish`, `/playbooks/{id}/runs` | Publikowane wersje i wykonanie simulation |
 | SOAR runs | GET `/playbook-runs/{id}`; POST `/playbook-runs/{id}/cancel` | Historia kroków, prób i wyników |
-| Users | GET/POST `/users`; PATCH `/users/{id}` | Role/deactivation; Admin, bez ujawniania hashy |
-| Audit | GET `/audit` | Brak endpointów UPDATE/DELETE; Manager/Admin |
-| SOC metrics | GET `/metrics`, `/dashboard`, `/system/health` | JSON metryk domenowych i stanu zależności, auth |
+| SOC metrics | GET `/metrics`, `/dashboard` | JSON metryk domenowych, auth |
 | Demo | POST `/demo/runs`; GET `/demo/runs/{id}` | Admin/Manager, izolowany dataset i scenariusz |
 | Replay | POST `/replays`; GET `/replays/{id}` | Uprawniony, bounded, zamknięte wejście i snapshot wersji |
 | Reports | POST `/incidents/{id}/reports`; GET `/reports/{id}` | Audytowany snapshot JSON/HTML z redakcją danych |
@@ -63,7 +85,7 @@ Trasy stałe jak `/events/batches` i `/detections/import` są deklarowane przed
 dynamicznymi ID lub typowane UUID; test routingu chroni przed przechwyceniem słowa
 `import` jako identyfikatora. Paths skrócone w komórce dziedziczą jawny prefix zasobu.
 
-## Przykład ingestu (kontrakt, nie działające demo)
+## Ingest PHASE 2
 
 ```http
 POST /api/v1/events
@@ -74,13 +96,32 @@ Content-Type: application/json
 {"events":[{"source_type":"generic_json","source_event_id":"log-001","raw_event":{"timestamp":"2026-09-24T12:00:00Z","username":"analyst-demo","action":"login","result":"failed","source_ip":"192.0.2.10"}}]}
 ```
 
-Przyjęcie zwraca `202` z `batch_id`, `accepted_count`, `status_url` i `request_id`.
+Przyjęcie zwraca `202` z `batch_id`, `accepted_count`, `created_count`,
+`duplicate_count`, `status_url` i oryginalnym `request_id`. Ten sam klucz
+`Idempotency-Key` (1–128 znaków `[A-Za-z0-9._:-]`) i kanoniczna treść w tym samym
+source/dataset/mode/run zwracają ten sam wynik. Zmieniona treść daje `409`.
+`source_event_id` deduplikuje identyczne rekordy w tym scope także pomiędzy batchami;
+inny payload dla tego ID odrzuca cały batch. Brak ID wyłącza deduplikację eventu.
+Pojedynczy envelope i jednoelementowy `events` mają ten sam kanoniczny hash.
+
+Batch ma 1–500 pozycji, request do 1 MiB, raw do 64 KiB, głębokość JSON do 16.
+Nieznane pola, typ spoza listy źródła, wadliwy envelope lub timestamp bez jawnego
+offsetu odrzucają całe wejście `422`. Timestamp envelope musi być tekstem RFC3339,
+nie liczbą Unix epoch. Przyjęcie wymaga dostępnego limitera Redis: 10 żądań/s
+na źródło wspólnie dla credentiali, `429` z Retry-After lub `503` przy awarii.
+Ograniczenia pojemności również dają `503` z `Retry-After: 5`.
+
 Źródło ma `events:status` tylko dla własnych batchy w swoim source/dataset; ten scope
 nie daje prawa wyszukiwania logów innych źródeł ani odczytu spraw.
-Ten przykład wymaga skonfigurowanego mapowania generic_json. Pole source credential
-jest miejscem na sekret, a nie wartością do zapisania w repozytorium.
+Status zwraca `records` z pozycją, event UUID, stanem, generacją, liczbą prób i
+bezpiecznym error_code; nie zwraca raw treści. Jego counts liczą pozycje batcha,
+więc powtórzony event może wystąpić więcej niż raz. Operator `/system/ingestion`
+liczy unikalne zadania. `staged` oznacza gotowość do normalizacji; counts
+`normalized`, `processed`, `projected` wynoszą zero w PHASE 2. Mapowania pól,
+normalizacja, detekcja i ClickHouse pozostają następnymi fazami.
+Pole source credential w przykładzie jest miejscem na sekret, nie wartością do Git.
 
-## Explorer i query
+## Explorer i query — przyszłe fazy
 
 Filtry: czas, user, host, IP, process, event category/type/severity, source,
 MITRE technique i rule ID. Parametr `q` jest parsowany do typowanego AST.
