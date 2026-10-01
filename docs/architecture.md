@@ -1,10 +1,15 @@
 # Architektura docelowa
 
-Status: architektura docelowa z PHASE 0; fundament PHASE 1 ukończony 2026-09-28.
-API, migracje i worker przeszły integrację z rzeczywistymi usługami w Compose.
-PHASE 2 dodaje trwały ingress surowych danych; jego bramka jest w końcowej walidacji.
-Normalizacja, projekcja ClickHouse i dalsze moduły pozostają projektem.
-Dowody: [raport walidacji](validation.md).
+Status 2026-10-01: fundament PHASE 1–3, pojedyncze detekcje, panel,
+incydenty i korelacja Etapu 2 są zaimplementowane. PostgreSQL przechowuje
+niezmienne normalized snapshots; processor projektuje je do ClickHouse,
+a detector i correlator niezależnie oceniają fakty z PostgreSQL.
+Correlator publikuje alert z wieloma dowodami oraz automatyczną sprawę
+High/Critical w jednej transakcji. Finalizację opisuje
+[ADR 0008](adr/0008-temporal-correlation.md), a wykonane kontrole
+[raport Etapu 2](validation-correlation.md).
+Poniższe diagramy i zakres dalszych modułów zachowują architekturę docelową
+PHASE 0; risk, IOC, SOAR, graf/merge i generator pozostają projektem.
 Szczegóły rozstrzygnięć:
 [ADR](adr/README.md). Poziom produkcyjny oznacza świadome kontrakty, odporność i testy,
 nie deklarację wysokiej dostępności klastra uruchamianego na jednym laptopie.

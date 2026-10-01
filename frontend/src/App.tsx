@@ -7,7 +7,8 @@ import type { Alert, Me, Page, SearchResult, SecurityEvent } from './types';
 import { Events, EventDetail } from './Events';
 import { Sources } from './Sources';
 import { System } from './System';
-import { Alerts, Detections } from './Alerts';
+import { Alerts } from './Alerts';
+import { Detections } from './detections/Detections';
 import { Incidents } from './incidents/Incidents';
 
 type View = 'overview' | 'alerts' | 'events' | 'incidents' | 'detections' | 'sources' | 'system';
@@ -30,6 +31,7 @@ const roleName = {
 export function App() {
   const [user, setUser] = useState<Me | null>(null);
   const identity = useRef<Me | null>(null);
+  const authGeneration = useRef(0);
   const [starting, setStarting] = useState(true);
   const [startError, setStartError] = useState<unknown>(null);
   const [view, setView] = useState<View>('overview');
@@ -39,32 +41,35 @@ export function App() {
   const [incidentSequence, setIncidentSequence] = useState(0);
   useEffect(() => {
     let active = true;
+    const restoreGeneration = authGeneration.current;
     void api
       .restore()
       .then((me) => {
-        if (active) {
+        if (active && authGeneration.current === restoreGeneration) {
           identity.current = me;
           setUser(me);
         }
       })
       .catch((error: unknown) => {
-        if (active) setStartError(error);
+        if (active && authGeneration.current === restoreGeneration) setStartError(error);
       })
       .finally(() => {
         if (active) setStarting(false);
       });
     const unsubscribe = api.subscribe((kind) => {
+      const generation = ++authGeneration.current;
       if (kind === 'logout') {
         identity.current = null;
         setUser(null);
         setSelected(null);
         setIncidentAlert(null);
+        setQuery('');
         setView('overview');
       } else {
         void api
           .get<Me>('/auth/me')
           .then((me) => {
-            if (active) {
+            if (active && authGeneration.current === generation) {
               const previous = identity.current;
               const authorityChanged =
                 previous?.id !== me.id ||
@@ -77,11 +82,19 @@ export function App() {
                 setView('overview');
                 setSelected(null);
                 setIncidentAlert(null);
+                setQuery('');
               }
             }
           })
           .catch(() => {
-            if (active) setUser(null);
+            if (active && authGeneration.current === generation) {
+              identity.current = null;
+              setUser(null);
+              setView('overview');
+              setSelected(null);
+              setIncidentAlert(null);
+              setQuery('');
+            }
           });
       }
     });
@@ -102,8 +115,14 @@ export function App() {
       <Login
         initialError={startError}
         onLogin={(me) => {
+          authGeneration.current++;
           identity.current = me;
           setUser(me);
+          setStartError(null);
+          setView('overview');
+          setSelected(null);
+          setIncidentAlert(null);
+          setQuery('');
         }}
       />
     );
@@ -207,7 +226,9 @@ export function App() {
               onInitialConsumed={() => setIncidentAlert(null)}
             />
           )}
-          {view === 'detections' && allowed('detections:read') && <Detections user={user} />}
+          {view === 'detections' && allowed('detections:read') && (
+            <Detections user={user} onEvent={setSelected} />
+          )}
           {view === 'sources' && allowed('sources:manage') && (
             <Sources
               onEventId={(id) => {

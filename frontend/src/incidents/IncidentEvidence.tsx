@@ -6,6 +6,9 @@ import { incidentsApi } from './api';
 import { Pagination } from './Pagination';
 import type { IncidentDetail } from './types';
 import { usePage } from './usePage';
+import { EventEvidence } from '../evidence/EventEvidence';
+import { evidenceEvents } from '../evidence/events';
+import { EventReason } from '../evidence/EventReason';
 
 export function IncidentEvidence({
   incident,
@@ -42,9 +45,8 @@ export function IncidentEvidence({
                 <small>
                   {time(evidence.event_timestamp)} · {evidence.event_snapshot.source.name}
                 </small>
-                <button className="quiet" onClick={() => onEvent(evidence.event_snapshot)}>
-                  Otwórz oryginalne zdarzenie
-                </button>
+                <EventReason reason={evidence.reason} />
+                <EventEvidence events={evidenceEvents(evidence)} onEvent={onEvent} />
                 <details>
                   <summary>Pochodzenie i uzasadnienie</summary>
                   <dl className="facts">

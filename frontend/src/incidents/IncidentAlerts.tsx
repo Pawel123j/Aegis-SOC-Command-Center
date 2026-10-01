@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { api } from '../api';
-import { Badge, Empty, ErrorNotice, Panel } from '../components';
-import type { Alert, AlertDetail, SecurityEvent } from '../types';
+import { Badge, Empty, Panel } from '../components';
+import type { Alert, SecurityEvent } from '../types';
+import { AlertEvidenceButton } from '../evidence/AlertEvidenceButton';
 import { time, statusName } from '../utilities';
 import { incidentsApi } from './api';
 import { AlertPicker } from './AlertPicker';
@@ -23,20 +23,6 @@ export function IncidentAlerts({
 }) {
   const [adding, setAdding] = useState(false);
   const [selected, setSelected] = useState<Alert[]>([]);
-  const [opening, setOpening] = useState(false);
-  const [error, setError] = useState<unknown>(null);
-  async function open(alertId: string) {
-    setOpening(true);
-    setError(null);
-    try {
-      const alert = await api.get<AlertDetail>(`/alerts/${encodeURIComponent(alertId)}`);
-      onEvent(alert.event_snapshot);
-    } catch (failure) {
-      setError(failure);
-    } finally {
-      setOpening(false);
-    }
-  }
   async function attach() {
     if (!selected[0]) return;
     const result = await mutate((version) =>
@@ -58,7 +44,6 @@ export function IncidentAlerts({
         )
       }
     >
-      <ErrorNotice error={error} />
       {editable && adding && (
         <fieldset disabled={disabled}>
           <AlertPicker
@@ -92,19 +77,16 @@ export function IncidentAlerts({
                     <small>
                       {time(alert.event_timestamp)} · {alert.rule_id}
                     </small>
+                    {alert.detection_type === 'correlation' && (
+                      <small>Korelacja · liczba zdarzeń: {alert.event_count}</small>
+                    )}
                   </td>
                   <td>
                     <Badge tone={alert.severity}>{alert.severity}</Badge>
                     <small>{statusName[alert.status]}</small>
                   </td>
                   <td>
-                    <button
-                      className="quiet"
-                      disabled={opening}
-                      onClick={() => void open(alert.id)}
-                    >
-                      Otwórz dowód
-                    </button>
+                    <AlertEvidenceButton alertId={alert.id} onEvent={onEvent} />
                   </td>
                   {editable && (
                     <td>

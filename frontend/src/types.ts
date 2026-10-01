@@ -130,13 +130,22 @@ export interface Alert {
   mode: string;
   run_id: string;
   risk_score: null;
+  event_count?: number;
+  detection_type?: 'single_event' | 'correlation';
 }
 export interface AlertDetail extends Alert {
   rule_snapshot: Json;
   event_snapshot: SecurityEvent;
+  event_snapshots?: EventSnapshot[];
+  event_sha256?: string;
   reason: Json;
   acknowledged_at: string | null;
   acknowledged_by: string | null;
+}
+export interface EventSnapshot {
+  event_id: string;
+  event_sha256: string;
+  event_snapshot: SecurityEvent;
 }
 export interface Rule {
   id: string;

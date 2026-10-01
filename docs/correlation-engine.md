@@ -1,6 +1,70 @@
-# Correlation Engine — projekt kontraktu
+# Correlation Engine — Etap 2 i dalszy projekt
 
-**Status: projekt PHASE 0; brak działającej implementacji korelacji, storyline i testów wykonawczych.** Wymagania poniżej stanowią kryteria późniejszych faz.
+Etap 2 dodaje natywne reguły threshold/sequence, trwały proces korelacji,
+wielozdarzeniowe alerty i dowody oraz ich integrację z incydentami.
+Aktualną finalizację, tożsamości, izolację i granice zakresu opisuje
+[ADR 0008](adr/0008-temporal-correlation.md). Wykonane kontrole i szczegółowy
+kontrakt przyrostu opisuje [raport Etapu 2](validation-correlation.md).
+
+## Działające reguły Etapu 2
+
+| Reguła | Warunek i okno | Severity |
+| --- | --- | --- |
+| `possible_bruteforce_compromise` | 5 porażek, potem sukces tego samego użytkownika/hosta/IP w 10 min | High |
+| `repeated_authentication_failures` | 5 porażek tego samego użytkownika/hosta/IP w 5 min | Medium |
+| `powershell_then_outbound` | PowerShell, potem wychodzące połączenie tego samego trwałego procesu/hosta w 5 min | High |
+| `login_then_local_admin_change` | Sukces logowania, potem dodanie członka lokalnej grupy administratorów przez tego użytkownika na tym hoście w 10 min | High |
+| `possible_multi_stage_compromise` | 5 porażek → sukces → PowerShell → zmiana grupy → połączenie wychodzące, użytkownik/host i pełny span 30 min; PowerShell/network wymaga tego samego procesu | Critical |
+
+W panelu wybierz **Reguły detekcji → Korelacja**. Szczegóły pokazują wersję,
+liczność etapów, AND/OR, okno, wspólne encje i wskazówki analityczne.
+Admin/Manager może zmienić enabled z kontrolą wersji; Analyst może wykonać
+izolowany test maksymalnie 100 normalized events. Test działa także dla
+wyłączonej reguły i nie tworzy alertów, spraw ani checkpointów.
+Viewer odczytuje katalog i stan pokrycia.
+
+Alert pokazuje chronologiczną listę wszystkich zdarzeń wybranych do dowodu.
+Każdy otwiera oryginalny normalized/raw snapshot oraz SHA-256. Incydent agreguje
+czas, źródła i encje całego dowodu. Pojedynczy High/Critical alert nadal tworzy
+własną sprawę; reguła wieloetapowa nie scala istniejących spraw analityka.
+Zmiana grupy dowodzi wykonania operacji przez aktora, nie automatycznie nadania
+uprawnień właśnie temu aktorowi. Kolejność zdarzeń stanowi potencjalny ciąg
+aktywności wymagający oceny, a nie dowód związku przyczynowego.
+
+## Praca, finalizacja i limity
+
+`app.correlator` odpytuje PostgreSQL co 2 s, odkrywając i oceniając do 25 zadań
+w przebiegu. `AEGIS_CORRELATION_POLL_SECONDS` i `AEGIS_CORRELATION_BATCH_SIZE`
+mają walidowane granice. Restart korzysta z trwałego stanu oraz klucza
+deduplikacji, a alert/audyt/automatyczna sprawa/checkpoint mają wspólny commit.
+Nie zależy to od dostępności wyszukiwarki ClickHouse.
+
+Live finalizuje po buforze 120 s i opróżnieniu zaległości. Znacznik przyszłego
+czasu ponad 30 s względem przyjęcia daje `clock_skew`, zbyt spóźniony log daje
+`late`. Log pozostaje w archiwum. Zamknięty replay pomija te granice zegara live
+i korzysta z immutable manifestu wejścia oraz snapshotu deploymentów.
+API finalizacji wymaga dokładnego dataset/run i oczekiwanej liczby wejścia;
+nie tworzy źródła ani generatora. Publiczne źródła nadal mają tryb live.
+
+Maksymalnie 500 kandydatów encji/okna i 100 dowodów na alert. Przekroczenie
+kandydatów zapisuje końcowe `incomplete`, bez alertu z obciętych logów i bez
+automatycznego retry. Stan pokrycia ujawnia te wyniki, backlog, watermark oraz
+niepełną listę zakresów. Dowód jest minimalnym zbiorem spełniającym etapy;
+kolejne kwalifikujące się kotwice mogą dawać kolejne alerty. Nie dodano suppression.
+Sekwencja wymaga ściśle rosnącego czasu między etapami; zdarzenia o równym
+czasie mogą zwiększyć licznik jednego etapu.
+
+Źródło musi dostarczyć wiarygodne `host.id` i `process.entity_id`, jeśli reguła
+ich wymaga. Hostname zastępczy ma zakres źródła; sam PID lub IP nie zastępuje
+tożsamości. Rozpoznawanie aliasów i rejestr encji to dalsze etapy.
+Explorer nie ma jeszcze filtrów adnotacji correlation rule/MITRE.
+
+## Historyczny projekt szerszego silnika
+
+**Poniżej zachowano historyczny projekt PHASE 0.** Graf, storyline,
+automatyczny merge i reconstruct pozostają przyszłym zakresem. Opisane
+poniżej statusy i dokładny dataset isolation nie zastępują aktualnego kontraktu
+incydentów z [ADR 0007](adr/0007-incident-case-management.md).
 
 ## Cel i wejście
 

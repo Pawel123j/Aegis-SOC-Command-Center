@@ -1,11 +1,11 @@
 # API v1 — zakres wdrożony i projekt dalszych faz
 
 Status: kod PHASE 1–3 i przyrostów SOC, stan 2026-10-01;
-wyniki wykonanych kontroli w [raporcie incydentów](validation-incidents.md)
+wyniki wykonanych kontroli w [raporcie korelacji](validation-correlation.md)
 i wcześniejszych raportach walidacji.
 Kod obejmuje `/auth`, `/users`, `/audit`, `/system/health`, źródła, przyjęcie
 eventów, status batcha, retry, normalized event search, alerts/detections,
-incidents oraz techniczne sondy/metryki.
+incidents, correlations oraz techniczne sondy/metryki.
 OpenAPI dla zaimplementowanych tras powstaje z modeli pod `/api/v1/openapi.json`.
 Zasoby oznaczone jako przyszłe poniżej nie są dostępne w tej implementacji.
 Weryfikację działania z rzeczywistymi usługami dokumentuje [raport walidacji](validation.md).
@@ -60,6 +60,9 @@ przeglądarkowy przepływ UI należy do PHASE 13.
 | Alerts | GET `/alerts`, `/alerts/{id}`; PATCH `/alerts/{id}` | Odczyt dowodu; Analyst/Manager/Admin zmienia status z If-Match |
 | Detections | GET `/detections`, `/detections/{id}`; PATCH `/detections/{id}`; POST `/detections/test` | Trzy wbudowane reguły; publish włącza deployment, test nie zapisuje alertu |
 | Detection status | GET `/system/detections` | Manager/Admin; checkpointy i backlog |
+| Correlations | GET `/correlations`, `/correlations/{id}`; PATCH `/correlations/{id}`; POST `/correlations/test` | Pięć reguł, detections:read/publish/test; If-Match dla enabled; czysty test bez zapisu alertów |
+| Correlation status | GET `/correlations/status` | Stan pracy, watermark i jawne luki pokrycia |
+| Replay finalization | POST `/correlations/replay/finalize` | Uprawniona, audytowana finalizacja dataset/run z oczekiwaną liczbą wejścia |
 | Incidents | GET/POST `/incidents`; GET/PATCH `/incidents/{id}` | Tworzenie z Idempotency-Key; edycja/status/owner z If-Match |
 | Incident alerts | POST `/incidents/{id}/alerts`; DELETE `/incidents/{id}/alerts/{alert_id}` | Dopinanie/odpinanie z zachowaniem dowodów, If-Match |
 | Incident history | POST/GET `/incidents/{id}/notes`; GET `/incidents/{id}/timeline`, `/incidents/{id}/evidence` | Append-only notes/timeline, paginacja i niezmienne dowody |
@@ -77,6 +80,8 @@ Przebieg nadawcy, operacje Admina i znaczenie pojemności:
 
 Szczegółowy kontrakt incydentów i limity: [etap 1](incidents.md).
 Kontrakty wcześniejszego panelu i trzech detekcji: [initial SOC](initial-soc.md).
+Finalizacja czasowa i wielozdarzeniowe dowody: [ADR 0008](adr/0008-temporal-correlation.md),
+[raport Etapu 2](validation-correlation.md).
 
 ## Projekt zasobów przyszłych faz
 

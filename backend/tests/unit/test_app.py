@@ -40,7 +40,9 @@ def test_concurrent_application_builds_serialize_schema_generation(
 
     with ThreadPoolExecutor(max_workers=2) as executor:
         futures = [executor.submit(build) for _ in range(2)]
-        applications = [future.result(timeout=15) for future in futures]
+        # The deliberate delay applies to every adapter in the expanding API.
+        # Keep a bounded deadlock guard without treating schema count as a speed test.
+        applications = [future.result(timeout=45) for future in futures]
     assert applications[0] is not applications[1]
     assert warnings.filters == filters_before
 

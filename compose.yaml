@@ -9,9 +9,11 @@ x-app-environment: &app-environment
   AEGIS_JWT_SECRET: ${AEGIS_JWT_SECRET:?Run python scripts/bootstrap_env.py}
   AEGIS_PUBLIC_ORIGIN: ${AEGIS_PUBLIC_ORIGIN:?Run python scripts/bootstrap_env.py}
   AEGIS_LOCAL_HTTP: ${AEGIS_LOCAL_HTTP:?Run python scripts/bootstrap_env.py}
+  AEGIS_CORRELATION_POLL_SECONDS: ${AEGIS_CORRELATION_POLL_SECONDS:-2.0}
+  AEGIS_CORRELATION_BATCH_SIZE: ${AEGIS_CORRELATION_BATCH_SIZE:-25}
 
 x-app: &app
-  image: aegis-soc-backend:incidents-stage1
+  image: aegis-soc-backend:correlation-stage2
   build:
     context: ./backend
     target: runtime
@@ -164,6 +166,13 @@ services:
       migrator: {condition: service_completed_successfully}
     restart: unless-stopped
 
+  correlator:
+    <<: *app
+    command: [python, -m, app.correlator]
+    depends_on:
+      migrator: {condition: service_completed_successfully}
+    restart: unless-stopped
+
   proxy:
     image: nginx:1.30.5-alpine
     user: "101:101"
@@ -183,7 +192,7 @@ services:
 
   tests:
     <<: *app
-    image: aegis-soc-backend-test:incidents-stage1
+    image: aegis-soc-backend-test:correlation-stage2
     build:
       context: ./backend
       target: test

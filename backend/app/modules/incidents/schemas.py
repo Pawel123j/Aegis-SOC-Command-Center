@@ -7,7 +7,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.core.permissions import Role
-from app.modules.alerts.schemas import AlertSummary
+from app.modules.alerts.schemas import AlertSummary, EventEvidence
 from app.modules.normalization.schemas import NormalizedSecurityEvent
 
 IncidentStatus = Literal["new", "investigating", "contained", "resolved", "closed"]
@@ -196,6 +196,7 @@ class EvidenceView(BaseModel):
     event_sha256: str
     rule_snapshot: dict[str, Any]
     event_snapshot: NormalizedSecurityEvent
+    event_snapshots: list[EventEvidence]
     reason: dict[str, Any]
 
 

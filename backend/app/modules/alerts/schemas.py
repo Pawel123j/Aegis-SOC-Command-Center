@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Any, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.modules.normalization.schemas import NormalizedSecurityEvent
 
@@ -43,6 +43,14 @@ class AlertSummary(BaseModel):
     updated_at: datetime
     version: int
     risk_score: int | None
+    event_count: int = 1
+    detection_type: Literal["single_event", "correlation"] = "single_event"
+
+
+class EventEvidence(BaseModel):
+    event_id: UUID
+    event_sha256: str
+    event_snapshot: NormalizedSecurityEvent
 
 
 class AlertDetail(AlertSummary):
@@ -53,6 +61,19 @@ class AlertDetail(AlertSummary):
     event_snapshot: NormalizedSecurityEvent
     reason: dict[str, Any]
     event_sha256: str
+    event_snapshots: list[EventEvidence] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def legacy_evidence(self) -> "AlertDetail":
+        if not self.event_snapshots:
+            self.event_snapshots = [
+                EventEvidence(
+                    event_id=self.event_id,
+                    event_sha256=self.event_sha256,
+                    event_snapshot=self.event_snapshot,
+                )
+            ]
+        return self
 
 
 class AlertList(BaseModel):

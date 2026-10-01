@@ -1,4 +1,4 @@
-import type { Alert, Json, SecurityEvent } from '../types';
+import type { Alert, EventSnapshot, Json, SecurityEvent } from '../types';
 import type { incidentSeverities, incidentStatuses } from './labels';
 
 export type IncidentStatus = keyof typeof incidentStatuses;
@@ -53,6 +53,7 @@ export interface IncidentEvidence {
   event_sha256: string;
   rule_snapshot: Json;
   event_snapshot: SecurityEvent;
+  event_snapshots?: EventSnapshot[];
   reason: Json;
 }
 export interface IncidentDetail extends Incident {

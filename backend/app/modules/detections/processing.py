@@ -70,7 +70,14 @@ def _process_one(database: Database) -> dict[str, int] | None:
         # Use the same lock order as deployment changes and authority revocation.
         # Evaluation is pure and bounded; no network I/O occurs in this transaction.
         session.execute(text("SELECT pg_advisory_xact_lock(:lock)"), {"lock": ADMIN_LOCK_ID})
-        deployments = {row.id: row for row in session.scalars(select(RuleDeployment))}
+        deployments = {
+            row.id: row
+            for row in session.scalars(
+                select(RuleDeployment).where(
+                    RuleDeployment.id.in_([rule.id for rule in BUILTIN_RULES])
+                )
+            )
+        }
         if set(deployments) != {rule.id for rule in BUILTIN_RULES} or any(
             deployments[rule.id].rule_version != rule.version for rule in BUILTIN_RULES
         ):
@@ -132,6 +139,13 @@ def _process_one(database: Database) -> dict[str, int] | None:
                 "version": 1,
                 "rule_snapshot": match.rule.snapshot(),
                 "event_snapshot": deepcopy(snapshot.document),
+                "event_snapshots": [
+                    {
+                        "event_id": str(event.event_id),
+                        "event_sha256": snapshot.document_sha256,
+                        "event_snapshot": deepcopy(snapshot.document),
+                    }
+                ],
                 "reason": deepcopy(match.reason),
                 "event_sha256": snapshot.document_sha256,
                 "risk_score": None,

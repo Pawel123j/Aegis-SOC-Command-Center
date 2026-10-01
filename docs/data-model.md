@@ -1,7 +1,8 @@
 # Model danych i normalizacja
 
 Status 2026-10-01: PHASE 1–3, początkowe detekcje/alerty i incydenty
-są zaimplementowane. Kontrakt działającej normalizacji opisuje
+są zaimplementowane, wraz z regułami wielozdarzeniowej korelacji Etapu 2.
+Kontrakt działającej normalizacji opisuje
 [normalization](normalization.md), a spraw [incidents](incidents.md).
 Dalsze encje i wcześniejsze szkice oznaczono jako projekt poniżej.
 Nazwy pól nie są deklaracją pełnej zgodności ECS/OTel.
@@ -139,6 +140,12 @@ Aktualny przyrost incydentów (`0005_incidents`) dodaje `incidents`,
 PostgreSQL. Powiązania alertów mają active/detached zamiast DELETE,
 notes/timeline/receipts pozostają append-only. Scope live/replay oraz
 limity opisuje [kontrakt incydentów](incidents.md).
+Etap 2 rozszerza immutable alert o `event_snapshots`: listę wrapperów
+`{event_id, event_sha256, event_snapshot}`. Dotychczasowy `event_snapshot`
+pozostaje dowodem kotwicy. Trwałe zadania i watermark korelacji są stanem
+PostgreSQL; replay zapisuje zamknięty manifest, identyfikatory i hashe wejścia.
+Agregacja sprawy używa czasu i encji ze wszystkich dowodów aktywnych alertów.
+Zakres i dokładne modele: [raport korelacji](validation-correlation.md).
 Poniższa tabela obejmuje również dalsze, jeszcze niewdrożone encje.
 
 | Agregat | Planowane encje / constraints |

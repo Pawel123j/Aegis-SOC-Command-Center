@@ -10,7 +10,7 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, Query, Request, Response
-from sqlalchemy import func, select, tuple_
+from sqlalchemy import func, or_, select, tuple_
 
 from app.api.dependencies import DB, Principal, lock_authority, require
 from app.core.errors import ApiError
@@ -121,7 +121,15 @@ def list_alerts(
     for name in ("status", "severity", "mode", "dataset_id", "source_id", "run_id"):
         value = getattr(data, name)
         if value is not None:
-            filters.append(getattr(Alert, name) == value)
+            if name in {"dataset_id", "source_id"}:
+                filters.append(
+                    or_(
+                        getattr(Alert, name) == value,
+                        Alert.event_snapshots.contains([{"event_snapshot": {name: str(value)}}]),
+                    )
+                )
+            else:
+                filters.append(getattr(Alert, name) == value)
     total = int(db.scalar(select(func.count()).select_from(Alert).where(*filters)) or 0)
     query = (
         select(Alert)

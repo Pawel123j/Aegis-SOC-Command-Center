@@ -6,6 +6,9 @@ Aktualizacja 2026-10-01: nowa prośba użytkownika wyznacza 15 przyrostów,
 zaczynając od incydentów. [Audyt i plan rozbudowy](soc-expansion-plan.md)
 określa bieżącą kolejność; poniższe PHASE 0–20 zachowują historyczny plan
 i kryteria jakości. Każdy nowy przyrost pozostawia aplikację uruchamialną.
+Etap 1 dostarczył [incydenty](validation-incidents.md); Etap 2 dostarcza
+[korelację liczników i sekwencji](validation-correlation.md).
+Nie obejmuje przyszłego merge/grafu/reconstruct z historycznej PHASE 6.
 
 Plan odpowiada fazom 0–20 wskazanym w wymaganiach. Faza 0 dostarczyła analizę stanu, decyzje architektoniczne, szkielet repozytorium i dokumentację. Faza 1 dostarczyła zweryfikowany fundament backendu z integracją rzeczywistych usług (2026-09-28). SIEM, frontend i generator wymagają dalszych faz.
 

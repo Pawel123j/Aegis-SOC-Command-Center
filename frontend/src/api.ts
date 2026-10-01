@@ -32,6 +32,11 @@ const messages: Record<string, string> = {
   csrf_failed: 'Sesja logowania zmieniła się. Spróbuj zalogować się ponownie.',
   rate_limited: 'Za dużo żądań. Poczekaj chwilę i spróbuj ponownie.',
   ingest_capacity_exceeded: 'Magazyn przyjmowania logów osiągnął limit.',
+  duplicate_event_id: 'Każde zdarzenie testu musi mieć inny event_id. Usuń powtórzone rekordy.',
+  body_too_large: 'Przesłany zestaw przekracza limit rozmiaru. Test może zawierać najwyżej 64 KiB.',
+  rules_unavailable: 'Katalog reguł jest chwilowo niedostępny. Odśwież go przed kolejną zmianą.',
+  rule_not_found: 'Nie znaleziono reguły. Odśwież katalog detekcji.',
+  rule_unchanged: 'Reguła ma już ten stan. Odśwież katalog detekcji.',
 };
 
 export class ApiError extends Error {

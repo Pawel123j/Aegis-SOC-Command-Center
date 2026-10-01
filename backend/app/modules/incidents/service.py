@@ -12,13 +12,14 @@ from sqlalchemy.orm import Session
 from app.core.errors import ApiError
 from app.core.permissions import Permission, Role, has_permission
 from app.infrastructure.database import utcnow
+from app.modules.alerts.evidence import verified_events
 from app.modules.alerts.models import Alert
 from app.modules.audit.service import append_audit
 from app.modules.incidents.models import Incident, IncidentAlert, IncidentNote, IncidentTimeline
 from app.modules.incidents.schemas import IncidentCreate, IncidentPatch
 from app.modules.ingestion.models import LIVE_RUN_ID
 from app.modules.ingestion.schemas import canonical_json
-from app.modules.normalization.schemas import NormalizedSecurityEvent, canonical_ip
+from app.modules.normalization.schemas import canonical_ip
 from app.modules.users.models import User
 
 SEVERITY_ORDER = {"informational": 0, "low": 1, "medium": 2, "high": 3, "critical": 4}
@@ -115,14 +116,14 @@ def recompute_entities(db: Session, incident: Incident) -> None:
     db.flush()
     alerts = linked_alerts(db, incident)
     incident.alert_count = len(alerts)
-    incident.first_seen = min((alert.event_timestamp for alert in alerts), default=None)
-    incident.last_seen = max((alert.event_timestamp for alert in alerts), default=None)
+    all_events = [event for alert in alerts for event in verified_events(alert)]
+    incident.first_seen = min((event.timestamp for event in all_events), default=None)
+    incident.last_seen = max((event.timestamp for event in all_events), default=None)
     users: set[str] = set()
     hosts: set[str] = set()
     ips: set[str] = set()
     mitre: set[str] = set()
-    for alert in alerts:
-        event = NormalizedSecurityEvent.model_validate(alert.event_snapshot)
+    for event in all_events:
         for account in (event.user, event.user.target):
             if account.name:
                 users.add(f"{account.realm}\\{account.name}" if account.realm else account.name)
@@ -134,6 +135,7 @@ def recompute_entities(db: Session, incident: Incident) -> None:
             if address is not None:
                 # Serialization preserves the same IPv4-mapped IPv6 representation as event search.
                 ips.add(canonical_ip(address))
+    for alert in alerts:
         mitre.update(
             value for value in alert.rule_snapshot.get("mitre", []) if isinstance(value, str)
         )
@@ -141,7 +143,7 @@ def recompute_entities(db: Session, incident: Incident) -> None:
     incident.related_hosts = sorted(hosts)
     incident.related_ip_addresses = sorted(ips)
     incident.mitre_techniques = sorted(mitre)
-    incident.dataset_ids = sorted({str(alert.dataset_id) for alert in alerts})
+    incident.dataset_ids = sorted({str(event.dataset_id) for event in all_events})
 
 
 def touch(incident: Incident, actor: User | None) -> None:
@@ -169,6 +171,12 @@ def attach_alert(
         hashlib.sha256(canonical_json(alert.event_snapshot)).hexdigest(), alert.event_sha256
     ):
         raise ApiError(409, "evidence_integrity_mismatch", "Alert evidence integrity failed")
+    try:
+        verified_events(alert)
+    except (KeyError, TypeError, ValueError):
+        raise ApiError(
+            409, "evidence_integrity_mismatch", "Alert evidence integrity failed"
+        ) from None
     existing = db.scalar(
         select(IncidentAlert).where(
             IncidentAlert.incident_id == incident.id,

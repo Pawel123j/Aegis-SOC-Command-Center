@@ -4,7 +4,8 @@ React 19.3.0, TypeScript 6.0.3, Vite 8.3.1, Node.js 24.19.0 i pnpm 11.19.0.
 Panel działa za lokalnym proxy pod tym samym origin co API.
 
 Widoki: logowanie, przegląd, zdarzenia i dowody, alerty z decyzjami analityka,
-incydenty z notatkami i osią czasu, trzy wbudowane reguły, źródła z własnymi
+incydenty z notatkami i osią czasu, trzy reguły pojedynczych zdarzeń i pięć reguł
+korelacji, źródła z własnymi
 kluczami, status przetwarzania i retry.
 Dane pochodzą z API; niewdrożona ocena ryzyka jest jawnie niedostępna.
 
@@ -28,6 +29,35 @@ alertu replay i może łączyć tylko alerty tej samej sesji oraz zestawu danych
 Sprawy live mogą łączyć alerty z wielu źródeł. Oś czasu rozróżnia czas logu
 od czasu działania analityka i pozwala otworzyć zachowany oryginał bez
 uzależnienia od dostępności wyszukiwarki zdarzeń.
+
+„Reguły detekcji” mają zakładki pojedynczych zdarzeń i korelacji. Korelacje
+pokazują kolejność etapów lub próg liczby zdarzeń, okno czasu, wspólne encje
+oraz warunki AND/OR. Widok szczegółów pobiera wersjonowaną regułę z API.
+Kierownik SOC i administrator mogą ją włączać i wyłączać z `If-Match`;
+analityk może przeprowadzić izolowany test, a osoba z rolą odczytu przeglądać
+warunki. Konflikt zmiany wymaga jawnego odświeżenia katalogu.
+
+Pokrycie przetwarzania pokazuje liczniki kolejki, rekordy spóźnione,
+nieprawidłowy czas, kwarantannę i niekompletne dopasowania z rzeczywistego
+API. Można sprawdzić domknięty zakres live oraz stan i SHA-256 zestawu replay.
+Niepełna lista zakresów jest jawnie oznaczona.
+
+Test korelacji przyjmuje od 1 do 100 pełnych znormalizowanych rekordów JSON,
+maksymalnie 64 KiB. Wyświetla liczbę dopasowań, wersję silnika, uzasadnienie
+i każdy rekord dowodowy z przesłanego zestawu. Nie zapisuje alertu ani
+incydentu i nie zmienia reguły. Test sprawdza kompletny przesłany zestaw od
+razu; przetwarzanie live uwzględnia bufor opóźnionych logów i zaległą kolejkę.
+Niekompletny wynik jest oznaczony osobno i nie jest traktowany jako brak
+dopasowań. Szkic testu pozostaje po przełączeniu zakładki i odświeżeniu sesji
+tego samego użytkownika.
+
+Alerty korelacyjne, powiązane alerty incydentu, zachowane dowody i oś czasu
+udostępniają wszystkie oryginalne zdarzenia dopasowania. Dla wielu rekordów
+można wybrać konkretny dowód, sprawdzić jego SHA-256 oraz pierwszy i ostatni
+czas. Starsze alerty nadal otwierają swój pojedynczy rekord. Odpięcie alertu
+z incydentu zachowuje całą sekwencję dowodową. Dane logów i notatki są
+wyświetlane jako tekst. Każde kliknięcie encji w oryginalnym zdarzeniu prowadzi
+do rzeczywistego wyszukiwania w Event Explorer.
 
 ```text
 pnpm install --frozen-lockfile --ignore-scripts

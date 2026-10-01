@@ -3,6 +3,7 @@
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.modules.alerts.evidence import contributors
 from app.modules.alerts.models import Alert
 from app.modules.alerts.schemas import AlertSummary
 from app.modules.incidents.models import Incident, IncidentAlert, IncidentNote, IncidentTimeline
@@ -82,5 +83,6 @@ def evidence(link: IncidentAlert, alert: Alert) -> EvidenceView:
         event_sha256=alert.event_sha256,
         rule_snapshot=alert.rule_snapshot,
         event_snapshot=alert.event_snapshot,
+        event_snapshots=contributors(alert),
         reason=alert.reason,
     )

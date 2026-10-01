@@ -28,6 +28,11 @@ class Alert(Base):
             "jsonb_typeof(event_snapshot) = 'object' AND jsonb_typeof(reason) = 'object'",
             name="object_evidence",
         ),
+        CheckConstraint(
+            "jsonb_typeof(event_snapshots) = 'array' AND "
+            "jsonb_array_length(event_snapshots) <= 100",
+            name="array_event_snapshots",
+        ),
         Index("ix_alerts_created_at_id", "created_at", "id"),
     )
 
@@ -57,8 +62,21 @@ class Alert(Base):
     version: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
     rule_snapshot: Mapped[dict[str, Any]] = mapped_column(JSONB)
     event_snapshot: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    event_snapshots: Mapped[list[dict[str, Any]]] = mapped_column(
+        JSONB, default=list, server_default=text("'[]'::jsonb")
+    )
     reason: Mapped[dict[str, Any]] = mapped_column(JSONB)
     event_sha256: Mapped[str] = mapped_column(String(64))
     risk_score: Mapped[int | None] = mapped_column(Integer)
 
     __mapper_args__ = {"version_id_col": version}
+
+    @property
+    def event_count(self) -> int:
+        return len(self.event_snapshots or []) or 1
+
+    @property
+    def detection_type(self) -> str:
+        return (
+            "correlation" if self.evaluator_version.startswith("correlation-") else "single_event"
+        )

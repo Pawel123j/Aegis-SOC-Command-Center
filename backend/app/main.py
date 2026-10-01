@@ -17,6 +17,7 @@ from app.api import (
     alerts,
     audit,
     auth,
+    correlations,
     detections,
     event_search,
     events,
@@ -95,6 +96,7 @@ def _create_app(settings: Settings | None = None) -> FastAPI:
         pipeline.router,
         alerts.router,
         detections.router,
+        correlations.router,
         incidents.router,
     ):
         application.include_router(router)

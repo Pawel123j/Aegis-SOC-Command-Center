@@ -1,0 +1,62 @@
+.detection-tabs {
+  display: flex;
+  gap: 8px;
+  padding-bottom: 20px;
+}
+.detection-tabs button[aria-selected='true'] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.correlation-stages {
+  padding-left: 24px;
+  margin: 24px 0;
+}
+.correlation-stages > li {
+  border-left: 2px solid var(--accent);
+  padding: 8px 0 8px 18px;
+  margin-bottom: 16px;
+}
+.correlation-stages p {
+  margin: 7px 0;
+  color: var(--muted);
+}
+.correlation-condition ul {
+  padding-left: 20px;
+  margin-top: 8px;
+}
+.correlation-condition li {
+  margin: 6px 0;
+  overflow-wrap: anywhere;
+}
+.correlation-test {
+  border-top: 1px solid var(--border);
+  margin-top: 24px;
+  padding-top: 16px;
+}
+.correlation-test textarea {
+  margin-bottom: 14px;
+}
+.correlation-result {
+  margin-top: 20px;
+}
+.correlation-coverage {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.correlation-coverage .metric strong {
+  font-size: 24px;
+}
+.correlation-match {
+  border-top: 1px solid var(--border);
+  margin-top: 18px;
+  padding-top: 8px;
+}
+@media (max-width: 760px) {
+  .detection-tabs {
+    flex-wrap: wrap;
+  }
+  .correlation-coverage {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

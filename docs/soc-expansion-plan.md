@@ -71,3 +71,12 @@ analityka; sama w sobie nie potwierdza ataku.
 Na końcu etapu raport zawiera implementację, dodane/zmienione pliki,
 endpointy, modele, nowe testy, wynik kontroli, ograniczenia i następny krok.
 Zmiany zapisujemy w osobnych logicznych commitach.
+
+## Dostarczone przyrosty i bieżąca walidacja
+
+Etap 1: [sprawy i praca analityka](validation-incidents.md), commit `4db94e8`.
+Etap 2: [reguły korelacji](validation-correlation.md), osobny proces, trwały
+watermark i manifest replay, wiele dowodów oraz panel reguł.
+Zakres czasu i tożsamości określa [ADR 0008](adr/0008-temporal-correlation.md).
+Jest to rozpoznawanie jawnych sekwencji, a nie cały historyczny graf/merge
+PHASE 6. Kolejny przyrost: Risk Engine, bez wymyślania ocen w obecnym etapie.

@@ -78,6 +78,8 @@ class Settings(BaseSettings):
     pipeline_lease_seconds: int = Field(default=60, ge=31, le=600)
     pipeline_max_normalization_attempts: int = Field(default=3, ge=1, le=20)
     pipeline_max_projection_attempts: int = Field(default=20, ge=1, le=100)
+    correlation_poll_seconds: float = Field(default=2.0, ge=0.1, le=60)
+    correlation_batch_size: int = Field(default=25, ge=1, le=200)
 
     @field_validator("jwt_secret")
     @classmethod

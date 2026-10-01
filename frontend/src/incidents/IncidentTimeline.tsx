@@ -1,7 +1,7 @@
-import { useCallback, useState } from 'react';
-import { api } from '../api';
+import { useCallback } from 'react';
 import { Empty, ErrorNotice, JsonView, Loading, Panel } from '../components';
-import type { AlertDetail, SecurityEvent } from '../types';
+import type { SecurityEvent } from '../types';
+import { AlertEvidenceButton } from '../evidence/AlertEvidenceButton';
 import { time } from '../utilities';
 import { incidentsApi } from './api';
 import { incidentStatuses } from './labels';
@@ -41,27 +41,13 @@ export function IncidentTimeline({
     [id, version],
   );
   const resource = usePage(loader);
-  const [opening, setOpening] = useState(false);
-  const [error, setError] = useState<unknown>(null);
-  async function open(alertId: string) {
-    setOpening(true);
-    setError(null);
-    try {
-      const alert = await api.get<AlertDetail>(`/alerts/${encodeURIComponent(alertId)}`);
-      onEvent(alert.event_snapshot);
-    } catch (failure) {
-      setError(failure);
-    } finally {
-      setOpening(false);
-    }
-  }
   return (
     <Panel title="Oś czasu incydentu">
       <p className="muted">
         Od najnowszego wpisu. Czas działania analityka i czas oryginalnego zdarzenia są opisane
         oddzielnie.
       </p>
-      <ErrorNotice error={resource.error ?? error} />
+      <ErrorNotice error={resource.error} />
       {resource.pending && <Loading />}
       {resource.data &&
         !resource.error &&
@@ -104,13 +90,11 @@ export function IncidentTimeline({
                       <p className="incident-note">{data.body}</p>
                     )}
                     {typeof data.alert_id === 'string' && typeof data.event_id === 'string' && (
-                      <button
-                        className="quiet"
-                        disabled={opening}
-                        onClick={() => void open(data.alert_id as string)}
-                      >
-                        Otwórz zdarzenie z osi czasu
-                      </button>
+                      <AlertEvidenceButton
+                        alertId={data.alert_id}
+                        onEvent={onEvent}
+                        label="Otwórz zdarzenie z osi czasu"
+                      />
                     )}
                     <details>
                       <summary>Pełny zapis działania</summary>
