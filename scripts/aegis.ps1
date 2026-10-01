@@ -33,9 +33,28 @@ function Find-Docker {
 }
 
 function Test-Engine {
-    $ErrorActionPreference = 'Continue'
-    $kind = & $script:DockerPath info --format '{{.OSType}}' 2>$null
-    return ($LASTEXITCODE -eq 0 -and $kind -eq 'linux')
+    # An unavailable Desktop pipe can leave docker info waiting indefinitely.
+    # Bound only this probe process, so the overall startup deadline can advance.
+    $probe = New-Object System.Diagnostics.Process
+    $probe.StartInfo.FileName = $script:DockerPath
+    $probe.StartInfo.Arguments = 'info --format "{{.OSType}}"'
+    $probe.StartInfo.UseShellExecute = $false
+    $probe.StartInfo.CreateNoWindow = $true
+    $probe.StartInfo.RedirectStandardOutput = $true
+    $probe.StartInfo.RedirectStandardError = $true
+    try {
+        if (-not $probe.Start()) { return $false }
+        if (-not $probe.WaitForExit(4000)) {
+            $probe.Kill()
+            return $false
+        }
+        $kind = $probe.StandardOutput.ReadToEnd().Trim()
+        return ($probe.ExitCode -eq 0 -and $kind -eq 'linux')
+    } catch {
+        return $false
+    } finally {
+        $probe.Dispose()
+    }
 }
 
 function Assert-Engine {
@@ -96,11 +115,15 @@ function Find-Python {
 }
 
 function Initialize-Environment {
-    if (Test-Path -LiteralPath $EnvFile) { return }
-    Write-Host 'Tworze lokalna konfiguracje z losowymi sekretami...'
+    $upgrade = @()
+    if (Test-Path -LiteralPath $EnvFile) {
+        $upgrade = @('--upgrade')
+    } else {
+        Write-Host 'Tworze lokalna konfiguracje z losowymi sekretami...'
+    }
     Invoke-Docker (@('run', '--rm', '--network', 'none', '--mount',
         "type=bind,source=$ProjectRoot,target=/workspace", $BaseImage,
-        'python', '/workspace/scripts/bootstrap_env.py', '--output', '/workspace/.env'))
+        'python', '/workspace/scripts/bootstrap_env.py', '--output', '/workspace/.env') + $upgrade)
 }
 
 function Get-PublicOrigin {

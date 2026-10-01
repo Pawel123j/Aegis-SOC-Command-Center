@@ -18,6 +18,7 @@ from scripts import check_runtime as runtime
 
 SOURCE_ID = "58a7f271-5ec7-44bb-8e1c-45c7064fcfa9"
 BATCH_ID = "05909190-9fb6-42ed-a208-6f1e747683ff"
+EVENT_ID = "eaee64b8-de75-421c-af5d-cb27dd4bbfca"
 SOURCE_TOKEN = "aegis_ingest_" + "a" * 43
 PRIVATE_TEXT = "private-test-password-token-cookie"
 
@@ -98,7 +99,13 @@ class FakeApi:
                 "duplicate_count": 0,
             }, {}
         if path == f"/api/v1/events/batches/{BATCH_ID}":
-            return {"records": [{"state": self.state}]}, {}
+            return {
+                "records": [
+                    {"state": self.state, "pipeline_state": "projected", "event_id": EVENT_ID}
+                ]
+            }, {}
+        if path == f"/api/v1/events/{EVENT_ID}":
+            return {"event_id": EVENT_ID, "source_id": SOURCE_ID}, {}
         if path == f"/api/v1/sources/{SOURCE_ID}":
             if self.expired_access and kwargs.get("token") != "refreshed-test-access":
                 raise runtime.CheckFailed("Synthetic source inspection: HTTP 401")

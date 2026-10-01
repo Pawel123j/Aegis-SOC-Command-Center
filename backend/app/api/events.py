@@ -27,6 +27,7 @@ from app.modules.ingestion.models import (
 )
 from app.modules.ingestion.schemas import EnvelopeBatch, RawEnvelope
 from app.modules.ingestion.service import accept_batch
+from app.modules.normalization.models import NormalizedEvent, PipelineJob
 
 router = APIRouter(prefix="/api/v1/events", tags=["ingestion"])
 system_router = APIRouter(prefix="/api/v1/system", tags=["system"])
@@ -131,16 +132,21 @@ def batch_status(batch_id: UUID, request: Request, response: Response, db: DB) -
     if batch is None:
         raise ApiError(404, "not_found", "Batch not found")
     records = db.execute(
-        select(BatchEvent.position, OutboxJob)
+        select(BatchEvent.position, OutboxJob, PipelineJob, NormalizedEvent.event_id)
         .join(OutboxJob, OutboxJob.event_id == BatchEvent.event_id)
+        .outerjoin(PipelineJob, PipelineJob.event_id == BatchEvent.event_id)
+        .outerjoin(NormalizedEvent, NormalizedEvent.event_id == BatchEvent.event_id)
         .where(BatchEvent.batch_id == batch_id)
         .order_by(BatchEvent.position)
         .limit(500)
     ).all()
     counts = {state: 0 for state in ("pending", "processing", "staged", "quarantined")}
     items = []
-    for position, job in records:
+    normalized_count = projected_count = 0
+    for position, job, pipeline, normalized_id in records:
         counts[job.state] += 1
+        normalized_count += int(normalized_id is not None)
+        projected_count += int(pipeline is not None and pipeline.state == "projected")
         items.append(
             {
                 "position": position,
@@ -149,6 +155,9 @@ def batch_status(batch_id: UUID, request: Request, response: Response, db: DB) -
                 "generation": job.generation,
                 "attempts": job.attempts,
                 "error_code": job.last_error_code,
+                "pipeline_state": pipeline.state if pipeline else None,
+                "pipeline_error_code": pipeline.last_error_code if pipeline else None,
+                "pipeline_version": pipeline.version if pipeline else None,
             }
         )
     response.headers["Cache-Control"] = "no-store"
@@ -157,7 +166,12 @@ def batch_status(batch_id: UUID, request: Request, response: Response, db: DB) -
         "accepted_count": batch.accepted_count,
         "created_count": batch.created_count,
         "duplicate_count": batch.duplicate_count,
-        "counts": {**counts, "normalized": 0, "processed": 0, "projected": 0},
+        "counts": {
+            **counts,
+            "normalized": normalized_count,
+            "processed": 0,
+            "projected": projected_count,
+        },
         "records": items,
         "request_id": batch.request_id,
     }

@@ -39,6 +39,8 @@ def _child_environment(settings: Settings) -> dict[str, str]:
     }
     for name in Settings.model_fields:
         value = getattr(settings, name)
+        if value is None or name.startswith("clickhouse_admin_"):
+            continue
         if isinstance(value, SecretStr):
             value = value.get_secret_value()
         environment[f"AEGIS_{name.upper()}"] = str(value)

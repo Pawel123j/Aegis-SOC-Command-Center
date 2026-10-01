@@ -34,6 +34,37 @@ def test_secure_defaults_and_redacted_secrets(settings_values: dict[str, object]
 
 
 @pytest.mark.parametrize(
+    "migration",
+    [
+        {"clickhouse_admin_user": "owner"},
+        {"clickhouse_admin_password": "private-owner-secret"},
+        {"clickhouse_admin_user": "aegis", "clickhouse_admin_password": "private-owner-secret"},
+        {"clickhouse_admin_user": "owner", "clickhouse_admin_password": "CHANGE_ME"},
+    ],
+)
+def test_archive_owner_requires_separate_valid_credentials(
+    settings_values: dict[str, object], migration: dict[str, str]
+) -> None:
+    with pytest.raises(ValidationError):
+        Settings.model_validate({**settings_values, **migration})
+
+
+def test_archive_owner_credentials_are_optional_and_redacted(
+    settings_values: dict[str, object],
+) -> None:
+    runtime = Settings.model_validate(settings_values)
+    assert runtime.clickhouse_admin_user is None and runtime.clickhouse_admin_password is None
+    owner = Settings.model_validate(
+        {
+            **settings_values,
+            "clickhouse_admin_user": "owner",
+            "clickhouse_admin_password": "private-owner-secret",
+        }
+    )
+    assert "private-owner-secret" not in repr(owner)
+
+
+@pytest.mark.parametrize(
     "field",
     ["database_url", "redis_url", "clickhouse_password", "jwt_secret", "public_origin"],
 )

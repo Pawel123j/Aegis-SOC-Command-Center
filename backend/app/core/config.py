@@ -46,6 +46,9 @@ class Settings(BaseSettings):
     clickhouse_url: str
     clickhouse_user: str = Field(min_length=1, max_length=128)
     clickhouse_password: SecretStr
+    clickhouse_database: str = Field(default="aegis", pattern=r"^[a-z][a-z0-9_]{0,63}$")
+    clickhouse_admin_user: str | None = Field(default=None, pattern=r"^[a-z][a-z0-9_]{0,63}$")
+    clickhouse_admin_password: SecretStr | None = None
     jwt_secret: SecretStr
     jwt_issuer: str = Field(default="aegis-soc", min_length=1)
     jwt_audience: str = Field(default="aegis-api", min_length=1)
@@ -70,6 +73,11 @@ class Settings(BaseSettings):
     ingest_retry_max_seconds: int = Field(default=60, ge=1, le=3600)
     ingest_relay_poll_seconds: float = Field(default=2.0, ge=0.1, le=60)
     ingest_queue: str = Field(default="ingestion", pattern=r"^[a-zA-Z0-9_.-]{1,64}$")
+    pipeline_poll_seconds: float = Field(default=2.0, ge=0.1, le=60)
+    pipeline_batch_size: int = Field(default=25, ge=1, le=200)
+    pipeline_lease_seconds: int = Field(default=60, ge=31, le=600)
+    pipeline_max_normalization_attempts: int = Field(default=3, ge=1, le=20)
+    pipeline_max_projection_attempts: int = Field(default=20, ge=1, le=100)
 
     @field_validator("jwt_secret")
     @classmethod
@@ -81,6 +89,13 @@ class Settings(BaseSettings):
     @classmethod
     def validate_clickhouse_password(cls, value: SecretStr) -> SecretStr:
         _check_secret(value.get_secret_value())
+        return value
+
+    @field_validator("clickhouse_admin_password")
+    @classmethod
+    def validate_clickhouse_admin_password(cls, value: SecretStr | None) -> SecretStr | None:
+        if value is not None:
+            _check_secret(value.get_secret_value())
         return value
 
     @field_validator("database_url")
@@ -166,6 +181,10 @@ class Settings(BaseSettings):
             raise ValueError("session idle timeout cannot exceed the absolute timeout")
         if self.ingest_retry_base_seconds > self.ingest_retry_max_seconds:
             raise ValueError("ingestion retry base cannot exceed the maximum backoff")
+        if (self.clickhouse_admin_user is None) != (self.clickhouse_admin_password is None):
+            raise ValueError("ClickHouse migration credentials must be supplied together")
+        if self.clickhouse_admin_user == self.clickhouse_user:
+            raise ValueError("ClickHouse owner and runtime users must be separate")
         self.public_origin = self.public_origin.rstrip("/")
         return self
 

@@ -3,12 +3,13 @@
 Projekt portfolio Security Engineering: docelowo lokalna platforma mini-SIEM, SOAR,
 Incident Response i Threat Hunting, z demonstracją opartą na prawdziwym pipeline logów.
 
-**Stan: PHASE 2 — trwałe przyjmowanie zdarzeń, ukończona i zweryfikowana 2026-09-30.**
+**Stan: PHASE 3 — normalizacja i wyszukiwanie, ukończona i zweryfikowana 2026-10-01.**
 Backend ma API źródeł, osobne tokeny ingestion, single/batch, idempotencję,
 PostgreSQL inbox/outbox, relay i worker z ograniczonym retry oraz kwarantanną.
-Stan `staged` oznacza gotowość surowego zdarzenia do normalizacji w PHASE 3.
-Nie ma jeszcze normalizacji, detekcji, wyszukiwania zdarzeń, UI ani generatora.
-Zakres i wyniki kontroli: [walidacja](docs/validation.md).
+Sześć parserów tworzy niezmienne snapshoty w PostgreSQL, a osobny processor
+projektuje je do ClickHouse. API wyszukuje logi z filtrowaniem i deduplikacją.
+Detekcje, alerty, UI i generator należą do następnych przyrostów.
+Zakres i wyniki kontroli: [walidacja PHASE 3](docs/validation-phase3.md).
 
 ## Start z folderu na Windows
 
@@ -26,8 +27,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\aegis.ps1 -Action 
 ```
 
 Kontrola prosi o hasło istniejącego administratora i sprawdza trwały zapis,
-idempotencję oraz relay/worker. API działa pod
-`http://localhost:8080/api/v1`. Obecny zakres to backend PHASE 1–2; dashboard
+idempotencję, normalizację i odczyt z archiwum. API działa pod
+`http://localhost:8080/api/v1`. Obecny zakres to backend PHASE 1–3; dashboard
 powstanie w kolejnych etapach.
 
 Start, stan usług, zatrzymanie, tryb offline i rozwiązywanie problemów:
@@ -83,7 +84,7 @@ z Node 24; jego zależności nie są jeszcze instalowane.
 
 ## Kontrole lokalne
 
-Walidacja struktury i dokumentacji wymaga Python 3.11+ bez bibliotek zewnętrznych:
+Walidacja struktury i dokumentacji wymaga Python 3.12+ bez bibliotek zewnętrznych:
 
 ```sh
 python scripts/validate_repository.py

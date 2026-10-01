@@ -4,7 +4,7 @@ FastAPI/Pydantic/SQLAlchemy tworzą modularny monolit z oddzielnym procesem Cele
 Runtime to **Python 3.12.14**, zgodny z obrazem Docker i konfiguracją CI. Zależności
 runtime i developerskie mają osobne lockfile z hashami.
 
-**Stan: PHASE 2 — trwałe przyjmowanie zdarzeń, ukończona i zweryfikowana 2026-09-30.**
+**Stan: PHASE 3 — normalizacja i wyszukiwanie, ukończona i zweryfikowana 2026-10-01.**
 Fundament PHASE 1 obejmuje konfigurację i bezpieczne błędy, `/api/v1/auth`,
 `/api/v1/users`, `/api/v1/audit`, chronione `/api/v1/system/health`, sondy `/health`
 i `/ready`, wewnętrzne `/metrics` oraz OpenAPI pod `/api/v1/openapi.json`.
@@ -23,9 +23,12 @@ z kwarantanny z kontrolą generacji przez `If-Match`.
 
 `202` potwierdza zatwierdzony zapis, a `staged` oznacza gotowość raw do PHASE 3.
 Status batcha i chronione `/api/v1/system/ingestion` udostępniają stan pracy
-i pojemności. Nie ma jeszcze normalizacji, detekcji, wyszukiwania zdarzeń,
-projekcji ClickHouse, UI ani generatora. Wyniki bramki PHASE 2 są raportowane
-wyłącznie po wykonaniu kontroli w [raporcie walidacji](../docs/validation.md).
+i pojemności. PHASE 3 dodaje sześć parserów, niezmienne snapshoty w PostgreSQL
+(`0003_normalization`), trwałe zadania oraz processor projekcji ClickHouse.
+Osobny migrator archiwum stosuje SQL z checksum i rozdziela właściciela od runtime.
+API `/events/search` i `/events/{id}` udostępnia filtrowanie, podpisaną paginację
+i odczyt z deduplikacją przed zliczeniem. Detekcje, UI i generator są kolejnymi
+przyrostami. Wyniki: [raport PHASE 3](../docs/validation-phase3.md).
 
 **Historyczny dowód: PHASE 1 ukończona i zweryfikowana 2026-09-28.** Przeszło 230 testów
 jednostkowych oraz 33 testy integracyjne z rzeczywistymi PostgreSQL, Redis,
@@ -38,5 +41,7 @@ Uruchomienie, sekrety, bootstrap i komendy testów:
 [instrukcja operacyjna PHASE 1](../docs/phase1-operations.md).
 Źródła, wysyłanie, status, limity i odzyskiwanie:
 [instrukcja operacyjna PHASE 2](../docs/phase2-operations.md).
+Normalizacja, wyszukiwanie i odzyskiwanie projekcji:
+[instrukcja operacyjna PHASE 3](../docs/phase3-operations.md).
 Zakres dalszych prac: [plan](../docs/implementation-plan.md).
 Odpowiedzialność katalogów: [struktura](../docs/repository-structure.md).

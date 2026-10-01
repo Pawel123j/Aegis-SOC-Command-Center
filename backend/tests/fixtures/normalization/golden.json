@@ -1,0 +1,80 @@
+[
+  {
+    "name": "generic_unicode_ipv6",
+    "source_type": "generic_json",
+    "raw_event": {"timestamp": "2025-12-31T23:59:58+01:00", "username": "Paweł", "source_ip": "2001:db8::1", "result": "failed", "host": {"name": "węzeł"}, "event": {"action": "login", "severity": "low"}},
+    "expected": {"timestamp": "2025-12-31T22:59:58Z", "user.name": "Paweł", "source.ip": "2001:db8::1", "host.name": "węzeł", "event.outcome": "failure", "event.action": "login", "quality": []}
+  },
+  {
+    "name": "ssh_invalid_user_ipv6_new_year",
+    "source_type": "linux_auth",
+    "raw_event": "Dec 31 23:59:59 bastion sshd[322]: Failed password for invalid user nobody from 2001:db8::2 port 2222 ssh2",
+    "expected": {"timestamp": "2025-12-31T23:59:59Z", "host.name": "bastion", "user.name": "nobody", "source.ip": "2001:db8::2", "source.port": 2222, "process.pid": 322, "event.action": "ssh_login", "event.outcome": "failure", "extensions.invalid_user": true, "quality": ["inferred_year"]}
+  },
+  {
+    "name": "ssh_accepted_key",
+    "source_type": "linux_auth",
+    "raw_event": "Jan  1 00:00:00 bastion sshd[333]: Accepted publickey for admin from 192.0.2.3 port 52222 ssh2: RSA SHA256:example",
+    "expected": {"timestamp": "2026-01-01T00:00:00Z", "event.outcome": "success", "extensions.authentication_method": "publickey", "event.severity": "informational"}
+  },
+  {
+    "name": "sudo_actor_target_command",
+    "source_type": "linux_auth",
+    "raw_event": "Jan  1 00:00:00 bastion sudo[444]: alice : TTY=pts/0 ; PWD=/home/alice ; USER=root ; COMMAND=/usr/bin/id",
+    "expected": {"user.name": "alice", "user.target.name": "root", "process.command_line": "/usr/bin/id", "event.action": "sudo_command", "event.outcome": "success", "event.severity": "informational", "extensions.tty": "pts/0"}
+  },
+  {
+    "name": "su_session",
+    "source_type": "linux_auth",
+    "raw_event": "Jan  1 00:00:00 bastion su[445]: pam_unix(su:session): session opened for user root(uid=0) by alice(uid=1000)",
+    "expected": {"user.name": "alice", "user.target.name": "root", "event.action": "su_session", "event.outcome": "success"}
+  },
+  {
+    "name": "windows_failed_actor_and_account",
+    "source_type": "windows_auth",
+    "raw_event": {"System": {"EventID": 4625, "Computer": "PC-1", "TimeCreated": {"SystemTime": "2026-01-01T00:00:00Z"}}, "EventData": {"SubjectUserSid": "S-1-5-18", "SubjectUserName": "SYSTEM", "SubjectDomainName": "NT AUTHORITY", "TargetUserSid": "S-1-0-0", "TargetUserName": "alice", "TargetDomainName": "CORP", "IpAddress": "::ffff:192.0.2.5", "IpPort": "54321", "LogonType": "3", "Status": "0xC000006D"}},
+    "expected": {"user.name": "SYSTEM", "user.target.name": "alice", "user.target.id": null, "user.target.realm": "CORP", "source.ip": "::ffff:c000:205", "event.outcome": "failure", "event.code": "4625", "session.id": null, "extensions.Status": "0xC000006D"}
+  },
+  {
+    "name": "windows_created_account",
+    "source_type": "windows_auth",
+    "raw_event": {"EventID": 4720, "timestamp": "2026-01-01T00:00:00Z", "Computer": "DC-1", "EventData": {"SubjectUserSid": "S-1-5-21-1-500", "SubjectUserName": "operator", "TargetSid": "S-1-5-21-1-1234", "TargetUserName": "new-user", "TargetDomainName": "CORP"}},
+    "expected": {"user.name": "operator", "user.target.id": "S-1-5-21-1-1234", "user.target.name": "new-user", "event.action": "user_created"}
+  },
+  {
+    "name": "windows_member_is_account_group_is_separate",
+    "source_type": "windows_auth",
+    "raw_event": {"EventID": 4732, "timestamp": "2026-01-01T00:00:00Z", "EventData": {"SubjectUserName": "operator", "MemberSid": "S-1-5-21-1-1234", "MemberName": "-", "TargetSid": "S-1-5-32-544", "TargetUserName": "Administrators", "TargetDomainName": "Builtin"}},
+    "expected": {"user.target.id": "S-1-5-21-1-1234", "user.target.name": null, "extensions.group.id": "S-1-5-32-544", "extensions.group.name": "Administrators", "event.action": "group_member_added"}
+  },
+  {
+    "name": "windows_process_hex_pids",
+    "source_type": "windows_process",
+    "raw_event": {"EventID": 4688, "timestamp": "2026-01-01T00:00:00Z", "EventData": {"SubjectUserName": "alice", "NewProcessName": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe", "NewProcessId": "0x1234", "ProcessId": "0x4321", "CommandLine": "powershell.exe -NoProfile -Command Get-Date"}},
+    "expected": {"process.name": "powershell.exe", "process.pid": 4660, "process.parent_pid": 17185, "process.entity_id": null, "event.action": "process_started"}
+  },
+  {
+    "name": "sysmon_provenance_and_guid",
+    "source_type": "windows_process",
+    "raw_event": {"System": {"EventID": 1, "Provider": {"Name": "Microsoft-Windows-Sysmon"}, "Computer": "PC-1"}, "EventData": {"UtcTime": "2026-01-01 00:00:00.000", "ProcessGuid": "{a0-b1}", "ParentProcessGuid": "{c2-d3}", "ProcessId": 42, "ParentProcessId": 41, "Image": "C:\\Tools\\tool.exe", "User": "CORP\\alice", "Hashes": "SHA256=abc"}},
+    "expected": {"timestamp": "2026-01-01T00:00:00Z", "process.entity_id": "{a0-b1}", "process.parent_entity_id": "{c2-d3}", "process.name": "tool.exe", "user.name": "alice", "user.realm": "CORP", "extensions.provider": "microsoft_windows_sysmon", "quality": []}
+  },
+  {
+    "name": "firewall_key_value",
+    "source_type": "firewall",
+    "raw_event": "timestamp=2026-01-01T01:00:00+01:00 hostname=edge action=drop proto=TCP src=192.0.2.1 dst=2001:db8::5 spt=12345 dpt=443 bytes=120 packets=2",
+    "expected": {"timestamp": "2026-01-01T00:00:00Z", "source.ip": "192.0.2.1", "destination.ip": "2001:db8::5", "destination.port": 443, "network.transport": "tcp", "network.bytes": 120, "event.action": "drop", "event.outcome": "failure"}
+  },
+  {
+    "name": "nginx_combined_403_is_web",
+    "source_type": "nginx",
+    "raw_event": "192.0.2.1 - - [01/Jan/2026:01:00:00 +0100] \"GET /admin HTTP/1.1\" 403 120 \"-\" \"Mozilla/5.0\"",
+    "expected": {"timestamp": "2026-01-01T00:00:00Z", "http.request_method": "GET", "http.url": "/admin", "http.status_code": 403, "http.referrer": null, "user.name": null, "event.category": "web", "event.action": "http_request", "event.outcome": "failure"}
+  },
+  {
+    "name": "nginx_json",
+    "source_type": "nginx",
+    "raw_event": {"timestamp": "2026-01-01T00:00:00Z", "remote_addr": "2001:db8::5", "remote_user": "alice", "request": "POST /login HTTP/2.0", "status": 200, "body_bytes_sent": "88", "http_user_agent": "Test/1"},
+    "expected": {"http.request_method": "POST", "http.version": "HTTP/2.0", "http.bytes": 88, "event.category": "web", "event.outcome": "success"}
+  }
+]

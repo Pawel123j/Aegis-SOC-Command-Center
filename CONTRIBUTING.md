@@ -1,8 +1,8 @@
 # Rozwój i bramki jakości
 
-Status repozytorium: PHASE 2 — trwałe przyjmowanie zdarzeń, ukończona i zweryfikowana 2026-09-30.
+Status repozytorium: PHASE 3 — normalizacja i wyszukiwanie, ukończona i zweryfikowana 2026-10-01.
 PHASE 1 zweryfikowano 2026-09-28; jej wyniki pozostają historycznym dowodem
-fundamentu. Bieżący zakres i wykonane kontrole opisuje [raport walidacji](docs/validation.md).
+fundamentu. Bieżący zakres i wykonane kontrole opisuje [raport walidacji](docs/validation-phase3.md).
 Dokumenty zawierają także kontrakty docelowe; obecność implementacji nie oznacza
 zaliczenia bramki integracyjnej. Fazy zależne rozpoczynamy po zamknięciu wymaganych kontroli.
 
@@ -41,6 +41,12 @@ Zmiany tego przepływu wymagają adekwatnych testów rzeczywistej współbieżno
 awarii i odzyskiwania; samo `202` lub `/ready` nie potwierdza przetworzenia
 zadania. Stan `staged` oznacza gotowość surowych danych do PHASE 3.
 Procedury i ograniczenia: [obsługa PHASE 2](docs/phase2-operations.md).
+
+PHASE 3 obejmuje sześć parserów, niezmienne snapshoty PostgreSQL, osobne
+migracje/projekcję ClickHouse, ograniczony AST wyszukiwania i podpisaną paginację.
+Zmiany wymagają kontroli formatów, czasu, injection, grantów oraz raw → search
+na rzeczywistych bazach, w tym ponowienia po utracie potwierdzenia.
+[Obsługa PHASE 3](docs/phase3-operations.md) opisuje zakres i odzyskiwanie.
 
 Frontend, skan sekretów oraz dalsze bramki należą do kolejnych etapów.
 Frontend otrzyma TypeScript, ESLint, testy komponentów i E2E z prawdziwym API.

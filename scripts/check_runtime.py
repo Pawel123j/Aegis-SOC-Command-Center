@@ -219,7 +219,7 @@ def check_ingestion(api: Api, username: str, password: str, timeout: float) -> N
             "source_type": "generic_json",
             "source_event_id": f"runtime-check-{uuid4().hex}",
             "raw_event": {
-                "message": "Synthetic PHASE 2 runtime check",
+                "message": "Synthetic normalization runtime check",
                 "synthetic": True,
             },
         }
@@ -270,14 +270,29 @@ def check_ingestion(api: Api, username: str, password: str, timeout: float) -> N
                 raise CheckFailed("Processing status: unexpected receipt records")
             state = records[0].get("state")
             if state == "staged":
-                break
+                pipeline = records[0].get("pipeline_state")
+                if pipeline == "projected":
+                    event_id = identity(records[0], "event_id", "Processed event")
+                    found, _ = api.request(
+                        "GET",
+                        f"/api/v1/events/{event_id}",
+                        expected=200,
+                        label="Normalized archive lookup",
+                        token=access,
+                        timeout=min(3.0, max(0.1, deadline - time.monotonic())),
+                    )
+                    if found.get("event_id") != event_id or found.get("source_id") != source_id:
+                        raise CheckFailed("Normalized archive lookup returned unexpected identity")
+                    break
+                if pipeline in {"quarantined", "projection_failed"}:
+                    raise CheckFailed("Synthetic event processing failed; check processor status")
             if state == "quarantined":
                 raise CheckFailed("Synthetic event entered quarantine; check relay/worker status")
-            if state not in {"pending", "processing"}:
+            if state not in {"pending", "processing", "staged"}:
                 raise CheckFailed("Processing status: unexpected event state")
             time.sleep(min(0.5, max(0.0, deadline - time.monotonic())))
         else:
-            raise CheckFailed("Event did not reach staged before the deadline; check relay/worker")
+            raise CheckFailed("Event did not reach projected before the deadline; check processor")
     except CheckFailed as error:
         failure = error
     finally:
@@ -366,7 +381,7 @@ def main(argv: list[str] | None = None) -> int:
             username, password = read_credentials(args)
             check_ingestion(api, username, password, args.timeout)
             print(
-                "PASS: readiness, Admin login, durable/idempotent intake and relay/worker staging."
+                "PASS: readiness, Admin login, durable/idempotent intake, normalization and archive lookup."
             )
             print(
                 "Synthetic source disabled and check session closed; event/audit history retained."

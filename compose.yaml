@@ -11,7 +11,7 @@ x-app-environment: &app-environment
   AEGIS_LOCAL_HTTP: ${AEGIS_LOCAL_HTTP:?Run python scripts/bootstrap_env.py}
 
 x-app: &app
-  image: aegis-soc-backend:phase2
+  image: aegis-soc-backend:phase3
   build:
     context: ./backend
     target: runtime
@@ -73,9 +73,9 @@ services:
     image: clickhouse/clickhouse-server:26.8.6.5
     user: "101:101"
     environment:
-      CLICKHOUSE_USER: aegis
-      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:?Run python scripts/bootstrap_env.py}
-      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: "0"
+      CLICKHOUSE_USER: aegis_owner
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_OWNER_PASSWORD:?Run python scripts/bootstrap_env.py --upgrade}
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: "1"
     volumes: [clickhouse-data:/var/lib/clickhouse]
     networks: [backend]
     read_only: true
@@ -111,6 +111,7 @@ services:
     <<: *app
     depends_on:
       migrator: {condition: service_completed_successfully}
+      clickhouse-migrator: {condition: service_completed_successfully}
       redis: {condition: service_healthy}
       clickhouse: {condition: service_healthy}
     healthcheck:
@@ -137,6 +138,25 @@ services:
       redis: {condition: service_healthy}
     restart: unless-stopped
 
+  clickhouse-migrator:
+    <<: *app
+    environment:
+      <<: *app-environment
+      AEGIS_CLICKHOUSE_ADMIN_USER: aegis_owner
+      AEGIS_CLICKHOUSE_ADMIN_PASSWORD: ${CLICKHOUSE_OWNER_PASSWORD:?Run python scripts/bootstrap_env.py --upgrade}
+    command: [python, -m, app.clickhouse_migrate]
+    depends_on:
+      clickhouse: {condition: service_healthy}
+    restart: "no"
+
+  processor:
+    <<: *app
+    command: [python, -m, app.processor]
+    depends_on:
+      migrator: {condition: service_completed_successfully}
+      clickhouse-migrator: {condition: service_completed_successfully}
+    restart: unless-stopped
+
   proxy:
     image: nginx:1.30.5-alpine
     user: "101:101"
@@ -154,7 +174,7 @@ services:
 
   tests:
     <<: *app
-    image: aegis-soc-backend-test:phase2
+    image: aegis-soc-backend-test:phase3
     build:
       context: ./backend
       target: test
@@ -163,8 +183,11 @@ services:
       <<: *app-environment
       AEGIS_TEST_DATABASE_URL: postgresql+psycopg://aegis_owner:${POSTGRES_OWNER_PASSWORD:?Run python scripts/bootstrap_env.py}@postgres:5432/aegis
       AEGIS_INTEGRATION_TESTS: "1"
+      AEGIS_CLICKHOUSE_ADMIN_USER: aegis_owner
+      AEGIS_CLICKHOUSE_ADMIN_PASSWORD: ${CLICKHOUSE_OWNER_PASSWORD:?Run python scripts/bootstrap_env.py --upgrade}
     depends_on:
       migrator: {condition: service_completed_successfully}
+      clickhouse-migrator: {condition: service_completed_successfully}
       redis: {condition: service_healthy}
       clickhouse: {condition: service_healthy}
       worker: {condition: service_started}

@@ -8,6 +8,10 @@ x-offline-build: &offline-build
 services:
   migrator:
     build: *offline-build
+  clickhouse-migrator:
+    build: *offline-build
+  processor:
+    build: *offline-build
   api:
     build: *offline-build
   worker:

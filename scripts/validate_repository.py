@@ -118,7 +118,7 @@ def file_errors(path: Path) -> tuple[list[str], str]:
         errors.extend(markdown_errors(path, content))
     try:
         if path.suffix == ".py":
-            ast.parse(content, filename=str(path), feature_version=(3, 11))
+            ast.parse(content, filename=str(path), feature_version=(3, 12))
         elif path.suffix == ".json":
             json.loads(content)
     except (SyntaxError, ValueError) as error:
