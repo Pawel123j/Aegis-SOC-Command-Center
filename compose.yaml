@@ -11,7 +11,7 @@ x-app-environment: &app-environment
   AEGIS_LOCAL_HTTP: ${AEGIS_LOCAL_HTTP:?Run python scripts/bootstrap_env.py}
 
 x-app: &app
-  image: aegis-soc-backend:soc-initial
+  image: aegis-soc-backend:incidents-stage1
   build:
     context: ./backend
     target: runtime
@@ -183,7 +183,7 @@ services:
 
   tests:
     <<: *app
-    image: aegis-soc-backend-test:soc-initial
+    image: aegis-soc-backend-test:incidents-stage1
     build:
       context: ./backend
       target: test

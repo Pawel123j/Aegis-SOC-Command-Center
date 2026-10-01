@@ -10,14 +10,13 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, Query, Request, Response
-from sqlalchemy import func, select, text, tuple_
+from sqlalchemy import func, select, tuple_
 
-from app.api.dependencies import DB, Principal, require
+from app.api.dependencies import DB, Principal, lock_authority, require
 from app.core.errors import ApiError
-from app.core.permissions import Permission, has_permission
+from app.core.permissions import Permission
 from app.core.rate_limit import rate_limit
 from app.core.security import utcnow
-from app.infrastructure.database import ADMIN_LOCK_ID
 from app.modules.alerts.models import Alert
 from app.modules.alerts.schemas import (
     AlertDetail,
@@ -32,24 +31,6 @@ from app.modules.ingestion.schemas import canonical_json
 router = APIRouter(prefix="/api/v1/alerts", tags=["alerts"])
 Reader = Annotated[Principal, Depends(require(Permission.ALERTS_READ))]
 Analyst = Annotated[Principal, Depends(require(Permission.ALERTS_MANAGE))]
-
-
-def lock_authority(db: DB, principal: Principal, permission: Permission, request: Request) -> None:
-    """Linearize mutations against user/session revocation and rule deployment changes."""
-    db.execute(text("SELECT pg_advisory_xact_lock(:lock)"), {"lock": ADMIN_LOCK_ID})
-    db.refresh(principal.user)
-    db.refresh(principal.session)
-    now = utcnow()
-    if (
-        not principal.user.enabled
-        or principal.session.revoked_at is not None
-        or principal.session.absolute_expires_at <= now
-        or principal.session.last_seen_at
-        + timedelta(seconds=request.app.state.settings.session_idle_seconds)
-        <= now
-        or not has_permission(principal.user.role, permission)
-    ):
-        raise ApiError(403, "forbidden", "Permission denied")
 
 
 def _scope(data: AlertFilters, principal: Principal) -> str:

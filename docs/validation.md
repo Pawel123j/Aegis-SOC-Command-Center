@@ -1,6 +1,7 @@
 # Raport walidacji PHASE 2 — dowód historyczny
 
-Bieżący etap: [pierwsze alerty i panel](validation-initial-soc.md); zamknięta
+Bieżący etap: [Incident Management](validation-incidents.md); poprzedni przyrost
+[pierwszych alertów i panelu](validation-initial-soc.md); zamknięta
 PHASE 3: [jej raport](validation-phase3.md), zweryfikowany 2026-10-01.
 Zachowano także [kopię raportu PHASE 2](validation-phase2.md).
 

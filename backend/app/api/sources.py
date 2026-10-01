@@ -160,7 +160,7 @@ def list_sources(
 def create_source(
     data: SourceCreate, request: Request, response: Response, db: DB, principal: SourceAdmin
 ) -> dict[str, object]:
-    lock_administration(db, principal)
+    lock_administration(db, principal, request)
     source = IngestionSource(
         id=uuid4(),
         name=data.name,
@@ -226,7 +226,7 @@ def patch_source(
 ) -> IngestionSource:
     if if_match is None:
         raise ApiError(428, "version_required", "If-Match is required")
-    lock_administration(db, principal)
+    lock_administration(db, principal, request)
     source = lock_source(db, source_id)
     if if_match != f'"{source.version}"':
         raise ApiError(412, "version_conflict", "Refresh the resource before updating")
@@ -262,7 +262,7 @@ def create_credential(
     db: DB,
     principal: SourceAdmin,
 ) -> dict[str, object]:
-    lock_administration(db, principal)
+    lock_administration(db, principal, request)
     source = lock_source(db, source_id)
     if not source.enabled:
         raise ApiError(409, "source_disabled", "Enable the source before issuing credentials")
@@ -291,7 +291,7 @@ def revoke_credential(
     db: DB,
     principal: SourceAdmin,
 ) -> None:
-    lock_administration(db, principal)
+    lock_administration(db, principal, request)
     lock_source(db, source_id)
     credential = db.scalar(
         select(SourceCredential)

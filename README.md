@@ -3,15 +3,21 @@
 Projekt portfolio Security Engineering: docelowo lokalna platforma mini-SIEM, SOAR,
 Incident Response i Threat Hunting, z demonstracją opartą na prawdziwym pipeline logów.
 
-**Stan: PHASE 0–3 ukończone; pierwszy przyrost alertów i panelu SOC — 2026-10-01.**
+**Stan: PHASE 0–3 i Etap 1 Incident Management — 2026-10-01.**
 Backend ma API źródeł, osobne tokeny ingestion, single/batch, idempotencję,
 PostgreSQL inbox/outbox, relay i worker z ograniczonym retry oraz kwarantanną.
 Sześć parserów tworzy niezmienne snapshoty w PostgreSQL, a osobny processor
 projektuje je do ClickHouse. API wyszukuje logi z filtrowaniem i deduplikacją.
 Działają trzy wbudowane detekcje pojedynczych zdarzeń, trwałe alerty z dowodami
 i decyzjami analityka oraz panel React obsługujący rzeczywiste API.
-Pełne reguły okien czasowych, Sigma, incydenty, risk i generator pozostają zaplanowane.
-Zakres: [pierwsze alerty i panel](docs/initial-soc.md); wyniki: [walidacja przyrostu](docs/validation-initial-soc.md).
+Moduł incydentów dodaje sprawy z wieloma alertami, właścicielem, statusami,
+tagami, notatkami, trwałymi dowodami i historią. Nowe High/Critical alerty
+automatycznie tworzą sprawę do oceny analityka.
+Pełne reguły okien czasowych, Sigma, risk i generator pozostają zaplanowane.
+Rozbudowa zaczyna się od Incident Management według
+[audytu i nowego planu 15 etapów](docs/soc-expansion-plan.md).
+Zakres: [incydenty](docs/incidents.md), [pierwsze alerty i panel](docs/initial-soc.md).
+Wyniki: [walidacja Etapu 1](docs/validation-incidents.md).
 
 ## Start z folderu na Windows
 
@@ -82,8 +88,8 @@ Diagram pokazuje zależności logiczne. Mechanikę transakcji, projektowany stan
 Wersje backendu i hashe dystrybucji zapisano w [requirements.lock](backend/requirements.lock)
 i [requirements-dev.lock](backend/requirements-dev.lock). Lokalny Python, obraz
 kontenera i CI są przypięte do **3.12.14**. Zmianę wcześniejszego planu 3.13 uzasadnia
-[ADR 0001](docs/adr/0001-modular-monolith.md). Frontend pozostaje planowany na PHASE 13
-z Node 24; jego zależności nie są jeszcze instalowane.
+[ADR 0001](docs/adr/0001-modular-monolith.md). Działający panel używa React,
+TypeScript i Vite; Node 24.19.0 i pnpm 11.19.0 są przypięte w konfiguracji frontendu.
 
 ## Kontrole lokalne
 
@@ -110,6 +116,10 @@ z katalogu głównego repozytorium:
 
 ```sh
 python scripts/bootstrap_env.py
+cd frontend
+pnpm install --frozen-lockfile --ignore-scripts
+pnpm build
+cd ..
 docker compose config --quiet
 docker compose build api
 docker compose up -d --wait
@@ -120,7 +130,7 @@ Bootstrap tworzy lokalny `.env` z losowymi sekretami i odmawia nadpisania istnie
 pliku. Migrator wykonuje Alembic przed startem API. Pierwszy administrator podaje
 hasło w ukrytym monicie terminala; nie ma stałego hasła demo. Reverse proxy udostępnia
 API pod `http://localhost:8080/api/v1`; bazy i Redis pozostają w sieci Compose.
-ClickHouse ma sondę gotowości, a jego schemat zdarzeń powstanie w PHASE 3.
+ClickHouse ma sondę gotowości i wersjonowane migracje archiwum zdarzeń.
 
 Fundament zweryfikowano w PHASE 1. Konto administratora i profil lokalnego HTTP
 opisuje [instrukcja fundamentu](docs/phase1-operations.md). Przyjmowanie zdarzeń,
@@ -129,7 +139,9 @@ status, retry i limity opisuje [obsługa PHASE 2](docs/phase2-operations.md).
 ## Dokumentacja funkcji i dalszy plan
 
 Auth, RBAC, audyt i podstawowa obserwowalność działają od PHASE 1. PHASE 2
-dodaje trwałe przyjmowanie surowych zdarzeń. Pozostałe moduły należą do kolejnych faz.
+dodaje trwałe przyjmowanie surowych zdarzeń, PHASE 3 normalizację i wyszukiwanie,
+a pierwszy przyrost SOC trzy detekcje, alerty i panel. Aktualną kolejność
+rozbudowy wyznacza [plan 15 etapów](docs/soc-expansion-plan.md).
 
 - [API i kontrakty błędów](docs/api-contract.md), [model i normalizacja](docs/data-model.md).
 - [Detekcje, Sigma i testowanie reguł](docs/detection-engine.md).
@@ -149,8 +161,8 @@ logowanie po ataku, PowerShell, eskalację uprawnień, trafienie IOC, account co
 i nowe konto administratora. Każdy scenariusz zostanie powiązany z testami regresji.
 
 Screenshoty rzeczywistego dashboardu trafią do `docs/assets/` w PHASE 13/18.
-Pełna definicja ukończenia pozostaje otwarta do PHASE 20. Po zweryfikowaniu PHASE 2
-następny etap to **PHASE 3 — normalizacja i wyszukiwanie zdarzeń**.
+Pełna definicja ukończenia pozostaje otwarta. Bieżący przyrost to
+**Etap 1 — Incident Management**, a następny to **Correlation Engine**.
 
 ## Zasady rozwoju
 

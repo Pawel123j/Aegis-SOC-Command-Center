@@ -4,7 +4,15 @@ import { api } from './api';
 import { Badge, Empty, ErrorNotice, JsonView, Loading, Panel } from './components';
 import type { Alert, AlertDetail, Json, Me, Page, Rule, SecurityEvent } from './types';
 
-export function Alerts({ user, onEvent }: { user: Me; onEvent: (event: SecurityEvent) => void }) {
+export function Alerts({
+  user,
+  onEvent,
+  onCreateIncident,
+}: {
+  user: Me;
+  onEvent: (event: SecurityEvent) => void;
+  onCreateIncident: (alert: Alert) => void;
+}) {
   const [status, setStatus] = useState('');
   const [severity, setSeverity] = useState('');
   const [cursor, setCursor] = useState<string | null>(null);
@@ -156,6 +164,7 @@ export function Alerts({ user, onEvent }: { user: Me; onEvent: (event: SecurityE
           user={user}
           onClose={() => setSelected(null)}
           onEvent={onEvent}
+          onCreateIncident={onCreateIncident}
           onChange={() => {
             void resource.reload();
           }}
@@ -170,12 +179,14 @@ function AlertDialog({
   onClose,
   onEvent,
   onChange,
+  onCreateIncident,
 }: {
   id: string;
   user: Me;
   onClose: () => void;
   onEvent: (event: SecurityEvent) => void;
   onChange: () => void;
+  onCreateIncident: (alert: Alert) => void;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   useEffect(() => {
@@ -267,6 +278,16 @@ function AlertDialog({
               >
                 Otwórz dowód zdarzenia
               </button>
+              {user.permissions.includes('incidents:edit') && (
+                <button
+                  onClick={() => {
+                    onCreateIncident(resource.data!);
+                    onClose();
+                  }}
+                >
+                  Utwórz incydent z alertu
+                </button>
+              )}
               {user.permissions.includes('alerts:manage') &&
                 ['new', 'acknowledged'].includes(resource.data.status) && (
                   <>

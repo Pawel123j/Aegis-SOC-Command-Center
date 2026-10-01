@@ -1,8 +1,11 @@
 # API v1 — zakres wdrożony i projekt dalszych faz
 
-Status: kod PHASE 1–2, stan 2026-09-30; wyniki wykonanych kontroli w raporcie walidacji.
+Status: kod PHASE 1–3 i przyrostów SOC, stan 2026-10-01;
+wyniki wykonanych kontroli w [raporcie incydentów](validation-incidents.md)
+i wcześniejszych raportach walidacji.
 Kod obejmuje `/auth`, `/users`, `/audit`, `/system/health`, źródła, przyjęcie
-eventów, status batcha, retry oraz `/system/ingestion` i techniczne sondy/metryki.
+eventów, status batcha, retry, normalized event search, alerts/detections,
+incidents oraz techniczne sondy/metryki.
 OpenAPI dla zaimplementowanych tras powstaje z modeli pod `/api/v1/openapi.json`.
 Zasoby oznaczone jako przyszłe poniżej nie są dostępne w tej implementacji.
 Weryfikację działania z rzeczywistymi usługami dokumentuje [raport walidacji](validation.md).
@@ -13,11 +16,13 @@ Wspólny prefiks zasobów: `/api/v1`. Role i scopes: [security](security.md).
 - UTC RFC3339; UUID identyfikatory; cursor pagination ze stabilnym tie-breaker ID.
 - Docelowy limit listy: domyślnie 100, maksymalnie 500. Wyjątek PHASE 1:
   `/api/v1/users`, `/api/v1/audit` i `/api/v1/sources` używają domyślnie 50,
-  maksymalnie 100 rekordów. Przyszłe wyszukiwanie eventów: domyślnie 24 h, max 7 dni na żądanie interaktywne,
+  maksymalnie 100 rekordów; ten limit obowiązuje również incidents i ich kolekcje.
+  Wyszukiwanie eventów: domyślnie 24 h, max 7 dni na żądanie interaktywne,
   bez dowolnego SQL. Większy zakres jako kontrolowany job.
 - Mutacja case/rule/playbook wymaga oczekiwanej wersji (ETag/If-Match): brak `428`,
   nieaktualna wersja `412`. Niedozwolone przejście stanu daje `409`.
-- Idempotency-Key na ingest, start demo/replay i start playbook; ponowienie zwraca
+- Idempotency-Key na ingest i tworzenie incydentu; w przyszłości start demo/replay
+  i start playbook. Ponowienie zwraca
   ten sam wynik tylko dla zgodnego body i scope; konflikt treści `409`.
 - `401` brak poprawnej sesji; `403` brak permission; `413` rozmiar; `422` walidacja;
   `429` rate limit z Retry-After; `503` brak zależności/pojemności. Nie pokazujemy stack trace.
@@ -37,7 +42,7 @@ Limity przypisane do rodziny sesji zachowują swój odrębny zakres. Integracja
 PHASE 1 potwierdza działanie auth i limitera na rzeczywistych usługach;
 przeglądarkowy przepływ UI należy do PHASE 13.
 
-## Dostępne zasoby PHASE 1–2
+## Dostępne zasoby
 
 | Obszar | Metody i ścieżki | Dostęp / zachowanie |
 | --- | --- | --- |
@@ -50,6 +55,15 @@ przeglądarkowy przepływ UI należy do PHASE 13.
 | Batch status | GET `/events/batches/{batch_id}` | Własny source scope `events:status` lub ludzki `events:read` |
 | Retry | POST `/events/{event_id}/retry` | Admin; quarantined + If-Match generacji; limit pending |
 | System | GET `/system/health`, `/system/ingestion` | Admin/Manager; zależności oraz globalne liczniki/limity ingest |
+| Event Search | POST `/events/search`; GET `/events`, `/events/{id}` | Human events:read; parametryzowane filtry, podpisany cursor, dowód |
+| Pipeline | GET `/system/pipeline`, `/system/pipeline/{event_id}`; POST `/system/pipeline/{event_id}/retry` | Status; Admin może ponowić błąd z If-Match |
+| Alerts | GET `/alerts`, `/alerts/{id}`; PATCH `/alerts/{id}` | Odczyt dowodu; Analyst/Manager/Admin zmienia status z If-Match |
+| Detections | GET `/detections`, `/detections/{id}`; PATCH `/detections/{id}`; POST `/detections/test` | Trzy wbudowane reguły; publish włącza deployment, test nie zapisuje alertu |
+| Detection status | GET `/system/detections` | Manager/Admin; checkpointy i backlog |
+| Incidents | GET/POST `/incidents`; GET/PATCH `/incidents/{id}` | Tworzenie z Idempotency-Key; edycja/status/owner z If-Match |
+| Incident alerts | POST `/incidents/{id}/alerts`; DELETE `/incidents/{id}/alerts/{alert_id}` | Dopinanie/odpinanie z zachowaniem dowodów, If-Match |
+| Incident history | POST/GET `/incidents/{id}/notes`; GET `/incidents/{id}/timeline`, `/incidents/{id}/evidence` | Append-only notes/timeline, paginacja i niezmienne dowody |
+| Incident assignees | GET `/incidents/assignees` | Dostępni aktywni operatorzy zgodnie z rolą |
 
 Utworzenie źródła zwraca `{source, credential}` z tokenem widocznym tylko raz.
 Source ma server-generated dataset UUID, `mode=live` i zerowy `run_id`.
@@ -61,16 +75,17 @@ wydania nowych. Odpowiedzi źródeł, ingest i statusu mają `Cache-Control: no-
 Przebieg nadawcy, operacje Admina i znaczenie pojemności:
 [PHASE 2 operations](phase2-operations.md).
 
+Szczegółowy kontrakt incydentów i limity: [etap 1](incidents.md).
+Kontrakty wcześniejszego panelu i trzech detekcji: [initial SOC](initial-soc.md).
+
 ## Projekt zasobów przyszłych faz
 
 | Obszar | Planowane metody i ścieżki | Zachowanie |
 | --- | --- | --- |
-| Events | POST `/events/search`; GET `/events`, `/events/{id}` | Bounded query i znormalizowany odczyt |
-| Alerts | GET `/alerts`, `/alerts/{id}`, `/alerts/{id}/events` | Explanation, wkłady risk, immutable wersja reguły, pivots |
-| Incidents | GET/POST `/incidents`; GET/PATCH `/incidents/{id}`; POST `/incidents/{id}/transitions` | Przypisanie, opis, verdict i kontrolowane przejście statusu |
-| Case artifacts | POST `/incidents/{id}/notes`, `/evidence`, `/iocs`; GET `/incidents/{id}/timeline` | Audytowana praca analityka i storyline |
-| Detections | GET/POST `/detections`; GET/PATCH `/detections/{id}` | Draft/version/enable/disable zgodnie z permission |
-| Sigma / rule test | POST `/detections/import`, `/detections/{id}/test` | Walidacja obsługiwanego subsetu, sandbox test bez live efektów |
+| Alert extensions | GET `/alerts/{id}/events` | Wiele contributing events i wyjaśnione risk |
+| Case extensions | POST `/incidents/{id}/evidence`, `/incidents/{id}/iocs` | Dodatkowe artefakty/IOC i verdict; obecny status zmienia PATCH |
+| Rule authoring | POST `/detections`; wersjonowane definicje | Draft/version/import oprócz obecnego stałego katalogu |
+| Sigma | POST `/detections/import` | Walidacja i kompilacja obsługiwanego subsetu |
 | Hunts | GET/POST `/hunts`; PATCH `/hunts/{id}`; POST `/hunts/{id}/runs`, `/hunts/{id}/bookmarks`, `/hunts/{id}/investigations`, `/hunts/{id}/draft-detections` | Saved query, evidence, investigation, draft rule |
 | Investigations | POST `/investigations/{id}/promote` | Jednorazowa, audytowana promocja do sprawy |
 | TI | GET/POST `/iocs`; PATCH `/iocs/{id}` | Typowana lokalna reputacja, wersje i audit |

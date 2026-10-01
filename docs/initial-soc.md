@@ -1,5 +1,9 @@
 # Pierwsze alerty i panel SOC
 
+Zakres historycznego przyrostu `6119335`. Późniejszy
+[Etap 1](incidents.md) dodaje działające incydenty, notatki, dowody i timeline.
+Opisy „przyszłe” w tym dokumencie dotyczą stanu przed tą rozbudową.
+
 Ten przyrost udostępnia działające moduły przez wspólny lokalny panel pod
 [localhost:8080](http://localhost:8080). PHASE 0–3 są zakończone; pełne fazy
 detekcji, explainability i UI pozostają otwarte. Wyniki:

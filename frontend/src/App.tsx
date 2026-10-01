@@ -1,5 +1,5 @@
 import { time, useResource } from './utilities';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { api } from './api';
 import { Badge, Empty, ErrorNotice, Loading, Metric, Panel } from './components';
@@ -8,11 +8,13 @@ import { Events, EventDetail } from './Events';
 import { Sources } from './Sources';
 import { System } from './System';
 import { Alerts, Detections } from './Alerts';
+import { Incidents } from './incidents/Incidents';
 
-type View = 'overview' | 'alerts' | 'events' | 'detections' | 'sources' | 'system';
+type View = 'overview' | 'alerts' | 'events' | 'incidents' | 'detections' | 'sources' | 'system';
 const links: { id: View; name: string; icon: string; permission?: string }[] = [
   { id: 'overview', name: 'Przegląd', icon: '◈' },
   { id: 'alerts', name: 'Alerty', icon: '◉', permission: 'alerts:read' },
+  { id: 'incidents', name: 'Incydenty', icon: '◇', permission: 'incidents:read' },
   { id: 'events', name: 'Zdarzenia', icon: '⌕', permission: 'events:read' },
   { id: 'detections', name: 'Reguły detekcji', icon: '⌘', permission: 'detections:read' },
   { id: 'sources', name: 'Źródła logów', icon: '⇄', permission: 'sources:manage' },
@@ -27,17 +29,23 @@ const roleName = {
 
 export function App() {
   const [user, setUser] = useState<Me | null>(null);
+  const identity = useRef<Me | null>(null);
   const [starting, setStarting] = useState(true);
   const [startError, setStartError] = useState<unknown>(null);
   const [view, setView] = useState<View>('overview');
   const [selected, setSelected] = useState<SecurityEvent | null>(null);
   const [query, setQuery] = useState('');
+  const [incidentAlert, setIncidentAlert] = useState<Alert | null>(null);
+  const [incidentSequence, setIncidentSequence] = useState(0);
   useEffect(() => {
     let active = true;
     void api
       .restore()
       .then((me) => {
-        if (active) setUser(me);
+        if (active) {
+          identity.current = me;
+          setUser(me);
+        }
       })
       .catch((error: unknown) => {
         if (active) setStartError(error);
@@ -47,16 +55,29 @@ export function App() {
       });
     const unsubscribe = api.subscribe((kind) => {
       if (kind === 'logout') {
+        identity.current = null;
         setUser(null);
         setSelected(null);
+        setIncidentAlert(null);
+        setView('overview');
       } else {
         void api
           .get<Me>('/auth/me')
           .then((me) => {
             if (active) {
+              const previous = identity.current;
+              const authorityChanged =
+                previous?.id !== me.id ||
+                previous.role !== me.role ||
+                previous.permissions.length !== me.permissions.length ||
+                !previous.permissions.every((permission) => me.permissions.includes(permission));
+              identity.current = me;
               setUser(me);
-              setView('overview');
-              setSelected(null);
+              if (authorityChanged) {
+                setView('overview');
+                setSelected(null);
+                setIncidentAlert(null);
+              }
             }
           })
           .catch(() => {
@@ -76,7 +97,16 @@ export function App() {
         <Loading />
       </div>
     );
-  if (!user) return <Login initialError={startError} onLogin={setUser} />;
+  if (!user)
+    return (
+      <Login
+        initialError={startError}
+        onLogin={(me) => {
+          identity.current = me;
+          setUser(me);
+        }}
+      />
+    );
   const allowed = (permission: string) => user.permissions.includes(permission);
   function filterEntity(field: string, value: string) {
     setQuery(`${field} = ${JSON.stringify(value)}`);
@@ -158,7 +188,24 @@ export function App() {
             <Events key={query} initialQuery={query} onEvent={setSelected} />
           )}
           {view === 'alerts' && allowed('alerts:read') && (
-            <Alerts user={user} onEvent={setSelected} />
+            <Alerts
+              user={user}
+              onEvent={setSelected}
+              onCreateIncident={(alert) => {
+                setIncidentAlert(alert);
+                setIncidentSequence((value) => value + 1);
+                setView('incidents');
+              }}
+            />
+          )}
+          {view === 'incidents' && allowed('incidents:read') && (
+            <Incidents
+              key={incidentSequence}
+              user={user}
+              onEvent={setSelected}
+              initialAlert={incidentAlert}
+              onInitialConsumed={() => setIncidentAlert(null)}
+            />
           )}
           {view === 'detections' && allowed('detections:read') && <Detections user={user} />}
           {view === 'sources' && allowed('sources:manage') && (

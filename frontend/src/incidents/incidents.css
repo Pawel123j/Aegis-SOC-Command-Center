@@ -1,0 +1,121 @@
+.incident-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(280px, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+.incident-grid > *,
+.incident-grid section {
+  min-width: 0;
+}
+.incident-description,
+.incident-note {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.incident-header .intro h2 {
+  overflow-wrap: anywhere;
+}
+.incident-entities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.incident-choices {
+  margin: 14px 0;
+  max-height: 340px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+}
+.incident-choice {
+  display: flex;
+  flex-direction: row;
+  align-items: start;
+  gap: 12px;
+  padding: 12px;
+  margin: 0;
+  border-bottom: 1px solid var(--border);
+}
+.incident-choice:last-child {
+  border-bottom: 0;
+}
+.incident-choice input[type='checkbox'] {
+  flex: none;
+  width: 17px;
+  min-height: 17px;
+  height: 17px;
+  margin-top: 4px;
+}
+.incident-choice strong,
+.incident-choice small {
+  display: block;
+}
+.incident-choice small {
+  color: var(--muted);
+  margin-top: 3px;
+}
+.incident-timeline {
+  list-style: none;
+  margin: 22px 0;
+  padding: 0 0 0 20px;
+  border-left: 1px solid #40566e;
+}
+.incident-timeline li {
+  position: relative;
+  margin: 0 0 26px;
+  padding-left: 6px;
+  overflow-wrap: anywhere;
+}
+.incident-timeline li::before {
+  content: '';
+  position: absolute;
+  left: -26px;
+  top: 7px;
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  background: var(--bg);
+}
+.incident-timeline li > time,
+.incident-timeline li > small {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  margin-bottom: 6px;
+}
+.incident-timeline details {
+  margin: 10px 0;
+}
+.incident-note-card {
+  border-bottom: 1px solid var(--border);
+  padding: 16px 0;
+}
+.incident-note-card:first-child {
+  padding-top: 0;
+}
+.incident-note-card:last-child {
+  border-bottom: 0;
+}
+.incident-note-card small {
+  display: block;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+.incident-note-card p {
+  margin-bottom: 0;
+}
+@media (max-width: 1150px) {
+  .incident-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}
+.incident-grid fieldset,
+.detail-body fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}

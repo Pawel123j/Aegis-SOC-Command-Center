@@ -53,7 +53,7 @@ def retry_pipeline(
 ) -> dict[str, object]:
     if if_match is None:
         raise ApiError(428, "version_required", "If-Match is required")
-    lock_administration(db, principal)
+    lock_administration(db, principal, request)
     job = db.scalar(select(PipelineJob).where(PipelineJob.event_id == event_id).with_for_update())
     if job is None:
         raise ApiError(404, "not_found", "Event pipeline not found")

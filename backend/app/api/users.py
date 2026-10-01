@@ -6,13 +6,12 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator, model_validator
-from sqlalchemy import func, select, text, update
+from sqlalchemy import func, select, update
 
-from app.api.dependencies import DB, Principal, require
+from app.api.dependencies import DB, Principal, lock_authority, require
 from app.core.errors import ApiError
-from app.core.permissions import Permission, Role, has_permission
+from app.core.permissions import Permission, Role
 from app.core.security import hash_password, utcnow
-from app.infrastructure.database import ADMIN_LOCK_ID
 from app.modules.audit.service import append_audit
 from app.modules.auth.models import AuthSession
 from app.modules.users.models import User, normalize_username
@@ -59,16 +58,8 @@ class UserPatch(BaseModel):
         return self
 
 
-def lock_administration(db: DB, principal: Principal) -> None:
-    db.execute(text("SELECT pg_advisory_xact_lock(:lock)"), {"lock": ADMIN_LOCK_ID})
-    db.refresh(principal.user)
-    db.refresh(principal.session)
-    if (
-        not principal.user.enabled
-        or principal.session.revoked_at is not None
-        or not has_permission(principal.user.role, Permission.USERS_MANAGE)
-    ):
-        raise ApiError(403, "forbidden", "Permission denied")
+def lock_administration(db: DB, principal: Principal, request: Request) -> None:
+    lock_authority(db, principal, Permission.USERS_MANAGE, request)
 
 
 @router.get("")
@@ -92,7 +83,7 @@ def users(
 def create_user(
     data: UserCreate, request: Request, response: Response, db: DB, principal: Admin
 ) -> User:
-    lock_administration(db, principal)
+    lock_administration(db, principal, request)
     user = User(
         username=data.username,
         password_hash=hash_password(data.password.get_secret_value()),
@@ -127,7 +118,7 @@ def patch_user(
 ) -> User:
     if if_match is None:
         raise ApiError(428, "version_required", "If-Match is required")
-    lock_administration(db, principal)
+    lock_administration(db, principal, request)
     # Serialize account updates/login without blocking FK KEY SHARE locks from
     # refresh/logout audit inserts while their session row is locked.
     user = db.scalar(select(User).where(User.id == user_id).with_for_update(key_share=True))

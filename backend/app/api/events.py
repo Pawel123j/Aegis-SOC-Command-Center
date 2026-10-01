@@ -198,7 +198,7 @@ def retry_event(
 ) -> dict[str, object]:
     if if_match is None:
         raise ApiError(428, "version_required", "If-Match is required")
-    lock_administration(db, principal)
+    lock_administration(db, principal, request)
     # Admission and manual retries share the same serialization point. Take this
     # before the job lock so a retry cannot overfill the bounded pending backlog.
     capacity = db.scalar(select(IngestCapacity).where(IngestCapacity.id == 1).with_for_update())

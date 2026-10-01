@@ -1,6 +1,15 @@
 # Incident Response i case management
 
-Status: **projekt PHASE 0, bez implementacji**. Dokument definiuje stan domeny, zachowanie API i kryteria odbioru dla przyszłych faz alert management, korelacji i incident management.
+Aktualizacja 2026-10-01: Incident Management jest implementowany jako etap 1
+[nowego planu rozbudowy](soc-expansion-plan.md). Bieżące statusy wymagane przez
+użytkownika to `new`, `investigating`, `contained`, `resolved`, `closed`;
+zastępują proponowane poniżej stany starego projektu. Decyzję opisuje
+[ADR 0007](adr/0007-incident-case-management.md), a wyniki kontroli
+[raport etapu 1](validation-incidents.md).
+
+Poniższy dokument zachowuje **historyczny projekt PHASE 0**, w tym przyszłe
+investigations, IOC, verdict, retencję i metryki. Sam opis tych funkcji nie
+oznacza ich wdrożenia. Bieżący kod i raport etapu mają pierwszeństwo.
 
 ## Alert, investigation i incident
 

@@ -8,8 +8,7 @@ from fastapi import APIRouter, Depends, Header, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 
-from app.api.alerts import lock_authority
-from app.api.dependencies import DB, Principal, require
+from app.api.dependencies import DB, Principal, lock_authority, require
 from app.core.errors import ApiError
 from app.core.permissions import Permission
 from app.core.rate_limit import rate_limit

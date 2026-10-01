@@ -1,7 +1,9 @@
 # Model danych i normalizacja
 
-Status: dane identity/audit oraz trwałego ingestion zaimplementowane w PHASE 1–2.
-Normalizacja i dalsze agregaty poniżej pozostają projektem kolejnych faz.
+Status 2026-10-01: PHASE 1–3, początkowe detekcje/alerty i incydenty
+są zaimplementowane. Kontrakt działającej normalizacji opisuje
+[normalization](normalization.md), a spraw [incidents](incidents.md).
+Dalsze encje i wcześniejsze szkice oznaczono jako projekt poniżej.
 Nazwy pól nie są deklaracją pełnej zgodności ECS/OTel.
 
 ## RawEvent
@@ -56,9 +58,15 @@ Worker przechodzi `pending → processing → staged` lub do `quarantined`;
 błąd przejściowy może wrócić do `pending`. Token dzierżawy oraz generation
 warunkują zapis wyniku, więc spóźniona próba nie nadpisuje nowszej generacji.
 Manualny retry zwiększa generation i resetuje stan/próby, zachowując to samo raw.
-Nie powstaje jeszcze `NormalizedSecurityEvent` ani projekcja w ClickHouse.
+To koniec etapu worker raw. Osobny processor PHASE 3 tworzy
+`NormalizedSecurityEvent` w PostgreSQL i projektuje go do ClickHouse;
+osobny detector ocenia niezmienny snapshot.
 
-## NormalizedSecurityEvent v1 — projekt PHASE 3+
+## NormalizedSecurityEvent v1 — pierwotny szkic i dalsze rozszerzenia
+
+Poniższa tabela zachowuje projekt koncepcyjny. Dokładne aktualne nazwy,
+limity, parser/schema version i kontrakt API wynikają z
+[wdrożonej normalizacji](normalization.md) i modeli Pydantic.
 
 | Pole | Typ / semantyka |
 | --- | --- |
@@ -104,7 +112,7 @@ MITRE i rule ID są **adnotacjami po detekcji**, a nie faktami rzekomo pochodzą
 z surowego logu. Event Explorer filtruje je przez projekcję powiązań event-alert
 z rule version i mapping version. Jeden event może wspierać wiele alertów.
 
-## Parsery i niejednoznaczność — projekt PHASE 3
+## Parsery i niejednoznaczność — PHASE 3
 
 | Źródło | Kontrakt i testy |
 | --- | --- |
@@ -125,6 +133,14 @@ Testy obejmą zmianę roku i czasu, Unicode, brakujące pola i zbyt długie inpu
 
 ## Dalszy model operacyjny PostgreSQL — projekt
 
+Aktualny przyrost incydentów (`0005_incidents`) dodaje `incidents`,
+`incident_alerts`, `incident_notes`, `incident_timeline` i
+`incident_create_receipts`. Dowód jest zachowanym snapshotem alertu
+PostgreSQL. Powiązania alertów mają active/detached zamiast DELETE,
+notes/timeline/receipts pozostają append-only. Scope live/replay oraz
+limity opisuje [kontrakt incydentów](incidents.md).
+Poniższa tabela obejmuje również dalsze, jeszcze niewdrożone encje.
+
 | Agregat | Planowane encje / constraints |
 | --- | --- |
 | Detection | rules, immutable rule_versions, detection_state, matches, alert_revisions, alert_events |
@@ -139,7 +155,13 @@ międzybazowego FK, dlatego alert/case utrwala bounded evidence snapshot + check
 Unikalność source_event_id i fingerprintów jest wymuszana w bazie, nie tylko Pythonem.
 Indeksy operational time/status/owner i entity key powstaną z rzeczywistymi zapytaniami.
 
-## ClickHouse — projekt projekcji
+## ClickHouse — wdrożona projekcja i dalsze rozszerzenia
+
+Działające DDL są w `infra/clickhouse/migrations`; archiwum używa
+ReplacingMergeTree i deduplikacji na odczycie przed filtrowaniem/paginacją.
+Procedury i granice: [PHASE 3 operations](phase3-operations.md).
+Poniżej zachowano ogólne założenia dalszej projekcji adnotacji; benchmark
+przepustowości pozostaje niewykonany.
 
 Plan: partycja miesięczna po niezmiennym `timestamp`; sortowanie
 `(dataset_id, source_id, toDate(timestamp), timestamp, event_id)`.

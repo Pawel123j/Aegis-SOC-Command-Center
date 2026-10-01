@@ -10,6 +10,24 @@ const messages: Record<string, string> = {
   invalid_search: 'Sprawdź zapytanie, zakres czasu lub odśwież stronę wyników.',
   archive_unavailable: 'Archiwum zdarzeń jest chwilowo niedostępne. Spróbuj ponownie.',
   version_conflict: 'Dane zmieniły się w innej karcie. Odśwież je przed ponowną zmianą.',
+  precondition_failed: 'Dane zmieniły się. Odśwież szczegóły przed ponowną zmianą.',
+  precondition_required: 'Odśwież szczegóły, aby pobrać aktualną wersję danych.',
+  version_required: 'Odśwież szczegóły, aby pobrać aktualną wersję danych.',
+  not_found: 'Nie znaleziono tego zasobu. Mógł zmienić się zakres Twojego dostępu.',
+  invalid_incident_transition: 'Ta zmiana statusu nie jest dostępna. Odśwież incydent.',
+  incident_closed: 'Incydent jest zamknięty. Otwórz go ponownie przed zmianą.',
+  incident_scope_mismatch: 'Alert pochodzi z innego trybu lub sesji replay.',
+  incident_not_found: 'Nie znaleziono incydentu. Odśwież listę spraw.',
+  alert_not_found: 'Nie znaleziono alertu. Odśwież listę alertów.',
+  attachment_not_found: 'To powiązanie jest nieaktualne. Odśwież szczegóły incydentu.',
+  alert_already_attached: 'Ten alert jest już powiązany z incydentem.',
+  incident_alert_limit: 'Incydent może mieć maksymalnie 100 aktywnych alertów.',
+  status_reason_required: 'Podaj uzasadnienie zmiany statusu.',
+  invalid_incident_owner: 'Wybierz aktywnego analityka z dostępnej listy.',
+  incident_unchanged: 'Zmień co najmniej jedno pole incydentu.',
+  invalid_incident_scope:
+    'Wybierz alerty z jednego trybu. Replay wymaga jednej sesji i zestawu danych.',
+  idempotency_conflict: 'Potwierdzenie operacji nie pasuje do danych. Odśwież formularz.',
   conflict: 'Zasób o takich danych już istnieje.',
   csrf_failed: 'Sesja logowania zmieniła się. Spróbuj zalogować się ponownie.',
   rate_limited: 'Za dużo żądań. Poczekaj chwilę i spróbuj ponownie.',
@@ -200,6 +218,12 @@ export class ApiClient {
     return this.request<T>(path, {
       method: 'PATCH',
       body: JSON.stringify(body),
+      headers: { 'If-Match': `"${version}"` },
+    });
+  }
+  delete<T>(path: string, version: number) {
+    return this.request<T>(path, {
+      method: 'DELETE',
       headers: { 'If-Match': `"${version}"` },
     });
   }

@@ -6,11 +6,13 @@ from datetime import timedelta
 from typing import Annotated
 
 from fastapi import Depends, Request
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.core.errors import ApiError, unauthorized
 from app.core.permissions import Permission, has_permission
 from app.core.security import decode_access, utcnow
+from app.infrastructure.database import ADMIN_LOCK_ID
 from app.modules.audit.service import append_audit
 from app.modules.auth.models import AuthSession
 from app.modules.users.models import User
@@ -28,6 +30,24 @@ DB = Annotated[Session, Depends(get_db)]
 class Principal:
     user: User
     session: AuthSession
+
+
+def lock_authority(db: DB, principal: Principal, permission: Permission, request: Request) -> None:
+    """Recheck current authority after serializing against account/session changes."""
+    db.execute(text("SELECT pg_advisory_xact_lock(:lock)"), {"lock": ADMIN_LOCK_ID})
+    db.refresh(principal.user)
+    db.refresh(principal.session)
+    now = utcnow()
+    if (
+        not principal.user.enabled
+        or principal.session.revoked_at is not None
+        or principal.session.absolute_expires_at <= now
+        or principal.session.last_seen_at
+        + timedelta(seconds=request.app.state.settings.session_idle_seconds)
+        <= now
+        or not has_permission(principal.user.role, permission)
+    ):
+        raise ApiError(403, "forbidden", "Permission denied")
 
 
 def current_principal(request: Request, db: DB) -> Principal:

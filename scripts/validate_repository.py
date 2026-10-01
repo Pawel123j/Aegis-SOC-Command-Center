@@ -166,8 +166,9 @@ def main() -> int:
     requirements = [int(item) for item in re.findall(r"^\| (\d+) \|", matrix, re.M)]
     if requirements != list(range(1, 38)):
         errors.append("traceability must contain requirements 1..37 exactly once")
-    if len(list((ROOT / "docs/adr").glob("[0-9][0-9][0-9][0-9]-*.md"))) != 6:
-        errors.append("Phase 0 requires six ADR records")
+    adr_count = len(list((ROOT / "docs/adr").glob("[0-9][0-9][0-9][0-9]-*.md")))
+    if adr_count < 6:
+        errors.append("Phase 0 requires at least six ADR records")
 
     if errors:
         for error in errors:
@@ -176,7 +177,8 @@ def main() -> int:
         return 1
     print(
         f"PASS: {len(files)} text files, {len(required_directories)} required directories, "
-        "21 phases, 37 requirements, 6 ADRs; local links, text format, Python/JSON syntax."
+        f"21 phases, 37 requirements, {adr_count} ADRs; "
+        "local links, text format, Python/JSON syntax."
     )
     print("Scope: repository structure, text and syntax only; no runtime or hosted CI tests.")
     return 0

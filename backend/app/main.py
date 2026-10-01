@@ -21,6 +21,7 @@ from app.api import (
     event_search,
     events,
     health,
+    incidents,
     pipeline,
     sources,
     users,
@@ -94,6 +95,7 @@ def _create_app(settings: Settings | None = None) -> FastAPI:
         pipeline.router,
         alerts.router,
         detections.router,
+        incidents.router,
     ):
         application.include_router(router)
 

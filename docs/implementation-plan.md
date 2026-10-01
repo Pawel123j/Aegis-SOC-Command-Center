@@ -2,6 +2,11 @@
 
 ## Zakres i stan planu
 
+Aktualizacja 2026-10-01: nowa prośba użytkownika wyznacza 15 przyrostów,
+zaczynając od incydentów. [Audyt i plan rozbudowy](soc-expansion-plan.md)
+określa bieżącą kolejność; poniższe PHASE 0–20 zachowują historyczny plan
+i kryteria jakości. Każdy nowy przyrost pozostawia aplikację uruchamialną.
+
 Plan odpowiada fazom 0–20 wskazanym w wymaganiach. Faza 0 dostarczyła analizę stanu, decyzje architektoniczne, szkielet repozytorium i dokumentację. Faza 1 dostarczyła zweryfikowany fundament backendu z integracją rzeczywistych usług (2026-09-28). SIEM, frontend i generator wymagają dalszych faz.
 
 Punktem wyjścia jest puste repozytorium opisane w [raporcie stanu](current-state-report.md). Docelową architekturę i odpowiedzialności komponentów opisuje [architecture.md](architecture.md), a układ plików [repository-structure.md](repository-structure.md). Pełne pokrycie wymagań użytkownika zawiera [macierz wymagań](requirements-traceability.md).
