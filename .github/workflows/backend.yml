@@ -9,6 +9,20 @@ permissions:
   contents: read
 
 jobs:
+  frontend:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Frontend locked install, quality and static build
+        run: >-
+          docker run --rm -e CI=true -v "$PWD/frontend:/workspace" -w /workspace
+          node:24.19.0-bookworm-slim sh -ec
+          'npm install --global pnpm@11.19.0 &&
+          pnpm install --frozen-lockfile --ignore-scripts &&
+          pnpm build && pnpm lint && pnpm format && pnpm test && pnpm audit'
   quality:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -42,6 +56,12 @@ jobs:
         with:
           python-version: "3.12.14"
       - run: python scripts/bootstrap_env.py
+      - name: Build the panel served by the integration proxy
+        run: >-
+          docker run --rm -e CI=true -v "$PWD/frontend:/workspace" -w /workspace
+          node:24.19.0-bookworm-slim sh -ec
+          'npm install --global pnpm@11.19.0 &&
+          pnpm install --frozen-lockfile --ignore-scripts && pnpm build'
       - run: docker compose config --quiet
       - run: docker compose build api && docker compose --profile test build tests
       - run: docker compose up -d --wait

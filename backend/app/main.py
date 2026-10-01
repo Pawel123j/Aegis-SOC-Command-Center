@@ -13,7 +13,18 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from starlette.exceptions import HTTPException
 from starlette.responses import JSONResponse
 
-from app.api import audit, auth, event_search, events, health, pipeline, sources, users
+from app.api import (
+    alerts,
+    audit,
+    auth,
+    detections,
+    event_search,
+    events,
+    health,
+    pipeline,
+    sources,
+    users,
+)
 from app.api.dependencies import Principal, require
 from app.core.config import Settings, get_settings
 from app.core.errors import ApiError
@@ -81,6 +92,8 @@ def _create_app(settings: Settings | None = None) -> FastAPI:
         event_search.router,
         events.system_router,
         pipeline.router,
+        alerts.router,
+        detections.router,
     ):
         application.include_router(router)
 

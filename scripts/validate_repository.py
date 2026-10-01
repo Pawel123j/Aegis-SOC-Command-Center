@@ -15,6 +15,7 @@ SKIP = {
     ".git",
     ".venv",
     "node_modules",
+    ".pnpm-store",
     "__pycache__",
     ".local",
     "dist",
@@ -39,6 +40,11 @@ TEXT_SUFFIXES = {
     ".lock",
     ".ps1",
     ".cmd",
+    ".ts",
+    ".tsx",
+    ".css",
+    ".html",
+    ".js",
 }
 TEXT_NAMES = {
     ".gitignore",

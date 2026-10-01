@@ -4,7 +4,10 @@ FastAPI/Pydantic/SQLAlchemy tworzą modularny monolit z oddzielnym procesem Cele
 Runtime to **Python 3.12.14**, zgodny z obrazem Docker i konfiguracją CI. Zależności
 runtime i developerskie mają osobne lockfile z hashami.
 
-**Stan: PHASE 3 — normalizacja i wyszukiwanie, ukończona i zweryfikowana 2026-10-01.**
+**Stan: PHASE 0–3 ukończone; początkowe detekcje i alerty — 2026-10-01.**
+Migracja `0004_initial_alerts`, osobny `app.detector`, API alerts/detections
+i atomowy checkpoint zapewniają trzy reguły pojedynczego zdarzenia.
+[Zakres i ograniczenia](../docs/initial-soc.md).
 Fundament PHASE 1 obejmuje konfigurację i bezpieczne błędy, `/api/v1/auth`,
 `/api/v1/users`, `/api/v1/audit`, chronione `/api/v1/system/health`, sondy `/health`
 i `/ready`, wewnętrzne `/metrics` oraz OpenAPI pod `/api/v1/openapi.json`.

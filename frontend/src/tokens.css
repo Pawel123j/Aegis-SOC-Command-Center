@@ -1,0 +1,9 @@
+:root {
+  --bg: #0b111d;
+  --panel: #131d2d;
+  --border: #263449;
+  --text: #e3ecf5;
+  --muted: #91a4bf;
+  --accent: #64d9c1;
+  color-scheme: dark;
+}

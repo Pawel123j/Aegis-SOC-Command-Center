@@ -174,6 +174,61 @@ function Test-Readiness {
     } catch { return $false }
 }
 
+function Build-Frontend {
+    $frontendRoot = Join-Path $ProjectRoot 'frontend'
+    $runtimeRoot = Join-Path $env:USERPROFILE '.cache\codex-runtimes\codex-primary-runtime\dependencies'
+    $nodeCandidates = @()
+    $nodeCommand = Get-Command node -ErrorAction SilentlyContinue
+    if ($nodeCommand) { $nodeCandidates += $nodeCommand.Source }
+    $nodeCandidates += (Join-Path $runtimeRoot 'node\bin\node.exe')
+    $nodePath = $null
+    foreach ($candidate in $nodeCandidates) {
+        if (Test-Path -LiteralPath $candidate -PathType Leaf) {
+            $version = & $candidate --version
+            if ($LASTEXITCODE -eq 0 -and $version -eq 'v24.19.0') { $nodePath = $candidate; break }
+        }
+    }
+    if (-not $nodePath) {
+        throw 'Panel wymaga Node.js 24.19.0. Zobacz docs/local-start.md.'
+    }
+    $pnpmCandidates = @()
+    $pnpmCommand = Get-Command pnpm -ErrorAction SilentlyContinue
+    if ($pnpmCommand) { $pnpmCandidates += $pnpmCommand.Source }
+    $pnpmCandidates += (Join-Path $runtimeRoot 'bin\fallback\pnpm.cmd')
+    $pnpmPath = $pnpmCandidates | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Select-Object -First 1
+    if (-not $pnpmPath) { throw 'Panel wymaga pnpm 11.19.0. Zobacz docs/local-start.md.' }
+    $previousPath = $env:PATH
+    $previousNodeOptions = $env:NODE_OPTIONS
+    $previousCI = $env:CI
+    Push-Location -LiteralPath $frontendRoot
+    try {
+        $env:PATH = (Split-Path -Parent $nodePath) + ';' + $previousPath
+        # Trust Windows certificates when a local HTTPS inspection product is present.
+        $env:NODE_OPTIONS = ($previousNodeOptions + ' --use-system-ca').Trim()
+        $env:CI = 'true'
+        $ErrorActionPreference = 'Continue'
+        Write-Host 'Przygotowuje panel aplikacji z zablokowanymi zaleznosciami...'
+        $frontendStore = Join-Path $frontendRoot '.local\pnpm-store'
+        $offlineInstall = @('install', '--frozen-lockfile', '--ignore-scripts', '--offline', '--store-dir', $frontendStore)
+        & $pnpmPath @offlineInstall
+        if ($LASTEXITCODE -ne 0) {
+            if ($BuildMode -eq 'offline') { throw 'Brak lokalnej pamieci zaleznosci panelu; pierwsze uruchomienie wymaga internetu.' }
+            & $pnpmPath install --frozen-lockfile --ignore-scripts --store-dir $frontendStore
+            if ($LASTEXITCODE -ne 0) { throw 'Nie udalo sie przygotowac zaleznosci panelu; TLS pozostaje wlaczony.' }
+        }
+        & $pnpmPath run build
+        if ($LASTEXITCODE -ne 0) { throw 'Budowanie panelu nie powiodlo sie.' }
+        if (-not (Test-Path -LiteralPath (Join-Path $frontendRoot 'dist\index.html') -PathType Leaf)) {
+            throw 'Brak gotowego panelu po budowaniu.'
+        }
+    } finally {
+        Pop-Location
+        $env:PATH = $previousPath
+        $env:NODE_OPTIONS = $previousNodeOptions
+        $env:CI = $previousCI
+    }
+}
+
 function Test-HasUsers {
     $probe = 'from sqlalchemy import select; from app.core.config import get_settings; from app.infrastructure.database import Database; from app.modules.users.models import User; db=Database(get_settings()); session=db.sessions(); print(1 if session.scalar(select(User.id).limit(1)) is not None else 0); session.close(); db.close()'
     $ErrorActionPreference = 'Continue'
@@ -238,6 +293,7 @@ try {
     $script:PublicOrigin = Get-PublicOrigin
     switch ($Action) {
         'start' {
+            Build-Frontend
             Build-Backend
             Write-Host 'Uruchamiam bazy, migracje, API i przetwarzanie zdarzen...'
             Invoke-Docker ($ComposeArguments + @('up', '-d', '--no-build', '--wait', '--wait-timeout', '180'))
@@ -248,8 +304,8 @@ try {
                 }
             } else { Initialize-Admin }
             Check-Runtime -OnlyHealth
-            Write-Host 'Backend dziala. API: http://localhost:8080/api/v1'
-            Write-Host 'Nie ma jeszcze panelu SOC. Pelna kontrola zdarzen: scripts/aegis.ps1 -Action check'
+            Write-Host 'Aegis dziala. Panel: http://localhost:8080'
+            Write-Host 'Zaloguj sie kontem administratora. Pelna kontrola zdarzen: scripts/aegis.ps1 -Action check'
         }
         'status' {
             Invoke-Docker ($ComposeArguments + @('ps', '--all'))

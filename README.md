@@ -3,19 +3,22 @@
 Projekt portfolio Security Engineering: docelowo lokalna platforma mini-SIEM, SOAR,
 Incident Response i Threat Hunting, z demonstracją opartą na prawdziwym pipeline logów.
 
-**Stan: PHASE 3 — normalizacja i wyszukiwanie, ukończona i zweryfikowana 2026-10-01.**
+**Stan: PHASE 0–3 ukończone; pierwszy przyrost alertów i panelu SOC — 2026-10-01.**
 Backend ma API źródeł, osobne tokeny ingestion, single/batch, idempotencję,
 PostgreSQL inbox/outbox, relay i worker z ograniczonym retry oraz kwarantanną.
 Sześć parserów tworzy niezmienne snapshoty w PostgreSQL, a osobny processor
 projektuje je do ClickHouse. API wyszukuje logi z filtrowaniem i deduplikacją.
-Detekcje, alerty, UI i generator należą do następnych przyrostów.
-Zakres i wyniki kontroli: [walidacja PHASE 3](docs/validation-phase3.md).
+Działają trzy wbudowane detekcje pojedynczych zdarzeń, trwałe alerty z dowodami
+i decyzjami analityka oraz panel React obsługujący rzeczywiste API.
+Pełne reguły okien czasowych, Sigma, incydenty, risk i generator pozostają zaplanowane.
+Zakres: [pierwsze alerty i panel](docs/initial-soc.md); wyniki: [walidacja przyrostu](docs/validation-initial-soc.md).
 
 ## Start z folderu na Windows
 
 Uruchom Docker Desktop w trybie kontenerów Linux, a następnie kliknij dwukrotnie
 [Uruchom Aegis.cmd](Uruchom%20Aegis.cmd). Skrypt przygotuje konfigurację,
-zbuduje backend i uruchomi lokalne usługi. Przy pierwszym starcie poprosi
+zbuduje panel i backend oraz uruchomi lokalne usługi. Panel wymaga Node.js 24.19.0
+i pnpm 11.19.0; launcher rozpoznaje także dostępny runtime Codex. Przy pierwszym starcie poprosi
 o ustawienie hasła administratora `admin` w ukrytym monicie. Kolejne uruchomienia
 zachowują konta, hasła, konfigurację i dane. Zwykły start online nie wymaga
 instalacji Pythona na Windows.
@@ -28,8 +31,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\aegis.ps1 -Action 
 
 Kontrola prosi o hasło istniejącego administratora i sprawdza trwały zapis,
 idempotencję, normalizację i odczyt z archiwum. API działa pod
-`http://localhost:8080/api/v1`. Obecny zakres to backend PHASE 1–3; dashboard
-powstanie w kolejnych etapach.
+`http://localhost:8080/api/v1`, a panel pod [localhost:8080](http://localhost:8080).
+Zaloguj się kontem utworzonym przez launcher.
 
 Start, stan usług, zatrzymanie, tryb offline i rozwiązywanie problemów:
 [lokalna instrukcja krok po kroku](docs/local-start.md).

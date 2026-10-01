@@ -11,8 +11,10 @@ from sqlalchemy.pool import NullPool
 
 from app.core.config import Settings
 from app.infrastructure.database import Base
+from app.modules.alerts import models as alert_models  # noqa: F401
 from app.modules.audit.models import AuditLog  # noqa: F401
 from app.modules.auth.models import AuthSession, PreAuthSession, RefreshToken  # noqa: F401
+from app.modules.detections import models as detection_models  # noqa: F401
 from app.modules.ingestion import models as ingestion_models  # noqa: F401
 from app.modules.normalization import models as normalization_models  # noqa: F401
 from app.modules.users.models import User  # noqa: F401

@@ -32,3 +32,19 @@ do poprawnego zabezpieczenia; rozwijamy subset dopiero z fixtures.
 Te same wersje i zamknięty zbiór eventów dają te same logiczne wyniki dla wszystkich
 kolejności dostarczenia. Testy obejmują granice czasu, NAT, late pierwszy element
 sekwencji i podwójne evidence. Zmiana polityki finalizacji wymaga osobnego ADR.
+
+## Pierwszy przyrost pojedynczego zdarzenia — 2026-10-01
+
+Trzy stałe reguły `single-event-v1` rozpoznają tylko fakty zawarte w jednym
+immutable normalized event. Nie korzystają z okien czasu, watermark, sekwencji
+ani Sigma; dlatego mogą finalizować wynik od razu bez 120 s allowed lateness.
+Nie wnioskują o sukcesie ataku ani o łańcuchu utworzenia konta.
+
+Deployment reguły, alert, snapshot dowodu, audyt i checkpoint są chronione
+transakcją PostgreSQL. Zmiana deploymentu serializuje się z ewaluacją przez
+ten sam advisory lock; stan ma zastosowanie do przyszłych, nieprzetworzonych
+eventów. Osobny detector nie zależy od ClickHouse. Hash dowodu i wersje katalogu
+są sprawdzane; niespójność konfiguracji pozostawia pracę oczekującą.
+
+To częściowy przyrost PHASE 4/5, uzasadniony uruchomieniem pierwszego panelu.
+Docelowa semantyka reguł czasowych pozostaje zgodna z decyzją wyżej.

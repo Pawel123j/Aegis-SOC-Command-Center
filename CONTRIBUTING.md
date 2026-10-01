@@ -1,6 +1,7 @@
 # Rozwój i bramki jakości
 
-Status repozytorium: PHASE 3 — normalizacja i wyszukiwanie, ukończona i zweryfikowana 2026-10-01.
+Status: PHASE 0–3 ukończone; pierwszy przyrost alertów i UI działa od 2026-10-01.
+Zakres częściowy faz 4/5/13 opisuje [pierwszy panel](docs/initial-soc.md).
 PHASE 1 zweryfikowano 2026-09-28; jej wyniki pozostają historycznym dowodem
 fundamentu. Bieżący zakres i wykonane kontrole opisuje [raport walidacji](docs/validation-phase3.md).
 Dokumenty zawierają także kontrakty docelowe; obecność implementacji nie oznacza
@@ -48,8 +49,11 @@ Zmiany wymagają kontroli formatów, czasu, injection, grantów oraz raw → sea
 na rzeczywistych bazach, w tym ponowienia po utracie potwierdzenia.
 [Obsługa PHASE 3](docs/phase3-operations.md) opisuje zakres i odzyskiwanie.
 
-Frontend, skan sekretów oraz dalsze bramki należą do kolejnych etapów.
-Frontend otrzyma TypeScript, ESLint, testy komponentów i E2E z prawdziwym API.
+Frontend ma przypięty TypeScript, ESLint, Prettier i testy Vitest. Komendy:
+`pnpm install --frozen-lockfile --ignore-scripts`, `pnpm build`, `pnpm lint`,
+`pnpm format`, `pnpm test`. Próba w przeglądarce wymaga rzeczywistego API
+i osobnego środowiska z kontem testowym. Pełny zakres fazy 13 pozostaje otwarty.
+Skan sekretów oraz dalsze bramki należą do kolejnych etapów.
 Każde nowe narzędzie i jego wersję przypinamy przy wprowadzeniu; skaner nie
 dostaje sekretów produkcyjnych. Nie ignorujemy błędów przez `continue-on-error`
 na bramkach wymaganych.

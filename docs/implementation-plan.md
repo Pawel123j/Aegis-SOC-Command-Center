@@ -6,7 +6,13 @@ Plan odpowiada fazom 0–20 wskazanym w wymaganiach. Faza 0 dostarczyła analiz�
 
 Punktem wyjścia jest puste repozytorium opisane w [raporcie stanu](current-state-report.md). Docelową architekturę i odpowiedzialności komponentów opisuje [architecture.md](architecture.md), a układ plików [repository-structure.md](repository-structure.md). Pełne pokrycie wymagań użytkownika zawiera [macierz wymagań](requirements-traceability.md).
 
-**Stan przyrostu:** fazy 0–2 są ukończone. PHASE 2 zweryfikowano 2026-09-30: wspólny przebieg 341 testów jednostkowych i 113 integracyjnych dał **454 passed**, z coverage 91% procesu testowego. Potwierdzono trwałość, role, limity, migracje, realny przepływ HTTP → relay → prefork worker oraz wznowienie po zatrzymaniu workera. Fazy 3–20 pozostają zaplanowane. Wyniki, odstępstwo lokalnego build oraz Conventional Commit zapisuje [raport walidacji](validation.md). Historyczny dowód fundamentu pozostaje w [raporcie PHASE 1](validation-phase1.md). Brak zdalnego repozytorium i przebiegu GitHub Actions oznacza niezweryfikowane hostowane CI. Końcowe kryteria Definition of Done całej platformy pozostają otwarte.
+**Stan przyrostu:** fazy 0–3 są ukończone. PHASE 3: 643 passed, coverage 91%;
+commit `f0d2ff3`. Początkowe trzy detekcje pojedynczego zdarzenia i panel
+obsługujący ten zakres są osobnym, częściowym przyrostem faz 4/5/13
+na prośbę o działanie całej aplikacji z folderu. Nie zamykają pełnych faz 4–13.
+[Zakres](initial-soc.md), [aktualna walidacja](validation-initial-soc.md).
+
+Historycznie: fazy 0–2 są ukończone. PHASE 2 zweryfikowano 2026-09-30: wspólny przebieg 341 testów jednostkowych i 113 integracyjnych dał **454 passed**, z coverage 91% procesu testowego. Potwierdzono trwałość, role, limity, migracje, realny przepływ HTTP → relay → prefork worker oraz wznowienie po zatrzymaniu workera. W tamtym raporcie fazy 3–20 były zaplanowane; aktualny stan opisano powyżej. Wyniki, odstępstwo lokalnego build oraz Conventional Commit zapisuje [raport walidacji](validation.md). Historyczny dowód fundamentu pozostaje w [raporcie PHASE 1](validation-phase1.md). Brak zdalnego repozytorium i przebiegu GitHub Actions oznacza niezweryfikowane hostowane CI. Końcowe kryteria Definition of Done całej platformy pozostają otwarte.
 
 ## Ustalenia wspólne
 
@@ -32,7 +38,9 @@ Rejestr wykonania powinien zawierać fazę, zakres, datę, środowisko, komendy,
 
 ## Zależności i kamienie milowe
 
-Główna kolejność pozostaje zgodna z żądaniem: `0 → 1 → 2 → … → 20`. Poniższe zależności wskazują konkretne kontrakty potrzebne kolejnym fazom, a nie pozwolenie na pomijanie bramek.
+Pełne fazy zachowują kolejność `0 → 1 → 2 → … → 20`. Wczesny panel obsługuje
+wyłącznie istniejące API po zweryfikowaniu fazy 3 i nie zastępuje bramek
+przyszłych modułów. Jawny wyjątek zakresu: ADR 0004 i ADR 0005. Poniższe zależności wskazują konkretne kontrakty potrzebne kolejnym fazom, a nie pozwolenie na pomijanie bramek.
 
 | Kamień milowy | Fazy | Wymagany dowód |
 | --- | --- | --- |

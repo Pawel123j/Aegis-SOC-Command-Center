@@ -12,6 +12,8 @@ services:
     build: *offline-build
   processor:
     build: *offline-build
+  detector:
+    build: *offline-build
   api:
     build: *offline-build
   worker:

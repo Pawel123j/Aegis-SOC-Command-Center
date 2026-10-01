@@ -13,6 +13,7 @@ from app.core.errors import ApiError
 from app.core.permissions import Permission
 from app.infrastructure.database import utcnow
 from app.modules.audit.service import append_audit
+from app.modules.detections.models import DetectionJob
 from app.modules.normalization.models import PipelineJob
 
 router = APIRouter(prefix="/api/v1", tags=["pipeline"])
@@ -103,6 +104,28 @@ def pipeline_status(
         select(func.min(PipelineJob.created_at)).where(
             PipelineJob.state.in_(["pending", "normalizing", "normalized", "projecting"])
         )
+    )
+    response.headers["Cache-Control"] = "no-store"
+    return {
+        "states": states,
+        "oldest_pending_seconds": max(0, int((utcnow() - oldest).total_seconds())) if oldest else 0,
+    }
+
+
+@router.get("/system/detections")
+def detection_status(
+    response: Response,
+    db: DB,
+    principal: Annotated[Principal, Depends(require(Permission.SYSTEM_READ))],
+) -> dict[str, object]:
+    states = {
+        state: count
+        for state, count in db.execute(
+            select(DetectionJob.state, func.count()).group_by(DetectionJob.state)
+        ).all()
+    }
+    oldest = db.scalar(
+        select(func.min(DetectionJob.created_at)).where(DetectionJob.state == "pending")
     )
     response.headers["Cache-Control"] = "no-store"
     return {

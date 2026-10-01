@@ -29,3 +29,17 @@ wielu kart podczas rotacji. Nie traktujemy CORS ani ukrytego przycisku jako perm
 
 E2E login/refresh/logout/reuse, równoległe karty, CSRF i natychmiastowe odebranie roli.
 Nowy ADR, jeśli zewnętrzny IdP/OIDC lub wiele originów stają się wymaganiem.
+
+## Wczesny panel istniejących modułów — 2026-10-01
+
+Na prośbę o obsługę aplikacji z folderu wdrażamy częściowy zakres PHASE 13:
+logowanie, overview, Event Explorer, dowody, alerty, wbudowane reguły, źródła
+i stan przetwarzania. Nie tworzymy fikcyjnych incydentów, IOC, risk ani SOAR.
+Ręcznie typowany klient odpowiada tym istniejącym kontraktom; generowanie pełnego
+klienta OpenAPI i pozostałe widoki pozostają w pełnej fazie 13.
+
+Static build nginx oraz `/api` mają wspólny origin. Memory-only JWT
+i BroadcastChannel są koordynowane przez Web Locks przy refresh. Brak Web Locks
+kończy access-session i wymaga ponownego logowania; nie ryzykuje rotacji
+równoległych kart. Logout podczas awarii pozostaje do ponowienia.
+CSP nie wymaga zewnętrznych fontów, skryptów ani inline JS.
