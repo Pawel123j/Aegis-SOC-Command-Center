@@ -6,6 +6,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from app.modules.mitre.schemas import MappingView
 from app.modules.normalization.schemas import NormalizedSecurityEvent
 from app.modules.risk.schemas import RiskCalculationView, RiskLevel
 
@@ -57,6 +58,7 @@ class EventEvidence(BaseModel):
 
 
 class AlertDetail(AlertSummary):
+    mitre_mapping: MappingView | None = None
     risk_explanation: RiskCalculationView | None = None
     acknowledged_at: datetime | None
     acknowledged_by: UUID | None

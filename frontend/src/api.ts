@@ -37,6 +37,11 @@ const messages: Record<string, string> = {
   rules_unavailable: 'Katalog reguł jest chwilowo niedostępny. Odśwież go przed kolejną zmianą.',
   rule_not_found: 'Nie znaleziono reguły. Odśwież katalog detekcji.',
   rule_unchanged: 'Reguła ma już ten stan. Odśwież katalog detekcji.',
+  mitre_evidence_integrity_mismatch:
+    'Nie można potwierdzić zgodności mapowania ATT&CK z zachowanym dowodem. Odśwież szczegóły.',
+  mitre_snapshot_integrity_mismatch:
+    'Zachowane mapowanie ATT&CK nie przeszło kontroli zgodności. Odśwież szczegóły.',
+  mitre_case_limit: 'Incydent przekracza limit 100 alertów dla mapowania ATT&CK.',
 };
 
 export class ApiError extends Error {

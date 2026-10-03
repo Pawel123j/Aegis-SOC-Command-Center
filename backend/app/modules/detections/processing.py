@@ -17,6 +17,7 @@ from app.modules.detections.builtin import BUILTIN_RULES, EVALUATOR_VERSION, Mat
 from app.modules.detections.models import DetectionJob, RuleDeployment
 from app.modules.incidents.service import automatic_incident
 from app.modules.ingestion.schemas import canonical_json
+from app.modules.mitre.service import record_mapping
 from app.modules.normalization.models import NormalizedEvent
 from app.modules.normalization.schemas import NormalizedSecurityEvent
 from app.modules.risk.service import score_subject
@@ -175,6 +176,7 @@ def _process_one(database: Database) -> dict[str, int] | None:
                 alert = session.get(Alert, alert_id)
                 assert alert is not None
                 score_subject(session, alert, request_id=str(uuid4()), trigger="alert_created")
+                record_mapping(session, alert)
                 automatic_incident(session, alert, request_id=str(uuid4()))
                 created += 1
         job.state = "processed"

@@ -8,6 +8,7 @@ import { evidenceEvents } from './evidence/events';
 import { EventReason } from './evidence/EventReason';
 import { RiskScore } from './risk/RiskScore';
 import { RiskPanel } from './risk/RiskPanel';
+import { MitreMapping } from './mitre/MitreMapping';
 
 export function Alerts({
   user,
@@ -285,6 +286,7 @@ function AlertDialog({
             />
             <h3>Dlaczego powstał alert</h3>
             <EventReason reason={resource.data.reason} />
+            <MitreMapping mapping={resource.data.mitre_mapping} />
             <details>
               <summary>Sprawdzone pola i pełne uzasadnienie</summary>
               <JsonView value={resource.data.reason} />

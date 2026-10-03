@@ -153,6 +153,17 @@ Projekcja bieżącego wyniku nie edytuje oryginalnego dowodu ani historii
 i nie zmienia wersji decyzji analityka. Runtime odczytuje i dopisuje
 obliczenia, a bieżący wynik aktualizuje ograniczona funkcja PostgreSQL.
 Wagi i deduplikację opisuje [Risk Engine](risk-engine.md).
+Etap 4 dodaje `alert_mitre_snapshots` (PK/FK alert_id, status, wersje/hash
+katalogu i polityki, input/snapshot SHA-256, bounded JSON document) oraz
+`alert_mitre_mappings` (PK alert_id/technique_id/tactic_id, FK do snapshotu).
+Trigger INSERT sprawdza zgodność skojarzenia z dokumentem. Runtime ma
+SELECT/INSERT; downgrade odmawia zniszczenia istniejącej historii.
+Indeksy mode/event_timestamp i mode/dataset/run/event_timestamp służą coverage.
+Oryginalne snapshoty reguł pozostają bez zmian, a legacy nie jest backfillowane.
+Nazwy w szczegółach sprawy pochodzą z aktywnych alertów bez false positives,
+z deduplikacją catalogue_hash/technique_id. Stare pole mitre_techniques
+pozostaje kompatybilną adnotacją; nowy panel używa jawnej projekcji.
+[Dokładne zasady](mitre.md).
 Poniższa tabela obejmuje również dalsze, jeszcze niewdrożone encje.
 
 | Agregat | Planowane encje / constraints |

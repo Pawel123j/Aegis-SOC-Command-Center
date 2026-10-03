@@ -1,6 +1,7 @@
 import type { Alert, EventSnapshot, Json, SecurityEvent } from '../types';
 import type { RiskLevel } from '../risk/levels';
 import type { RiskCalculation } from '../risk/types';
+import type { IncidentMitreMapping } from '../mitre/types';
 import type { incidentSeverities, incidentStatuses } from './labels';
 
 export type IncidentStatus = keyof typeof incidentStatuses;
@@ -61,6 +62,7 @@ export interface IncidentEvidence {
   reason: Json;
 }
 export interface IncidentDetail extends Incident {
+  mitre_mapping?: IncidentMitreMapping;
   risk_explanation: RiskCalculation | null;
   dataset_ids: string[];
   related_alerts: Alert[];

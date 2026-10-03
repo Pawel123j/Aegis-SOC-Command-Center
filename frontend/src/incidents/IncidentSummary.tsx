@@ -2,6 +2,7 @@ import { Badge, Metric, Panel } from '../components';
 import { time } from '../utilities';
 import { incidentSeverities, incidentStatuses } from './labels';
 import type { IncidentDetail } from './types';
+import { IncidentMitre } from '../mitre/MitreMapping';
 
 export function IncidentSummary({ incident }: { incident: IncidentDetail }) {
   return (
@@ -49,7 +50,7 @@ export function IncidentSummary({ incident }: { incident: IncidentDetail }) {
         <Entities title="Powiązani użytkownicy" values={incident.related_users} />
         <Entities title="Powiązane hosty" values={incident.related_hosts} />
         <Entities title="Powiązane adresy IP" values={incident.related_ip_addresses} />
-        <Entities title="Techniki MITRE ATT&CK" values={incident.mitre_techniques} />
+        <IncidentMitre mapping={incident.mitre_mapping} />
         <details>
           <summary>Identyfikatory i zakres danych</summary>
           <dl className="facts">

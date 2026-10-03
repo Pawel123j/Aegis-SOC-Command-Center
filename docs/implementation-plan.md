@@ -11,7 +11,10 @@ Etap 1 dostarczył [incydenty](validation-incidents.md); Etap 2 dostarcza
 Nie obejmuje przyszłego merge/grafu/reconstruct z historycznej PHASE 6.
 Etap 3 wprowadza [wyjaśnioną ocenę ryzyka](risk-engine.md), historyczne
 obliczenia i jawny brak przyszłego kontekstu; wykonane kontrole opisuje
-[raport Etapu 3](validation-risk.md).
+[raport Etapu 3](validation-risk.md). Etap 4 nowego planu dodaje
+[katalog i coverage MITRE](mitre.md), [raport](validation-mitre.md).
+Nie zamyka pełnej historycznej PHASE 8: graf/storyline i filtry Event Search
+pozostają osobnymi przyrostami.
 
 Plan odpowiada fazom 0–20 wskazanym w wymaganiach. Faza 0 dostarczyła analizę stanu, decyzje architektoniczne, szkielet repozytorium i dokumentację. Faza 1 dostarczyła zweryfikowany fundament backendu z integracją rzeczywistych usług (2026-09-28). SIEM, frontend i generator wymagają dalszych faz.
 

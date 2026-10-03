@@ -16,6 +16,7 @@ from app.modules.incidents.schemas import (
     TimelineView,
 )
 from app.modules.incidents.service import linked_alerts
+from app.modules.mitre.service import incident_mapping
 from app.modules.risk.service import current
 from app.modules.users.models import User
 
@@ -30,6 +31,7 @@ def summary(db: Session, incident: Incident) -> IncidentSummary:
 def detail(db: Session, incident: Incident) -> IncidentDetail:
     return IncidentDetail(
         **summary(db, incident).model_dump(),
+        mitre_mapping=incident_mapping(db, incident.id),
         risk_explanation=current(db, incident),
         related_alerts=[
             AlertSummary.model_validate(alert) for alert in linked_alerts(db, incident)

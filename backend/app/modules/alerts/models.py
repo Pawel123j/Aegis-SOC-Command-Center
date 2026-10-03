@@ -41,6 +41,10 @@ class Alert(Base):
             name="array_event_snapshots",
         ),
         Index("ix_alerts_created_at_id", "created_at", "id"),
+        Index("ix_alerts_mitre_live_time", "mode", "event_timestamp", "id"),
+        Index(
+            "ix_alerts_mitre_replay_time", "mode", "dataset_id", "run_id", "event_timestamp", "id"
+        ),
     )
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)

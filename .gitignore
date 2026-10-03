@@ -28,6 +28,8 @@ test-results/
 # Local runtime data and exports
 .local/
 data/
+!backend/app/modules/mitre/data/
+!backend/app/modules/mitre/data/**
 backups/
 exports/
 *.log

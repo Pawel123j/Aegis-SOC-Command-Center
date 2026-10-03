@@ -88,6 +88,6 @@ def test_downgrade_refuses_to_destroy_existing_risk_history(case: Case, admin: L
     with pytest.raises(DBAPIError):
         migrate(case.database.owner, "0006_correlation", downgrade=True)
     with case.database.runtime.connect() as db:
-        assert db.scalar(text("SELECT version_num FROM alembic_version")) == "0007_risk"
+        assert db.scalar(text("SELECT version_num FROM alembic_version")) == "0008_mitre"
         assert db.scalar(text("SELECT count(*) FROM risk_calculations")) == 2
     assert alerts(case)[0].risk_calculation_id == record.risk_calculation_id

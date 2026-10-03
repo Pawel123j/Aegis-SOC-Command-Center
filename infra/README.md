@@ -8,6 +8,10 @@ nowej bazy ani otwartego portu. `compose.offline.yaml` umożliwia build
 z lokalnych, zweryfikowanych zależności.
 Risk Engine Etapu 3 działa w procesach API/detector/correlator, korzysta
 z migracji PostgreSQL i nie dodaje portu ani nowego kontenera.
+MITRE Etapu 4 używa tych samych procesów i lokalnego katalogu w obrazie.
+Migracja `0008_mitre` dodaje append-only snapshoty i indeksy agregacji;
+role runtime zachowują wyłącznie SELECT/INSERT do historii mapowań.
+[Walidacja Etapu 4](../docs/validation-mitre.md).
 PostgreSQL migruje oddzielny Alembic w backend/migrations, role runtime nie mają DDL.
 [Granice infrastruktury](../docs/architecture.md).
 [Uruchomienie](../docs/local-start.md), [walidacja korelacji](../docs/validation-correlation.md).

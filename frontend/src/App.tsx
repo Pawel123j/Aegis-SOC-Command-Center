@@ -11,14 +11,18 @@ import { Alerts } from './Alerts';
 import { Detections } from './detections/Detections';
 import { Incidents } from './incidents/Incidents';
 import { RiskScore } from './risk/RiskScore';
+import { MitreCoverage } from './mitre/MitreCoverage';
+import { canReadMitreCoverage } from './mitre/permissions';
 
-type View = 'overview' | 'alerts' | 'events' | 'incidents' | 'detections' | 'sources' | 'system';
+type View =
+  'overview' | 'alerts' | 'events' | 'incidents' | 'detections' | 'mitre' | 'sources' | 'system';
 const links: { id: View; name: string; icon: string; permission?: string }[] = [
   { id: 'overview', name: 'Przegląd', icon: '◈' },
   { id: 'alerts', name: 'Alerty', icon: '◉', permission: 'alerts:read' },
   { id: 'incidents', name: 'Incydenty', icon: '◇', permission: 'incidents:read' },
   { id: 'events', name: 'Zdarzenia', icon: '⌕', permission: 'events:read' },
   { id: 'detections', name: 'Reguły detekcji', icon: '⌘', permission: 'detections:read' },
+  { id: 'mitre', name: 'MITRE ATT&CK', icon: '▦' },
   { id: 'sources', name: 'Źródła logów', icon: '⇄', permission: 'sources:manage' },
   { id: 'system', name: 'Stan systemu', icon: '▥', permission: 'system:read' },
 ];
@@ -155,7 +159,11 @@ export function App() {
         <p className="nav-label">CENTRUM OPERACYJNE</p>
         <nav aria-label="Menu główne">
           {links
-            .filter((item) => !item.permission || allowed(item.permission))
+            .filter((item) =>
+              item.id === 'mitre'
+                ? canReadMitreCoverage(user)
+                : !item.permission || allowed(item.permission),
+            )
             .map((item) => (
               <button
                 key={item.id}
@@ -230,6 +238,7 @@ export function App() {
           {view === 'detections' && allowed('detections:read') && (
             <Detections user={user} onEvent={setSelected} />
           )}
+          {view === 'mitre' && canReadMitreCoverage(user) && <MitreCoverage user={user} />}
           {view === 'sources' && allowed('sources:manage') && (
             <Sources
               onEventId={(id) => {

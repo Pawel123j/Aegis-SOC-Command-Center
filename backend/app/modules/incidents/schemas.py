@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from app.core.permissions import Role
 from app.modules.alerts.schemas import AlertSummary, EventEvidence
+from app.modules.mitre.schemas import IncidentMapping
 from app.modules.normalization.schemas import NormalizedSecurityEvent
 from app.modules.risk.schemas import RiskCalculationView, RiskLevel
 
@@ -173,6 +174,7 @@ class NoteView(BaseModel):
 
 
 class IncidentDetail(IncidentSummary):
+    mitre_mapping: IncidentMapping | None = None
     risk_explanation: RiskCalculationView | None = None
     related_alerts: list[AlertSummary]
     related_users: list[str]

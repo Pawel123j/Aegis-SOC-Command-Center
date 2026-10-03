@@ -18,6 +18,7 @@ from app.modules.correlation import models as correlation_models  # noqa: F401
 from app.modules.detections import models as detection_models  # noqa: F401
 from app.modules.incidents import models as incident_models  # noqa: F401
 from app.modules.ingestion import models as ingestion_models  # noqa: F401
+from app.modules.mitre import models as mitre_models  # noqa: F401
 from app.modules.normalization import models as normalization_models  # noqa: F401
 from app.modules.risk import models as risk_models  # noqa: F401
 from app.modules.users.models import User  # noqa: F401

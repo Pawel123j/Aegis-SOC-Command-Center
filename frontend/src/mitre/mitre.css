@@ -1,0 +1,61 @@
+.mitre-filters {
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.mitre-filters label {
+  min-width: 200px;
+  flex: 1;
+}
+.mitre-filter-actions {
+  justify-content: space-between;
+}
+.mitre-filter-actions .check-label,
+.mitre-catalogue-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.mitre-filter-actions input[type='checkbox'],
+.mitre-catalogue-toggle input[type='checkbox'] {
+  width: 17px;
+  height: 17px;
+  min-height: 0;
+  padding: 0;
+  margin: 0;
+  accent-color: var(--accent);
+}
+.mitre-catalogue-toggle {
+  margin: 14px 0;
+}
+.mitre-mapping {
+  margin: 22px 0;
+}
+.mitre-mapping-list {
+  padding-left: 20px;
+}
+.mitre-mapping-list li {
+  margin: 12px 0;
+  overflow-wrap: anywhere;
+}
+.mitre-tactic-labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+.mitre-scope {
+  overflow-wrap: anywhere;
+  margin: 18px 0;
+}
+.mitre-source-links {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+.mitre-source-links a {
+  color: var(--accent);
+  text-underline-offset: 3px;
+}
+.mitre-mapping .facts dd {
+  overflow-wrap: anywhere;
+}

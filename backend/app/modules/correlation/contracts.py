@@ -6,6 +6,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from app.modules.mitre.schemas import MappingView
 from app.modules.normalization.schemas import NormalizedSecurityEvent
 
 EVALUATOR_VERSION = "correlation-v1"
@@ -74,6 +75,7 @@ class CorrelationRule(BaseModel):
 
 
 class RuleView(BaseModel):
+    mitre_mapping: MappingView
     id: str
     rule_version: str
     title: str

@@ -6,12 +6,13 @@ Panel działa za lokalnym proxy pod tym samym origin co API.
 Widoki: logowanie, przegląd, zdarzenia i dowody, alerty z decyzjami analityka,
 incydenty z notatkami i osią czasu, trzy reguły pojedynczych zdarzeń i pięć reguł
 korelacji, źródła z własnymi
-kluczami, status przetwarzania i retry oraz ocena ryzyka alertów i incydentów.
+kluczami, status przetwarzania i retry, ocena ryzyka alertów i incydentów
+oraz MITRE ATT&CK Coverage.
 Dane i zachowane obliczenia pochodzą z API.
 
 Incydenty można tworzyć ręcznie lub z alertu, łączyć z kolejnymi alertami,
 przypisywać analitykom i prowadzić przez kolejne statusy. Widok szczegółów
-pokazuje encje i techniki MITRE z rzeczywistych alertów, zachowane dowody,
+pokazuje encje i nazwane powiązania MITRE z rzeczywistych alertów, zachowane dowody,
 notatki oraz stronicowaną historię. Odpięcie alertu zachowuje jego oryginalny
 dowód. Lista alertów i incydentów oraz przegląd pokazują wynik ryzyka 0–100.
 Wynik zero różni się od braku obliczenia. Pewność pozostaje jawnie nieznana,
@@ -58,6 +59,40 @@ Pokrycie przetwarzania pokazuje liczniki kolejki, rekordy spóźnione,
 nieprawidłowy czas, kwarantannę i niekompletne dopasowania z rzeczywistego
 API. Można sprawdzić domknięty zakres live oraz stan i SHA-256 zestawu replay.
 Niepełna lista zakresów jest jawnie oznaczona.
+
+„MITRE ATT&CK” wymaga łącznie uprawnień do odczytu detekcji, alertów
+i incydentów. Widok pokazuje nazwy i identyfikatory taktyk, technik
+i podtechnik katalogu Enterprise ATT&CK 19.2, liczbę różnych alertów
+i incydentów oraz osobno możliwości bieżących i włączonych reguł.
+Powiązania z katalogiem wskazują możliwe zachowania; nie potwierdzają
+udanego ataku ani zamiaru. Nie zmieniają składnika T oceny ryzyka,
+który nadal wymaga potwierdzonego kontekstu.
+
+Domyślny zakres obejmuje ostatnie 30 dni live, maksymalny 366 dni.
+Filtry używają czasu zdarzenia alertu: od początku włącznie do końca
+wyłącznie. Replay wymaga dokładnego Dataset ID i niezerowego Run ID,
+aby nie sumować różnych sesji. Fałszywe alarmy są domyślnie pomijane
+i można je jawnie uwzględnić. Rozwiązane alerty oraz zamknięte incydenty
+pozostają uwzględnione; odpięte powiązania nie zwiększają liczników.
+Każdy rekord liczy się raz w danym wierszu, lecz może wystąpić przy
+kilku technikach. Łączne liczniki pochodzą z API i nie są sumą wierszy.
+
+Panel jawnie pokazuje alerty bez mapowania, starsze alerty bez zachowanego
+mapowania i powiązania z innym katalogiem. Pusty wynik nie potwierdza
+bezpieczeństwa. Domyślnie lista technik obejmuje konfigurację reguł
+lub obserwacje; pełny katalog jest dostępny po zaznaczeniu dodatkowej
+opcji, z wyszukiwaniem, filtrem taktyki i stronami po 25, 50 lub 100 wierszy.
+Katalog ma widoczną wersję, źródło, uznanie autorstwa MITRE, warunki użycia
+i sumy kontrolne.
+
+Reguły pokazują bieżące mapowanie, a szczegóły alertu zachowane mapowanie
+z chwili detekcji. Oryginalny snapshot reguły pozostaje osobnym dowodem.
+Incydenty agregują zachowane nazwy z aktywnie dołączonych alertów,
+z pominięciem fałszywych alarmów, i pokazują wersje katalogów.
+Źródło logu nie może nadać etykiety ATT&CK przez dodatkowe pola.
+Zmiana zakresu, konta lub sesji usuwa wynik pokrycia; spóźnione odpowiedzi
+nie nadpisują nowego zakresu. Metadane wyświetlane są jako tekst,
+a odnośniki źródłowe są ograniczone do oficjalnych stron MITRE.
 
 Test korelacji przyjmuje od 1 do 100 pełnych znormalizowanych rekordów JSON,
 maksymalnie 64 KiB. Wyświetla liczbę dopasowań, wersję silnika, uzasadnienie

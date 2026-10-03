@@ -7,6 +7,7 @@ import { CorrelationPattern } from './CorrelationPattern';
 import { CorrelationTest } from './CorrelationTest';
 import { CorrelationStatus } from './CorrelationStatus';
 import type { CorrelationRule } from './types';
+import { MitreMapping } from '../mitre/MitreMapping';
 
 export function Correlations({
   user,
@@ -153,9 +154,7 @@ function CorrelationDetails({
       {resource.data && (
         <>
           <CorrelationPattern pattern={resource.data.pattern} />
-          {resource.data.mitre?.length ? (
-            <p className="muted">Techniki MITRE: {resource.data.mitre.join(', ')}</p>
-          ) : null}
+          <MitreMapping mapping={resource.data.mitre_mapping} />
           {resource.data.false_positive_guidance?.length ? (
             <>
               <h3>Co sprawdzić podczas analizy</h3>

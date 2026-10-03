@@ -86,3 +86,12 @@ Jest to ograniczona bramka PHASE 0, nie pełny Markdown linter, test Mermaid,
 skaner sekretów ani test aplikacji. Testy i bramki backendu opisuje
 [instrukcja PHASE 1](../docs/phase1-operations.md), a zakres ingestion
 [instrukcja PHASE 2](../docs/phase2-operations.md).
+
+## Lokalny katalog ATT&CK
+
+`prepare_mitre_catalog.py` odtwarza publiczny, przypięty wyciąg tactics/techniques
+z wcześniej pobranego oficjalnego bundle STIX i licencji. Używa stdlib, nie pobiera
+danych. `--check` porównuje wszystkie bajty z zatwierdzonym artefaktem; zły hash
+źródła albo licencji odrzuca bez zapisu. Aktualizacja wydania wymaga świadomej
+zmiany pinów i loadera. Komenda i pochodzenie:
+[README katalogu](../backend/app/modules/mitre/data/README.md).

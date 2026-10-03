@@ -24,6 +24,7 @@ from app.modules.correlation.engine import evaluate_anchor
 from app.modules.correlation.models import CorrelationJob, CorrelationScope
 from app.modules.correlation.replay import finalize_replay, seal_view
 from app.modules.detections.models import RuleDeployment
+from app.modules.mitre.mapping import rule_mapping
 
 router = APIRouter(prefix="/api/v1/correlations", tags=["correlations"])
 Reader = Annotated[Principal, Depends(require(Permission.DETECTIONS_READ))]
@@ -37,6 +38,7 @@ def view(rule: CorrelationRule, deployment: RuleDeployment) -> RuleView:
     return RuleView.model_validate(
         {
             **rule.snapshot(),
+            "mitre_mapping": rule_mapping(rule.id),
             "rule_version": rule.version,
             "version": deployment.version,
             "enabled": deployment.enabled,

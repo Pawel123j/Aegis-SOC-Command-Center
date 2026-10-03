@@ -4,7 +4,7 @@ FastAPI/Pydantic/SQLAlchemy tworzą modularny monolit z oddzielnym procesem Cele
 Runtime to **Python 3.12.14**, zgodny z obrazem Docker i konfiguracją CI. Zależności
 runtime i developerskie mają osobne lockfile z hashami.
 
-**Stan: PHASE 0–3, incydenty, korelacja i ocena ryzyka — 2026-10-03.**
+**Stan: PHASE 0–3, incydenty, korelacja, ryzyko i MITRE ATT&CK — 2026-10-03.**
 Migracja `0004_initial_alerts`, osobny `app.detector`, API alerts/detections
 i atomowy checkpoint zapewniają trzy reguły pojedynczego zdarzenia.
 [Zakres i ograniczenia](../docs/initial-soc.md).
@@ -23,6 +23,11 @@ PostgreSQL oraz ograniczoną projekcję bieżącego wyniku. Alert i incydent
 zachowują odrębne oceny; komplet powodów, braków i historii udostępnia API.
 [Polityka](../docs/risk-engine.md), [decyzja](../docs/adr/0009-explainable-risk.md),
 [walidacja](../docs/validation-risk.md).
+Etap 4 dodaje `app.modules.mitre`, lokalny przypięty katalog oraz migrację
+`0008_mitre`. Oddzielne append-only snapshoty nowych alertów zachowują wersję,
+hash i nazwy; coverage liczy distinct alerty i aktywnie powiązane sprawy.
+Nie zmienia oryginalnych reguł ani polityki ryzyka.
+[Kontrakt](../docs/mitre.md), [wyniki](../docs/validation-mitre.md).
 Fundament PHASE 1 obejmuje konfigurację i bezpieczne błędy, `/api/v1/auth`,
 `/api/v1/users`, `/api/v1/audit`, chronione `/api/v1/system/health`, sondy `/health`
 i `/ready`, wewnętrzne `/metrics` oraz OpenAPI pod `/api/v1/openapi.json`.

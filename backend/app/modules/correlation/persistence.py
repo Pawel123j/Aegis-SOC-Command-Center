@@ -14,6 +14,7 @@ from app.modules.correlation.contracts import EVALUATOR_VERSION, CorrelationRule
 from app.modules.correlation.engine import detection_key
 from app.modules.detections.models import RuleDeployment
 from app.modules.incidents.service import automatic_incident
+from app.modules.mitre.service import record_mapping
 from app.modules.normalization.models import NormalizedEvent
 from app.modules.normalization.schemas import NormalizedSecurityEvent
 from app.modules.risk.service import score_subject
@@ -95,5 +96,6 @@ def persist_match(
     alert = db.get(Alert, alert_id)
     assert alert is not None
     score_subject(db, alert, request_id=request_id, trigger="alert_created")
+    record_mapping(db, alert)
     automatic_incident(db, alert, request_id=request_id)
     return True

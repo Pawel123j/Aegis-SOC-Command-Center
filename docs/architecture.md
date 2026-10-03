@@ -1,7 +1,8 @@
 # Architektura docelowa
 
 Status 2026-10-03: fundament PHASE 1–3, pojedyncze detekcje, panel,
-incydenty i korelacja Etapu 2 są zaimplementowane; Etap 3 ryzyka jest w walidacji.
+incydenty i korelacja Etapu 2 są zaimplementowane; Etapy 3 ryzyka i 4 MITRE dodają osobne historyczne snapshoty i projekcje;
+wykonane kontrole opisują ich raporty walidacji.
 PostgreSQL przechowuje
 niezmienne normalized snapshots; processor projektuje je do ClickHouse,
 a detector i correlator niezależnie oceniają fakty z PostgreSQL.
@@ -16,7 +17,13 @@ dowodów sprawy, bez osobnej usługi. Niezmienne obliczenia, bieżąca projekcja
 i audyt mają jedną transakcję; odczyt nie przelicza stanu.
 [ADR 0009](adr/0009-explainable-risk.md) określa deduplikację i brak kontekstu.
 Szczegóły rozstrzygnięć:
-[ADR](adr/README.md). Poziom produkcyjny oznacza świadome kontrakty, odporność i testy,
+[ADR](adr/README.md). [ADR 0010](adr/0010-versioned-attack-mappings.md)
+określa lokalny katalog ATT&CK i niezmienne mapowania nowych alertów.
+Coverage odczytuje indeksowane skojarzenia jednym zapytaniem PostgreSQL,
+ze wspólnym snapshotem liczników i deployments, limitem czasu 3 s.
+Nowy mapping zapisuje się w transakcji alert/risk/incident/audit;
+ClickHouse ani dodatkowa usługa nie uczestniczą w tych agregacjach.
+Poziom produkcyjny oznacza świadome kontrakty, odporność i testy,
 nie deklarację wysokiej dostępności klastra uruchamianego na jednym laptopie.
 
 ## Zakres i budżet złożoności

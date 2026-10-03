@@ -21,6 +21,8 @@ from app.modules.detections.builtin import (
     evaluate_rule,
 )
 from app.modules.detections.models import RuleDeployment
+from app.modules.mitre.mapping import rule_mapping
+from app.modules.mitre.schemas import MappingView
 from app.modules.normalization.schemas import NormalizedSecurityEvent
 
 router = APIRouter(prefix="/api/v1/detections", tags=["detections"])
@@ -30,6 +32,7 @@ Tester = Annotated[Principal, Depends(require(Permission.DETECTIONS_TEST))]
 
 
 class RuleView(BaseModel):
+    mitre_mapping: MappingView
     id: str
     rule_version: str
     title: str
@@ -68,6 +71,7 @@ def view(rule: BuiltinRule, deployment: RuleDeployment) -> RuleView:
     if deployment.rule_version != rule.version:
         raise ApiError(503, "rules_unavailable", "Rule deployment version is unavailable")
     values = rule.snapshot()
+    values["mitre_mapping"] = rule_mapping(rule.id)
     values.update(
         {
             "rule_version": rule.version,

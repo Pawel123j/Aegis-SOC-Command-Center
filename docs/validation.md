@@ -1,6 +1,7 @@
 # Raport walidacji PHASE 2 — dowód historyczny
 
-Bieżący etap: [Risk Engine](validation-risk.md); wcześniejsze
+Bieżący etap: [MITRE ATT&CK](validation-mitre.md); wcześniejsze
+[Risk Engine](validation-risk.md),
 [Correlation Engine](validation-correlation.md) oraz
 [Incident Management](validation-incidents.md); poprzedni przyrost
 [pierwszych alertów i panelu](validation-initial-soc.md); zamknięta

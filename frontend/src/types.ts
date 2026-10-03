@@ -1,5 +1,6 @@
 import type { RiskLevel } from './risk/levels';
 import type { RiskCalculation } from './risk/types';
+import type { MitreMapping } from './mitre/types';
 
 export type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
 export interface Me {
@@ -139,6 +140,7 @@ export interface Alert {
   detection_type?: 'single_event' | 'correlation';
 }
 export interface AlertDetail extends Alert {
+  mitre_mapping?: MitreMapping;
   risk_explanation: RiskCalculation | null;
   rule_snapshot: Json;
   event_snapshot: SecurityEvent;
@@ -154,6 +156,7 @@ export interface EventSnapshot {
   event_snapshot: SecurityEvent;
 }
 export interface Rule {
+  mitre_mapping?: MitreMapping;
   id: string;
   title: string;
   description: string;

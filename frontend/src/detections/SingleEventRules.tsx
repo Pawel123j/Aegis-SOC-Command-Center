@@ -3,6 +3,7 @@ import { api } from '../api';
 import { Badge, Empty, ErrorNotice, JsonView, Loading, Panel } from '../components';
 import type { Json, Me, Page, Rule } from '../types';
 import { useResource } from '../utilities';
+import { MitreMapping } from '../mitre/MitreMapping';
 
 export function SingleEventRules({ user }: { user: Me }) {
   const loader = useCallback(() => api.get<Page<Rule>>('/detections'), []);
@@ -77,6 +78,7 @@ export function SingleEventRules({ user }: { user: Me }) {
             </div>
             <h2>{rule.title}</h2>
             <p>{rule.description}</p>
+            <MitreMapping mapping={rule.mitre_mapping} />
             <small className="mono">
               {rule.id} · {rule.rule_version}
             </small>

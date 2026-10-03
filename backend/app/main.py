@@ -23,6 +23,7 @@ from app.api import (
     events,
     health,
     incidents,
+    mitre,
     pipeline,
     risk,
     sources,
@@ -36,6 +37,7 @@ from app.core.observability import ObservabilityMiddleware, configure_logging
 from app.core.permissions import Permission
 from app.infrastructure.database import Database
 from app.modules.audit.service import append_audit
+from app.modules.mitre.catalogue import catalogue
 
 _APP_BUILD_LOCK = Lock()
 
@@ -56,6 +58,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
 
 def _create_app(settings: Settings | None = None) -> FastAPI:
+    catalogue()  # Validate local pinned data before this process can become ready.
+
     @asynccontextmanager
     async def lifespan(application: FastAPI) -> AsyncIterator[None]:
         configuration = settings or get_settings()
@@ -100,6 +104,7 @@ def _create_app(settings: Settings | None = None) -> FastAPI:
         correlations.router,
         incidents.router,
         risk.router,
+        mitre.router,
     ):
         application.include_router(router)
 

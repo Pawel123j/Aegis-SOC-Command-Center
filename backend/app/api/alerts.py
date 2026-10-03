@@ -27,6 +27,7 @@ from app.modules.alerts.schemas import (
 )
 from app.modules.audit.service import append_audit
 from app.modules.ingestion.schemas import canonical_json
+from app.modules.mitre.service import alert_mapping
 from app.modules.risk.service import current, score_linked_incidents
 
 router = APIRouter(prefix="/api/v1/alerts", tags=["alerts"])
@@ -161,6 +162,7 @@ def alert_detail(alert_id: UUID, response: Response, db: DB, principal: Reader) 
     response.headers["Cache-Control"] = "no-store"
     response.headers["ETag"] = f'"{row.version}"'
     result = AlertDetail.model_validate(row)
+    result.mitre_mapping = alert_mapping(db, row)
     result.risk_explanation = current(db, row)
     return result
 
@@ -216,5 +218,6 @@ def update_alert(
     response.headers["Cache-Control"] = "no-store"
     response.headers["ETag"] = f'"{row.version}"'
     result = AlertDetail.model_validate(row)
+    result.mitre_mapping = alert_mapping(db, row)
     result.risk_explanation = current(db, row)
     return result

@@ -1,11 +1,11 @@
 # API v1 — zakres wdrożony i projekt dalszych faz
 
-Status: kod PHASE 1–3 i przyrostów SOC, stan 2026-10-03; Risk Engine w walidacji;
-wyniki wykonanych kontroli w [raporcie korelacji](validation-correlation.md)
+Status: kod PHASE 1–3 i przyrostów SOC, stan 2026-10-03;
+wyniki wykonanych kontroli w [raporcie MITRE](validation-mitre.md)
 i wcześniejszych raportach walidacji.
 Kod obejmuje `/auth`, `/users`, `/audit`, `/system/health`, źródła, przyjęcie
 eventów, status batcha, retry, normalized event search, alerts/detections,
-incidents, correlations, risk oraz techniczne sondy/metryki.
+incidents, correlations, risk, mitre oraz techniczne sondy/metryki.
 OpenAPI dla zaimplementowanych tras powstaje z modeli pod `/api/v1/openapi.json`.
 Zasoby oznaczone jako przyszłe poniżej nie są dostępne w tej implementacji.
 Weryfikację działania z rzeczywistymi usługami dokumentuje [raport walidacji](validation.md).
@@ -170,3 +170,34 @@ Poza wersjonowanym API: `/health` (liveness), `/ready` (readiness), `/metrics`
 (Prometheus). Nie mylić z `/api/v1/metrics` dla JSON SOC. `/ready` zwraca `503`,
 gdy bazowe zależności są niedostępne; szczegóły tylko w chronionym widoku System Health.
 `/metrics` dostępne wyłącznie w wewnętrznej sieci lub z uprawnionym scraperem.
+
+## MITRE ATT&CK — Etap 4
+
+GET `/api/v1/mitre/catalog` wymaga `detections:read` i zwraca aktywne metadane
+lokalnego Enterprise ATT&CK: 15 tactics, 697 techniques/subtechniques.
+`catalogue` zawiera version/sha256, source URL/hash/commit, attribution i license URL.
+
+GET `/api/v1/mitre/coverage` wymaga jednocześnie `detections:read`, `alerts:read`
+i `incidents:read`. Parametry: mode=live|replay, from/to (UTC z timezone),
+dataset_id/run_id i include_false_positives=false. Live obejmuje wszystkie źródła
+i odrzuca dataset/nonzero run; replay wymaga exact dataset/nonzero run.
+Zakres domyślnie 30 dni, maksymalnie 366, dodatni i bez przyszłego to.
+`scope` dokumentuje alert.event_timestamp i przedział [from,to).
+
+`tactics`/`techniques` mają configured_rule_count/enabled_rule_count oraz
+distinct alert_count/incident_count. `summary` osobno opisuje eligible/mapped/
+unmapped/legacy/other_catalogue/excluded_false_positive alerts, distinct incidents
+i observed/configured/enabled technique/tactic counts. Sprawa musi mieć aktywny
+link do kwalifikującego się alertu w zakresie; closed/resolved nadal są dowodem.
+Wielu technik/taktyk nie sumuje się do liczby wszystkich alertów/spraw.
+Limit: 60 żądań/min/osoba, SQL statement_timeout=3 s; odczyt jednym aggregate SQL.
+Oba endpointy mają Cache-Control: no-store i nie wykonują backfillu.
+
+Istniejące katalogi reguł i szczegóły alertu zwracają osobne `mitre_mapping`:
+status mapped/unmapped/legacy_unmapped, catalogue_version/hash,
+mapping_version/hash, techniques z nazwami/URL i tactics oraz reason.
+`claim=candidate_association`, `confirmed_attack=false` określają znaczenie
+wszystkich skojarzeń. Szczegół incydentu ma deduplikowane historyczne techniki
+i mapped/unmapped/legacy/excluded-FP counters z aktualnych aktywnych links.
+Stare rule_snapshot i legacy mitre_techniques zachowują zgodność kontraktu.
+Mapping nie nadaje punktów T w Risk Engine. [Zasady i ograniczenia](mitre.md).

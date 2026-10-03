@@ -81,4 +81,7 @@ Zakres czasu i tożsamości określa [ADR 0008](adr/0008-temporal-correlation.md
 Jest to rozpoznawanie jawnych sekwencji, a nie cały historyczny graf/merge
 PHASE 6. Etap 3: [ocena ryzyka](validation-risk.md), deterministyczna punktacja,
 historia i jawny brak przyszłego kontekstu. [ADR 0009](adr/0009-explainable-risk.md)
-określa zasady. Kolejny przyrost: lokalny katalog MITRE ATT&CK.
+określa zasady. Etap 4: [lokalny katalog i coverage MITRE](validation-mitre.md),
+osobne historyczne mapowania oraz nazwy w panelu.
+[ADR 0010](adr/0010-versioned-attack-mappings.md) oddziela skojarzenie
+techniki od potwierdzenia ataku. Kolejny przyrost: Sigma.
