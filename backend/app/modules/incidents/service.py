@@ -20,6 +20,7 @@ from app.modules.incidents.schemas import IncidentCreate, IncidentPatch
 from app.modules.ingestion.models import LIVE_RUN_ID
 from app.modules.ingestion.schemas import canonical_json
 from app.modules.normalization.schemas import canonical_ip
+from app.modules.risk.service import score_subject
 from app.modules.users.models import User
 
 SEVERITY_ORDER = {"informational": 0, "low": 1, "medium": 2, "high": 3, "critical": 4}
@@ -225,6 +226,7 @@ def attach_alert(
     if aggregate:
         recompute_entities(db, incident)
         touch(incident, actor)
+        score_subject(db, incident, request_id=request_id, actor_id=actor.id if actor else None)
     else:
         db.flush()
 
@@ -267,6 +269,7 @@ def detach_alert(
     )
     recompute_entities(db, incident)
     touch(incident, actor)
+    score_subject(db, incident, request_id=request_id, actor_id=actor.id)
 
 
 def create_incident(
@@ -333,6 +336,13 @@ def create_incident(
     if alerts:
         recompute_entities(db, incident)
         touch(incident, actor)
+    score_subject(
+        db,
+        incident,
+        request_id=request_id,
+        actor_id=actor.id if actor else None,
+        trigger="incident_created",
+    )
     db.flush()
     return incident
 

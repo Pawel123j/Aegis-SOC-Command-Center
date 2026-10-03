@@ -1,0 +1,58 @@
+.risk-score {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.risk-score strong {
+  font-size: 15px;
+  white-space: nowrap;
+}
+.risk-score strong span {
+  font-size: 11px;
+  font-weight: 400;
+}
+.risk-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.risk-breakdown {
+  margin: 18px 0;
+}
+.risk-points {
+  font-weight: 700;
+  white-space: nowrap;
+}
+.risk-reason {
+  max-width: 44rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.risk-history {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0;
+  padding: 0;
+  list-style: none;
+}
+.risk-history li {
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+.risk-history details {
+  margin-top: 8px;
+}
+.risk-missing {
+  margin: 8px 0 16px;
+  padding-left: 20px;
+}
+.risk-missing li {
+  padding-bottom: 5px;
+  overflow-wrap: anywhere;
+}
+.risk-actions {
+  margin-top: 14px;
+}

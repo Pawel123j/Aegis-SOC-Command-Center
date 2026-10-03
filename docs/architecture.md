@@ -1,7 +1,8 @@
 # Architektura docelowa
 
-Status 2026-10-01: fundament PHASE 1–3, pojedyncze detekcje, panel,
-incydenty i korelacja Etapu 2 są zaimplementowane. PostgreSQL przechowuje
+Status 2026-10-03: fundament PHASE 1–3, pojedyncze detekcje, panel,
+incydenty i korelacja Etapu 2 są zaimplementowane; Etap 3 ryzyka jest w walidacji.
+PostgreSQL przechowuje
 niezmienne normalized snapshots; processor projektuje je do ClickHouse,
 a detector i correlator niezależnie oceniają fakty z PostgreSQL.
 Correlator publikuje alert z wieloma dowodami oraz automatyczną sprawę
@@ -9,7 +10,11 @@ High/Critical w jednej transakcji. Finalizację opisuje
 [ADR 0008](adr/0008-temporal-correlation.md), a wykonane kontrole
 [raport Etapu 2](validation-correlation.md).
 Poniższe diagramy i zakres dalszych modułów zachowują architekturę docelową
-PHASE 0; risk, IOC, SOAR, graf/merge i generator pozostają projektem.
+PHASE 0; IOC, SOAR, graf/merge i generator pozostają projektem.
+Ocena ryzyka jest czystym modułem wywoływanym przy zapisie alertów i zmianach
+dowodów sprawy, bez osobnej usługi. Niezmienne obliczenia, bieżąca projekcja
+i audyt mają jedną transakcję; odczyt nie przelicza stanu.
+[ADR 0009](adr/0009-explainable-risk.md) określa deduplikację i brak kontekstu.
 Szczegóły rozstrzygnięć:
 [ADR](adr/README.md). Poziom produkcyjny oznacza świadome kontrakty, odporność i testy,
 nie deklarację wysokiej dostępności klastra uruchamianego na jednym laptopie.

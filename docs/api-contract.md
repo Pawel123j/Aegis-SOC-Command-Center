@@ -1,11 +1,11 @@
 # API v1 — zakres wdrożony i projekt dalszych faz
 
-Status: kod PHASE 1–3 i przyrostów SOC, stan 2026-10-01;
+Status: kod PHASE 1–3 i przyrostów SOC, stan 2026-10-03; Risk Engine w walidacji;
 wyniki wykonanych kontroli w [raporcie korelacji](validation-correlation.md)
 i wcześniejszych raportach walidacji.
 Kod obejmuje `/auth`, `/users`, `/audit`, `/system/health`, źródła, przyjęcie
 eventów, status batcha, retry, normalized event search, alerts/detections,
-incidents, correlations oraz techniczne sondy/metryki.
+incidents, correlations, risk oraz techniczne sondy/metryki.
 OpenAPI dla zaimplementowanych tras powstaje z modeli pod `/api/v1/openapi.json`.
 Zasoby oznaczone jako przyszłe poniżej nie są dostępne w tej implementacji.
 Weryfikację działania z rzeczywistymi usługami dokumentuje [raport walidacji](validation.md).
@@ -67,6 +67,11 @@ przeglądarkowy przepływ UI należy do PHASE 13.
 | Incident alerts | POST `/incidents/{id}/alerts`; DELETE `/incidents/{id}/alerts/{alert_id}` | Dopinanie/odpinanie z zachowaniem dowodów, If-Match |
 | Incident history | POST/GET `/incidents/{id}/notes`; GET `/incidents/{id}/timeline`, `/incidents/{id}/evidence` | Append-only notes/timeline, paginacja i niezmienne dowody |
 | Incident assignees | GET `/incidents/assignees` | Dostępni aktywni operatorzy zgodnie z rolą |
+| Risk policy | GET `/risk/policy` | Detections:read; wersja/hash, wagi i poziomy 0–29/30–59/60–79/80–100 |
+| Risk history | GET `/alerts/{id}/risk`, `/incidents/{id}/risk` | Właściwe alerts:read/incidents:read; current/history, limit 1–50, history_truncated; odczyt bez mutacji |
+| Risk backfill | POST `/risk/backfill` | Admin system:manage; ograniczona porcja starszych rekordów, niezmienne obliczenia i audyt |
+| Risk test | POST `/risk/test` | Detections:test; jawna symulacja wersjonowanego wejścia, bez zapisu efektów domenowych |
+| Risk recalculation | POST `/alerts/{id}/risk/recalculate`, `/incidents/{id}/risk/recalculate` | Właściwe alerts:manage/incidents:edit, If-Match decyzji analityka, ponowna autoryzacja po blokadzie; wynik z zachowanych dowodów |
 
 Utworzenie źródła zwraca `{source, credential}` z tokenem widocznym tylko raz.
 Source ma server-generated dataset UUID, `mode=live` i zerowy `run_id`.
@@ -82,6 +87,10 @@ Szczegółowy kontrakt incydentów i limity: [etap 1](incidents.md).
 Kontrakty wcześniejszego panelu i trzech detekcji: [initial SOC](initial-soc.md).
 Finalizacja czasowa i wielozdarzeniowe dowody: [ADR 0008](adr/0008-temporal-correlation.md),
 [raport Etapu 2](validation-correlation.md).
+Szczegóły punktacji, deduplikacji i jawnych braków: [Risk Engine](risk-engine.md).
+Listy alertów/spraw zawierają nullable score, level i calculation ID;
+szczegóły także `risk_explanation`. Wynik zachowuje składniki, uzasadnienie
+punktów, policy/input hashes i odniesienie do poprzedniego obliczenia.
 
 ## Projekt zasobów przyszłych faz
 

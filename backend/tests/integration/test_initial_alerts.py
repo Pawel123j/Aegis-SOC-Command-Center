@@ -89,7 +89,7 @@ def test_raw_normalized_detection_alert_evidence_survives_retry_and_restart(
     assert len(records) == 1
     record = records[0]
     assert record.event_id == ids[0] and record.rule_id == RULE and record.status == "new"
-    assert record.risk_score is None and record.rule_version == "1.0.0"
+    assert record.risk_score == 45 and record.rule_version == "1.0.0"
     assert record.rule_snapshot["mitre"] == ["T1059.001"]
     assert hashlib.sha256(canonical_json(record.event_snapshot)).hexdigest() == record.event_sha256
     with Session(case.database.runtime) as session:
@@ -115,7 +115,7 @@ def test_raw_normalized_detection_alert_evidence_survives_retry_and_restart(
         body["reason"]["matched_fields"]["process.command_line"]
         == "powershell.exe -EncodedCommand QQ=="
     )
-    assert body["risk_score"] is None
+    assert body["risk_score"] == 45 and body["risk_explanation"]["confidence_status"] == "unknown"
 
 
 def test_all_three_builtin_rules_create_distinct_explanatory_alerts(

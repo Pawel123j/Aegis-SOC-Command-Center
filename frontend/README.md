@@ -6,15 +6,32 @@ Panel działa za lokalnym proxy pod tym samym origin co API.
 Widoki: logowanie, przegląd, zdarzenia i dowody, alerty z decyzjami analityka,
 incydenty z notatkami i osią czasu, trzy reguły pojedynczych zdarzeń i pięć reguł
 korelacji, źródła z własnymi
-kluczami, status przetwarzania i retry.
-Dane pochodzą z API; niewdrożona ocena ryzyka jest jawnie niedostępna.
+kluczami, status przetwarzania i retry oraz ocena ryzyka alertów i incydentów.
+Dane i zachowane obliczenia pochodzą z API.
 
 Incydenty można tworzyć ręcznie lub z alertu, łączyć z kolejnymi alertami,
 przypisywać analitykom i prowadzić przez kolejne statusy. Widok szczegółów
 pokazuje encje i techniki MITRE z rzeczywistych alertów, zachowane dowody,
 notatki oraz stronicowaną historię. Odpięcie alertu zachowuje jego oryginalny
-dowód. Ryzyko i pewność mają opis „Nie obliczono”, dopóki nie powstaną silniki
-oceny. Zamknięcie ani opanowanie sprawy nie uruchamia akcji na urządzeniach.
+dowód. Lista alertów i incydentów oraz przegląd pokazują wynik ryzyka 0–100.
+Wynik zero różni się od braku obliczenia. Pewność pozostaje jawnie nieznana,
+gdy nie dostarczono danych do jej oceny. Zamknięcie ani opanowanie sprawy nie
+uruchamia akcji na urządzeniach.
+
+Szczegóły alertu i incydentu pokazują każdy składnik ryzyka, punkty,
+uzasadnienie, limit, sumę przed ograniczeniem i końcowy wynik. Wynik jest
+priorytetem analizy, nie prawdopodobieństwem ataku. Brak reputacji IOC,
+znaczenia hosta lub użytkownika, taktyk MITRE albo potwierdzonej historii
+zachowania jest wyraźnie oznaczony i nie oznacza, że źródło jest bezpieczne.
+Historia pobiera na żądanie najnowsze 10 obliczeń i sygnalizuje, gdy istnieją
+starsze wyniki. „Wersja oceny” oznacza kolejne obliczenie ryzyka dla danego
+alertu lub incydentu, niezależnie od wersji zmian analityka. Politykę i jej
+progi można pobrać przez „Zasady punktacji”, zgodnie z uprawnieniami.
+Powiązane alerty mają osobny przycisk „Ocena ryzyka”, także gdy obejmują
+tylko jedno zdarzenie. Jeśli historia zawiera nowszy wynik, panel oznacza go
+osobno i udostępnia odświeżenie szczegółów. Do tego czasu wynik i uzasadnienie
+w szczegółach dotyczą tej samej zachowanej oceny. Odświeżenie historii nie
+zmienia ustaleń analityka.
 
 Analityk może przejąć sprawę i zwolnić własne przypisanie; kierownik SOC
 lub administrator może przypisać inną osobę i otworzyć zakończoną sprawę

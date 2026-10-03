@@ -53,7 +53,7 @@ it('shows real cases to viewers with uncomputed scores and no mutation controls'
   render(<Incidents user={reader} onEvent={() => undefined} onInitialConsumed={() => undefined} />);
   fireEvent.click(await screen.findByRole('button', { name: 'Otwórz incydent' }));
   await screen.findByText('Sprawdź wykonane polecenie.');
-  expect(screen.getAllByText('Nie obliczono')).toHaveLength(2);
+  expect(screen.getAllByText('Nie obliczono')).toHaveLength(3);
   expect(screen.queryByRole('button', { name: 'Powiąż alert' })).not.toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Dodaj notatkę' })).not.toBeInTheDocument();
   expect(screen.queryByLabelText('Status incydentu')).not.toBeInTheDocument();

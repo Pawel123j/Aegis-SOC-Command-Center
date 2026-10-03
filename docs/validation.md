@@ -1,6 +1,7 @@
 # Raport walidacji PHASE 2 — dowód historyczny
 
-Bieżący etap: [Correlation Engine](validation-correlation.md); wcześniejszy
+Bieżący etap: [Risk Engine](validation-risk.md); wcześniejsze
+[Correlation Engine](validation-correlation.md) oraz
 [Incident Management](validation-incidents.md); poprzedni przyrost
 [pierwszych alertów i panelu](validation-initial-soc.md); zamknięta
 PHASE 3: [jej raport](validation-phase3.md), zweryfikowany 2026-10-01.

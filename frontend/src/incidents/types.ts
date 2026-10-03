@@ -1,4 +1,6 @@
 import type { Alert, EventSnapshot, Json, SecurityEvent } from '../types';
+import type { RiskLevel } from '../risk/levels';
+import type { RiskCalculation } from '../risk/types';
 import type { incidentSeverities, incidentStatuses } from './labels';
 
 export type IncidentStatus = keyof typeof incidentStatuses;
@@ -15,6 +17,8 @@ export interface Incident {
   severity: IncidentSeverity;
   status: IncidentStatus;
   risk_score: number | null;
+  risk_level: RiskLevel | null;
+  risk_calculation_id: string | null;
   confidence: number | null;
   created_at: string;
   updated_at: string;
@@ -57,6 +61,7 @@ export interface IncidentEvidence {
   reason: Json;
 }
 export interface IncidentDetail extends Incident {
+  risk_explanation: RiskCalculation | null;
   dataset_ids: string[];
   related_alerts: Alert[];
   related_users: string[];

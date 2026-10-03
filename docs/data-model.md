@@ -146,6 +146,13 @@ pozostaje dowodem kotwicy. Trwałe zadania i watermark korelacji są stanem
 PostgreSQL; replay zapisuje zamknięty manifest, identyfikatory i hashe wejścia.
 Agregacja sprawy używa czasu i encji ze wszystkich dowodów aktywnych alertów.
 Zakres i dokładne modele: [raport korelacji](validation-correlation.md).
+Etap 3 dodaje `risk_calculations`: niezmienne wejście, wyjaśnienie, wersję/hash
+polityki, wynik i poprzednie obliczenie dla alertu lub incydentu.
+Nullable `risk_level` i `risk_calculation_id` uzupełniają istniejący score.
+Projekcja bieżącego wyniku nie edytuje oryginalnego dowodu ani historii
+i nie zmienia wersji decyzji analityka. Runtime odczytuje i dopisuje
+obliczenia, a bieżący wynik aktualizuje ograniczona funkcja PostgreSQL.
+Wagi i deduplikację opisuje [Risk Engine](risk-engine.md).
 Poniższa tabela obejmuje również dalsze, jeszcze niewdrożone encje.
 
 | Agregat | Planowane encje / constraints |

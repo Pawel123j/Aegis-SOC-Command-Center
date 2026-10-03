@@ -85,9 +85,12 @@ export const alert: Alert = {
   mode: original.mode,
   run_id: original.run_id,
   risk_score: null,
+  risk_level: null,
+  risk_calculation_id: null,
 };
 export const alertDetail: AlertDetail = {
   ...alert,
+  risk_explanation: null,
   rule_snapshot: { title: alert.title },
   event_snapshot: original,
   reason: { summary: 'Wykryto zakodowane polecenie.' },
@@ -101,6 +104,9 @@ export const incidentFixture: IncidentDetail = {
   severity: 'high',
   status: 'new',
   risk_score: null,
+  risk_level: null,
+  risk_calculation_id: null,
+  risk_explanation: null,
   confidence: null,
   created_at: timestamp,
   updated_at: timestamp,

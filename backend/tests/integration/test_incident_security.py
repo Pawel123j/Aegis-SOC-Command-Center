@@ -413,7 +413,7 @@ def test_runtime_cannot_rewrite_history_or_uncomputed_scores(
     assert stored_counts(case) == before
     detail = admin.client.get(path, headers=admin.authorization)
     assert detail.status_code == 200
-    assert detail.json()["risk_score"] is None and detail.json()["confidence"] is None
+    assert detail.json()["risk_score"] == 0 and detail.json()["confidence"] is None
 
 
 def test_storage_rejects_partial_event_range_instead_of_accepting_sql_null(

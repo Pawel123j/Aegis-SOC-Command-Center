@@ -91,7 +91,10 @@ def test_manual_empty_creation_is_idempotent_actor_bound_and_has_no_fake_scores(
     first = admin.client.post("/api/v1/incidents", json=body, headers=headers)
     assert first.status_code == 201
     incident = first.json()
-    assert incident["risk_score"] is None and incident["confidence"] is None
+    assert incident["risk_score"] == 0 and incident["confidence"] is None
+    assert all(
+        part["status"] == "not_applicable" for part in incident["risk_explanation"]["components"]
+    )
     assert (
         incident["alert_count"] == 0
         and incident["first_seen"] is None

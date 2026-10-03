@@ -7,6 +7,7 @@ import { incidentSeverities, incidentStatuses } from './labels';
 import { Pagination } from './Pagination';
 import type { Incident } from './types';
 import { usePage } from './usePage';
+import { RiskScore } from '../risk/RiskScore';
 
 export interface IncidentFilters {
   status: string;
@@ -65,6 +66,7 @@ export function IncidentList({
                   <tr>
                     <th>Incydent</th>
                     <th>Waga / status</th>
+                    <th>Ryzyko</th>
                     <th>Analityk</th>
                     <th>Alerty</th>
                     <th>Ostatnie zdarzenie</th>
@@ -85,6 +87,9 @@ export function IncidentList({
                           {incidentSeverities[incident.severity]}
                         </Badge>
                         <small>{incidentStatuses[incident.status]}</small>
+                      </td>
+                      <td>
+                        <RiskScore score={incident.risk_score} level={incident.risk_level} />
                       </td>
                       <td>{incident.owner?.username ?? 'Nieprzypisany'}</td>
                       <td>{incident.alert_count}</td>

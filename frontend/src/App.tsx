@@ -10,6 +10,7 @@ import { System } from './System';
 import { Alerts } from './Alerts';
 import { Detections } from './detections/Detections';
 import { Incidents } from './incidents/Incidents';
+import { RiskScore } from './risk/RiskScore';
 
 type View = 'overview' | 'alerts' | 'events' | 'incidents' | 'detections' | 'sources' | 'system';
 const links: { id: View; name: string; icon: string; permission?: string }[] = [
@@ -406,9 +407,9 @@ function Overview({
         />
         <Metric label="Zakres zdarzeń" value="24 godziny" note="Domyślne okno Event Explorer" />
         <Metric
-          label="Ocena ryzyka"
-          value="Niedostępna"
-          note="Silnik oceny ryzyka czeka na wdrożenie"
+          label="Skala ryzyka"
+          value="0–100"
+          note="Punkty i uzasadnienie przy każdym alercie"
         />
       </div>
       {resource.pending && <Loading />}
@@ -467,7 +468,12 @@ function Overview({
                       <strong>{item.title}</strong>
                       <small>{item.rule_id}</small>
                     </span>
-                    <Badge tone={item.severity}>{item.severity}</Badge>
+                    <span>
+                      <Badge tone={item.severity}>{item.severity}</Badge>
+                      <small>
+                        <RiskScore score={item.risk_score} level={item.risk_level} />
+                      </small>
+                    </span>
                   </button>
                 ))}
               </div>

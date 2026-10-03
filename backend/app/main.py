@@ -24,6 +24,7 @@ from app.api import (
     health,
     incidents,
     pipeline,
+    risk,
     sources,
     users,
 )
@@ -98,6 +99,7 @@ def _create_app(settings: Settings | None = None) -> FastAPI:
         detections.router,
         correlations.router,
         incidents.router,
+        risk.router,
     ):
         application.include_router(router)
 

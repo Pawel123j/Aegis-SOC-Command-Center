@@ -1,3 +1,6 @@
+import type { RiskLevel } from './risk/levels';
+import type { RiskCalculation } from './risk/types';
+
 export type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
 export interface Me {
   id: string;
@@ -129,11 +132,14 @@ export interface Alert {
   dataset_id: string;
   mode: string;
   run_id: string;
-  risk_score: null;
+  risk_score: number | null;
+  risk_level: RiskLevel | null;
+  risk_calculation_id: string | null;
   event_count?: number;
   detection_type?: 'single_event' | 'correlation';
 }
 export interface AlertDetail extends Alert {
+  risk_explanation: RiskCalculation | null;
   rule_snapshot: Json;
   event_snapshot: SecurityEvent;
   event_snapshots?: EventSnapshot[];

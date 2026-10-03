@@ -27,6 +27,7 @@ from app.modules.alerts.schemas import (
 )
 from app.modules.audit.service import append_audit
 from app.modules.ingestion.schemas import canonical_json
+from app.modules.risk.service import current, score_linked_incidents
 
 router = APIRouter(prefix="/api/v1/alerts", tags=["alerts"])
 Reader = Annotated[Principal, Depends(require(Permission.ALERTS_READ))]
@@ -159,7 +160,9 @@ def alert_detail(alert_id: UUID, response: Response, db: DB, principal: Reader) 
         raise ApiError(404, "alert_not_found", "Alert not found")
     response.headers["Cache-Control"] = "no-store"
     response.headers["ETag"] = f'"{row.version}"'
-    return AlertDetail.model_validate(row)
+    result = AlertDetail.model_validate(row)
+    result.risk_explanation = current(db, row)
+    return result
 
 
 @router.patch("/{alert_id}", response_model=AlertDetail)
@@ -205,7 +208,13 @@ def update_alert(
         object_id=str(row.id),
         details={"before": previous, "after": data.status},
     )
+    if (previous == "false_positive") != (data.status == "false_positive"):
+        score_linked_incidents(
+            db, row, request_id=request.state.request_id, actor_id=principal.user.id
+        )
     db.commit()
     response.headers["Cache-Control"] = "no-store"
     response.headers["ETag"] = f'"{row.version}"'
-    return AlertDetail.model_validate(row)
+    result = AlertDetail.model_validate(row)
+    result.risk_explanation = current(db, row)
+    return result

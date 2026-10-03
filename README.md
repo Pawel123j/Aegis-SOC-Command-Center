@@ -3,7 +3,7 @@
 Projekt portfolio Security Engineering: docelowo lokalna platforma mini-SIEM, SOAR,
 Incident Response i Threat Hunting, z demonstracją opartą na prawdziwym pipeline logów.
 
-**Stan: PHASE 0–3, incydenty i Etap 2 Correlation Engine — 2026-10-01.**
+**Stan: PHASE 0–3, incydenty, korelacja i ocena ryzyka — 2026-10-03.**
 Backend ma API źródeł, osobne tokeny ingestion, single/batch, idempotencję,
 PostgreSQL inbox/outbox, relay i worker z ograniczonym retry oraz kwarantanną.
 Sześć parserów tworzy niezmienne snapshoty w PostgreSQL, a osobny processor
@@ -17,10 +17,14 @@ Korelacja dodaje pięć wersjonowanych reguł liczników i sekwencji, okna czasu
 AND/OR oraz wspólne encje. Alert zachowuje wszystkie dowody; panel umożliwia
 odczyt, kontrolowane włączenie reguły i izolowany test. Osobny correlator
 finalizuje live z buforem 120 s; zamknięty replay ma własny manifest.
-Sigma, risk i generator pozostają zaplanowane. Rozbudowa przebiega według
+Etap 3 dodaje ocenę ryzyka 0–100, jawne wkłady i historię obliczeń alertów
+i incydentów. Brakujący kontekst pozostaje nieznany; punktacja nie oznacza
+prawdopodobieństwa ataku. [Polityka ryzyka](docs/risk-engine.md).
+Sigma i generator pozostają zaplanowane. Rozbudowa przebiega według
 [audytu i nowego planu 15 etapów](docs/soc-expansion-plan.md).
 Zakres: [incydenty](docs/incidents.md), [pierwsze alerty i panel](docs/initial-soc.md).
-Wyniki: [walidacja Etapu 2](docs/validation-correlation.md),
+Wyniki: [walidacja Etapu 3](docs/validation-risk.md),
+[walidacja Etapu 2](docs/validation-correlation.md),
 wcześniejszy [Etap 1](docs/validation-incidents.md).
 
 ## Start z folderu na Windows

@@ -10,8 +10,8 @@ export function IncidentSummary({ incident }: { incident: IncidentDetail }) {
         <Metric label="Powiązane alerty" value={incident.alert_count} note="Aktywne powiązania" />
         <Metric
           label="Ocena ryzyka"
-          value={incident.risk_score ?? 'Nie obliczono'}
-          note="Ocena wymaga silnika ryzyka"
+          value={incident.risk_score === null ? 'Nie obliczono' : `${incident.risk_score} / 100`}
+          note="Priorytet analizy · szczegóły poniżej"
         />
         <Metric
           label="Pewność"

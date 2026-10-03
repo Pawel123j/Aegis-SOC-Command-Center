@@ -7,6 +7,8 @@ import { incidentsApi } from './api';
 import { AlertPicker } from './AlertPicker';
 import type { IncidentDetail } from './types';
 import type { IncidentMutation } from './useIncident';
+import { AlertRiskButton } from '../risk/AlertRiskButton';
+import { RiskScore } from '../risk/RiskScore';
 
 export function IncidentAlerts({
   incident,
@@ -14,12 +16,16 @@ export function IncidentAlerts({
   disabled,
   mutate,
   onEvent,
+  riskReadable,
+  policyReadable,
 }: {
   incident: IncidentDetail;
   editable: boolean;
   disabled: boolean;
   mutate: IncidentMutation;
   onEvent: (event: SecurityEvent) => void;
+  riskReadable: boolean;
+  policyReadable: boolean;
 }) {
   const [adding, setAdding] = useState(false);
   const [selected, setSelected] = useState<Alert[]>([]);
@@ -65,6 +71,7 @@ export function IncidentAlerts({
               <tr>
                 <th>Alert / zdarzenie</th>
                 <th>Waga / status</th>
+                <th>Ryzyko</th>
                 <th>Dowód</th>
                 {editable && <th>Powiązanie</th>}
               </tr>
@@ -84,6 +91,18 @@ export function IncidentAlerts({
                   <td>
                     <Badge tone={alert.severity}>{alert.severity}</Badge>
                     <small>{statusName[alert.status]}</small>
+                  </td>
+                  <td>
+                    <RiskScore score={alert.risk_score} level={alert.risk_level} />
+                    {riskReadable && (
+                      <div>
+                        <AlertRiskButton
+                          alertId={alert.id}
+                          title={alert.title}
+                          canReadPolicy={policyReadable}
+                        />
+                      </div>
+                    )}
                   </td>
                   <td>
                     <AlertEvidenceButton alertId={alert.id} onEvent={onEvent} />

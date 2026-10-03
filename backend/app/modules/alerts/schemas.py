@@ -7,6 +7,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.modules.normalization.schemas import NormalizedSecurityEvent
+from app.modules.risk.schemas import RiskCalculationView, RiskLevel
 
 AlertStatus = Literal["new", "acknowledged", "false_positive", "resolved"]
 Severity = Literal["informational", "low", "medium", "high", "critical"]
@@ -43,6 +44,8 @@ class AlertSummary(BaseModel):
     updated_at: datetime
     version: int
     risk_score: int | None
+    risk_level: RiskLevel | None = None
+    risk_calculation_id: UUID | None = None
     event_count: int = 1
     detection_type: Literal["single_event", "correlation"] = "single_event"
 
@@ -54,6 +57,7 @@ class EventEvidence(BaseModel):
 
 
 class AlertDetail(AlertSummary):
+    risk_explanation: RiskCalculationView | None = None
     acknowledged_at: datetime | None
     acknowledged_by: UUID | None
     updated_by: UUID | None

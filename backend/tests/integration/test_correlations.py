@@ -54,7 +54,7 @@ def test_ingestion_closed_replay_alert_all_proofs_and_case_survive_restart(
         )
     assert process_once(database, case.database.settings)["alerts"] == 2
     high = correlation_alerts(case)[0]
-    assert high.event_count == 6 and high.risk_score is None and high.severity == "high"
+    assert high.event_count == 6 and high.risk_score == 55 and high.severity == "high"
     assert {item["event_id"] for item in high.event_snapshots} == {str(value) for value in ids}
     for proof in high.event_snapshots:
         assert (
@@ -67,7 +67,7 @@ def test_ingestion_closed_replay_alert_all_proofs_and_case_survive_restart(
         incident = db.scalar(select(Incident).where(Incident.automatic_alert_id == high.id))
         assert incident is not None and incident.first_seen == HISTORIC
         assert incident.last_seen == HISTORIC + timedelta(seconds=5)
-        assert incident.risk_score is None and incident.confidence is None
+        assert incident.risk_score == 55 and incident.confidence is None
 
         incident_id = incident.id
         initial_audits = db.scalar(select(func.count()).select_from(AuditLog))
@@ -461,7 +461,7 @@ def test_actual_windows_full_chain_creates_critical_nine_event_proof(
             and incident.last_seen == HISTORIC + timedelta(seconds=8)
         )
         assert "198.51.100.4" in incident.related_ip_addresses
-        assert incident.risk_score is None and incident.confidence is None
+        assert incident.risk_score == 73 and incident.confidence is None
 
 
 def test_open_ingress_transaction_is_fenced_before_live_watermark(case: Case, admin: Login) -> None:

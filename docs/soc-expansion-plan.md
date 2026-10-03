@@ -79,4 +79,6 @@ Etap 2: [reguły korelacji](validation-correlation.md), osobny proces, trwały
 watermark i manifest replay, wiele dowodów oraz panel reguł.
 Zakres czasu i tożsamości określa [ADR 0008](adr/0008-temporal-correlation.md).
 Jest to rozpoznawanie jawnych sekwencji, a nie cały historyczny graf/merge
-PHASE 6. Kolejny przyrost: Risk Engine, bez wymyślania ocen w obecnym etapie.
+PHASE 6. Etap 3: [ocena ryzyka](validation-risk.md), deterministyczna punktacja,
+historia i jawny brak przyszłego kontekstu. [ADR 0009](adr/0009-explainable-risk.md)
+określa zasady. Kolejny przyrost: lokalny katalog MITRE ATT&CK.

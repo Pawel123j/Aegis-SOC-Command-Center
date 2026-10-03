@@ -9,6 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from app.core.permissions import Role
 from app.modules.alerts.schemas import AlertSummary, EventEvidence
 from app.modules.normalization.schemas import NormalizedSecurityEvent
+from app.modules.risk.schemas import RiskCalculationView, RiskLevel
 
 IncidentStatus = Literal["new", "investigating", "contained", "resolved", "closed"]
 IncidentSeverity = Literal["low", "medium", "high", "critical"]
@@ -137,6 +138,8 @@ class IncidentSummary(BaseModel):
     severity: IncidentSeverity
     status: IncidentStatus
     risk_score: int | None
+    risk_level: RiskLevel | None = None
+    risk_calculation_id: UUID | None = None
     confidence: int | None
     created_at: datetime
     updated_at: datetime
@@ -170,6 +173,7 @@ class NoteView(BaseModel):
 
 
 class IncidentDetail(IncidentSummary):
+    risk_explanation: RiskCalculationView | None = None
     related_alerts: list[AlertSummary]
     related_users: list[str]
     related_hosts: list[str]

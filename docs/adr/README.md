@@ -14,6 +14,7 @@ nie usuwa się historii uzasadnień.
 | [0006](0006-local-demo-and-safe-soar.md) | Lokalny single-org deployment i SOAR simulation |
 | [0007](0007-incident-case-management.md) | Incydenty, transakcyjna historia, wiele źródeł live i izolacja replay |
 | [0008](0008-temporal-correlation.md) | Trwałe reguły czasowe, bariera finalizacji, manifest replay i wiele dowodów |
+| [0009](0009-explainable-risk.md) | Wersjonowana ocena ryzyka, jawny brak kontekstu i niezmienna historia |
 
 Każdy nowy ADR zawiera: kontekst, decyzję, alternatywy, konsekwencje, dowód
 akceptacji i warunek ponownego rozważenia.

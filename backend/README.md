@@ -4,7 +4,7 @@ FastAPI/Pydantic/SQLAlchemy tworzą modularny monolit z oddzielnym procesem Cele
 Runtime to **Python 3.12.14**, zgodny z obrazem Docker i konfiguracją CI. Zależności
 runtime i developerskie mają osobne lockfile z hashami.
 
-**Stan: PHASE 0–3, incydenty i korelacja — 2026-10-01.**
+**Stan: PHASE 0–3, incydenty, korelacja i ocena ryzyka — 2026-10-03.**
 Migracja `0004_initial_alerts`, osobny `app.detector`, API alerts/detections
 i atomowy checkpoint zapewniają trzy reguły pojedynczego zdarzenia.
 [Zakres i ograniczenia](../docs/initial-soc.md).
@@ -18,6 +18,11 @@ zamknięty manifest replay oraz wielozdarzeniowe dowody alertu.
 test i stan są dostępne pod `/api/v1/correlations`.
 [Decyzja](../docs/adr/0008-temporal-correlation.md),
 [walidacja](../docs/validation-correlation.md).
+Etap 3 dodaje osobny kalkulator `app.modules.risk`, niezmienne obliczenia
+PostgreSQL oraz ograniczoną projekcję bieżącego wyniku. Alert i incydent
+zachowują odrębne oceny; komplet powodów, braków i historii udostępnia API.
+[Polityka](../docs/risk-engine.md), [decyzja](../docs/adr/0009-explainable-risk.md),
+[walidacja](../docs/validation-risk.md).
 Fundament PHASE 1 obejmuje konfigurację i bezpieczne błędy, `/api/v1/auth`,
 `/api/v1/users`, `/api/v1/audit`, chronione `/api/v1/system/health`, sondy `/health`
 i `/ready`, wewnętrzne `/metrics` oraz OpenAPI pod `/api/v1/openapi.json`.
@@ -41,7 +46,7 @@ i pojemności. PHASE 3 dodaje sześć parserów, niezmienne snapshoty w PostgreS
 Osobny migrator archiwum stosuje SQL z checksum i rozdziela właściciela od runtime.
 API `/events/search` i `/events/{id}` udostępnia filtrowanie, podpisaną paginację
 i odczyt z deduplikacją przed zliczeniem. Detekcje i panel działają w
-początkowym przyroście SOC; risk, Sigma i generator pozostają planowane.
+początkowym przyroście SOC; Risk Engine rozwija Etap 3, Sigma i generator pozostają planowane.
 Rozbudowa: [plan 15 etapów](../docs/soc-expansion-plan.md).
 Wyniki: [raport PHASE 3](../docs/validation-phase3.md).
 

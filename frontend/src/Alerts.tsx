@@ -6,6 +6,8 @@ import type { Alert, AlertDetail, Me, Page, SecurityEvent } from './types';
 import { EventEvidence } from './evidence/EventEvidence';
 import { evidenceEvents } from './evidence/events';
 import { EventReason } from './evidence/EventReason';
+import { RiskScore } from './risk/RiskScore';
+import { RiskPanel } from './risk/RiskPanel';
 
 export function Alerts({
   user,
@@ -97,6 +99,7 @@ export function Alerts({
                     <tr>
                       <th>Alert / reguła</th>
                       <th>Waga</th>
+                      <th>Ryzyko</th>
                       <th>Status</th>
                       <th>Czas zdarzenia / końca sekwencji</th>
                       <th>Wykryto</th>
@@ -117,6 +120,9 @@ export function Alerts({
                         </td>
                         <td>
                           <Badge tone={item.severity}>{item.severity}</Badge>
+                        </td>
+                        <td>
+                          <RiskScore score={item.risk_score} level={item.risk_level} />
                         </td>
                         <td>
                           <Badge>{statusName[item.status]}</Badge>
@@ -265,8 +271,18 @@ function AlertDialog({
               <dt>Potwierdzono</dt>
               <dd>{time(resource.data.acknowledged_at)}</dd>
               <dt>Ocena ryzyka</dt>
-              <dd>Niedostępna · brak wdrożonego silnika risk</dd>
+              <dd>
+                <RiskScore score={resource.data.risk_score} level={resource.data.risk_level} />
+              </dd>
             </dl>
+            <RiskPanel
+              subject="alert"
+              id={id}
+              initial={resource.data.risk_explanation}
+              canReadPolicy={user.permissions.includes('detections:read')}
+              onRefresh={() => void resource.reload()}
+              refreshPending={resource.pending}
+            />
             <h3>Dlaczego powstał alert</h3>
             <EventReason reason={resource.data.reason} />
             <details>

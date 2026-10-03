@@ -39,6 +39,13 @@ class Incident(Base):
         CheckConstraint("version >= 1", name="positive_version"),
         CheckConstraint("risk_score IS NULL OR risk_score BETWEEN 0 AND 100", name="bounded_risk"),
         CheckConstraint(
+            "(risk_score IS NULL AND risk_level IS NULL AND risk_calculation_id IS NULL) OR "
+            "(risk_score IS NOT NULL AND risk_level IS NOT NULL "
+            "AND risk_level IN ('low','medium','high','critical') "
+            "AND risk_calculation_id IS NOT NULL)",
+            name="consistent_risk_projection",
+        ),
+        CheckConstraint(
             "confidence IS NULL OR confidence BETWEEN 0 AND 100", name="bounded_confidence"
         ),
         CheckConstraint("alert_count BETWEEN 0 AND 100", name="bounded_alert_count"),
@@ -68,6 +75,8 @@ class Incident(Base):
     severity: Mapped[str] = mapped_column(String(16))
     status: Mapped[str] = mapped_column(String(24), default="new", server_default="new", index=True)
     risk_score: Mapped[int | None] = mapped_column(Integer)
+    risk_level: Mapped[str | None] = mapped_column(String(16))
+    risk_calculation_id: Mapped[UUID | None] = mapped_column(ForeignKey("risk_calculations.id"))
     confidence: Mapped[int | None] = mapped_column(Integer)
     mode: Mapped[str] = mapped_column(String(8))
     dataset_id: Mapped[UUID | None] = mapped_column(index=True)

@@ -13,7 +13,7 @@ x-app-environment: &app-environment
   AEGIS_CORRELATION_BATCH_SIZE: ${AEGIS_CORRELATION_BATCH_SIZE:-25}
 
 x-app: &app
-  image: aegis-soc-backend:correlation-stage2
+  image: aegis-soc-backend:risk-stage3
   build:
     context: ./backend
     target: runtime
@@ -192,7 +192,7 @@ services:
 
   tests:
     <<: *app
-    image: aegis-soc-backend-test:correlation-stage2
+    image: aegis-soc-backend-test:risk-stage3
     build:
       context: ./backend
       target: test

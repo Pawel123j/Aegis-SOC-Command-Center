@@ -6,6 +6,8 @@ processor, detector, correlator oraz lokalny reverse proxy na 127.0.0.1:8080.
 Correlator Etapu 2 używa tego samego obrazu i sieci backend; nie wymaga
 nowej bazy ani otwartego portu. `compose.offline.yaml` umożliwia build
 z lokalnych, zweryfikowanych zależności.
+Risk Engine Etapu 3 działa w procesach API/detector/correlator, korzysta
+z migracji PostgreSQL i nie dodaje portu ani nowego kontenera.
 PostgreSQL migruje oddzielny Alembic w backend/migrations, role runtime nie mają DDL.
 [Granice infrastruktury](../docs/architecture.md).
 [Uruchomienie](../docs/local-start.md), [walidacja korelacji](../docs/validation-correlation.md).

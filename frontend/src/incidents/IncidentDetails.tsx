@@ -7,6 +7,7 @@ import { IncidentSummary } from './IncidentSummary';
 import { IncidentTimeline } from './IncidentTimeline';
 import { IncidentWorkflow } from './IncidentWorkflow';
 import { useIncident } from './useIncident';
+import { RiskPanel } from '../risk/RiskPanel';
 
 export function IncidentDetails({
   id,
@@ -48,6 +49,14 @@ export function IncidentDetails({
       {incident && (
         <>
           <IncidentSummary incident={incident} />
+          <RiskPanel
+            subject="incident"
+            id={id}
+            initial={incident.risk_explanation}
+            canReadPolicy={user.permissions.includes('detections:read')}
+            onRefresh={() => void resource.reload()}
+            refreshPending={resource.pending}
+          />
           <div className="incident-grid">
             <div>
               <IncidentAlerts
@@ -56,6 +65,8 @@ export function IncidentDetails({
                 disabled={disabled}
                 mutate={resource.mutate}
                 onEvent={onEvent}
+                riskReadable={user.permissions.includes('alerts:read')}
+                policyReadable={user.permissions.includes('detections:read')}
               />
               <IncidentTimeline incident={incident} onEvent={onEvent} />
               <IncidentEvidence incident={incident} onEvent={onEvent} />
