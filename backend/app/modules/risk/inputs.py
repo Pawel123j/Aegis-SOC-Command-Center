@@ -4,6 +4,8 @@ import hashlib
 from typing import Any, Literal, cast
 from uuid import UUID
 
+from sqlalchemy.orm import Session
+
 from app.core.errors import ApiError
 from app.modules.alerts.evidence import verified_events
 from app.modules.alerts.models import Alert
@@ -13,7 +15,9 @@ from app.modules.correlation.engine import condition_matches, entity_keys, evalu
 from app.modules.detections.builtin import BUILTIN_RULES, EVALUATOR_VERSION, evaluate_rule
 from app.modules.ingestion.schemas import canonical_json
 from app.modules.normalization.schemas import NormalizedSecurityEvent
-from app.modules.risk.schemas import EvidenceReference, Family, RiskInput, Signal
+from app.modules.risk.schemas import EvidenceReference, Family, RiskInput, SeverityBaseline, Signal
+from app.modules.sigma.compiler import EVALUATOR_VERSION as SIGMA_EVALUATOR
+from app.modules.sigma.service import verified_alert
 
 SINGLE_FAMILIES: dict[str, Family] = {
     "powershell-suspicious-command": "suspicious_execution",
@@ -103,9 +107,11 @@ def build_input(
     dataset_id: UUID | None,
     run_id: UUID,
     exclude_false_positive: bool,
+    db: Session | None = None,
 ) -> tuple[RiskInput, dict[str, Any]]:
     references: dict[UUID, EvidenceReference] = {}
     signals: list[Signal] = []
+    baselines: list[SeverityBaseline] = []
     sources = []
     keys: set[str] = set()
     excluded = []
@@ -132,7 +138,26 @@ def build_input(
             if exclude_false_positive and alert.status == "false_positive":
                 excluded.append(str(alert.id))
                 continue
-            signals.extend(_signals(alert, events))
+            if alert.evaluator_version == SIGMA_EVALUATOR:
+                if db is None or len(events) != 1:
+                    raise ValueError("Sigma requires immutable persisted revision proof")
+                verified_alert(db, alert)
+                baselines.append(
+                    SeverityBaseline(
+                        id=f"{alert.id}:sigma-severity",
+                        severity=cast(
+                            Literal["informational", "low", "medium", "high", "critical"],
+                            alert.severity,
+                        ),
+                        evidence_ids=[events[0].event_id],
+                        alert_ids=[alert.id],
+                    )
+                )
+                source["sigma_revision_id"] = alert.rule_snapshot["revision_id"]
+                source["sigma_source_sha256"] = alert.rule_snapshot["source_sha256"]
+                source["sigma_compiled_sha256"] = alert.rule_snapshot["compiled_sha256"]
+            else:
+                signals.extend(_signals(alert, events))
             for event in events:
                 reference = EvidenceReference(
                     id=event.event_id,
@@ -148,6 +173,7 @@ def build_input(
         data = RiskInput(
             evidence=sorted(references.values(), key=lambda item: item.id),
             signals=signals,
+            severity_baselines=baselines,
             subject_keys=sorted(keys),
             subject_id=subject_id,
             mode=cast(Literal["live", "replay"], mode),

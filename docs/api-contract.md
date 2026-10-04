@@ -1,11 +1,11 @@
 # API v1 — zakres wdrożony i projekt dalszych faz
 
-Status: kod PHASE 1–3 i przyrostów SOC, stan 2026-10-03;
-wyniki wykonanych kontroli w [raporcie MITRE](validation-mitre.md)
+Status: kod PHASE 1–3 i przyrostów SOC, stan 2026-10-04;
+wyniki wykonanych kontroli w [raporcie Sigma](validation-sigma.md)
 i wcześniejszych raportach walidacji.
 Kod obejmuje `/auth`, `/users`, `/audit`, `/system/health`, źródła, przyjęcie
 eventów, status batcha, retry, normalized event search, alerts/detections,
-incidents, correlations, risk, mitre oraz techniczne sondy/metryki.
+incidents, correlations, risk, mitre, sigma oraz techniczne sondy/metryki.
 OpenAPI dla zaimplementowanych tras powstaje z modeli pod `/api/v1/openapi.json`.
 Zasoby oznaczone jako przyszłe poniżej nie są dostępne w tej implementacji.
 Weryfikację działania z rzeczywistymi usługami dokumentuje [raport walidacji](validation.md).
@@ -72,6 +72,7 @@ przeglądarkowy przepływ UI należy do PHASE 13.
 | Risk backfill | POST `/risk/backfill` | Admin system:manage; ograniczona porcja starszych rekordów, niezmienne obliczenia i audyt |
 | Risk test | POST `/risk/test` | Detections:test; jawna symulacja wersjonowanego wejścia, bez zapisu efektów domenowych |
 | Risk recalculation | POST `/alerts/{id}/risk/recalculate`, `/incidents/{id}/risk/recalculate` | Właściwe alerts:manage/incidents:edit, If-Match decyzji analityka, ponowna autoryzacja po blokadzie; wynik z zachowanych dowodów |
+| Sigma | GET `/sigma/capabilities`, `/sigma/rules`, `/sigma/rules/{id}`; POST `/sigma/validate`, `/sigma/test`, `/sigma/rules`, `/sigma/rules/{id}/versions`; PATCH `/sigma/rules/{id}` | Odczyt/walidacja, bezstanowy test, import wyłączonej rewizji, publikacja z If-Match; szczegóły poniżej |
 
 Utworzenie źródła zwraca `{source, credential}` z tokenem widocznym tylko raz.
 Source ma server-generated dataset UUID, `mode=live` i zerowy `run_id`.
@@ -99,7 +100,6 @@ punktów, policy/input hashes i odniesienie do poprzedniego obliczenia.
 | Alert extensions | GET `/alerts/{id}/events` | Wiele contributing events i wyjaśnione risk |
 | Case extensions | POST `/incidents/{id}/evidence`, `/incidents/{id}/iocs` | Dodatkowe artefakty/IOC i verdict; obecny status zmienia PATCH |
 | Rule authoring | POST `/detections`; wersjonowane definicje | Draft/version/import oprócz obecnego stałego katalogu |
-| Sigma | POST `/detections/import` | Walidacja i kompilacja obsługiwanego subsetu |
 | Hunts | GET/POST `/hunts`; PATCH `/hunts/{id}`; POST `/hunts/{id}/runs`, `/hunts/{id}/bookmarks`, `/hunts/{id}/investigations`, `/hunts/{id}/draft-detections` | Saved query, evidence, investigation, draft rule |
 | Investigations | POST `/investigations/{id}/promote` | Jednorazowa, audytowana promocja do sprawy |
 | TI | GET/POST `/iocs`; PATCH `/iocs/{id}` | Typowana lokalna reputacja, wersje i audit |
@@ -201,3 +201,38 @@ wszystkich skojarzeń. Szczegół incydentu ma deduplikowane historyczne technik
 i mapped/unmapped/legacy/excluded-FP counters z aktualnych aktywnych links.
 Stare rule_snapshot i legacy mitre_techniques zachowują zgodność kontraktu.
 Mapping nie nadaje punktów T w Risk Engine. [Zasady i ograniczenia](mitre.md).
+
+## Sigma — Etap 5
+
+Wspólny prefiks `/api/v1/sigma`. GET capabilities/rules/rules/{id} i POST
+validate wymagają `detections:read`; POST test wymaga `detections:test`.
+POST rules/rules/{id}/versions wymaga `detections:import`, PATCH rules/{id}
+`detections:publish`. Mutacje ponownie sprawdzają authority po blokadzie.
+Każda odpowiedź ma Cache-Control: no-store. Szczegół/mutacja zwraca ETag
+wdrożenia. Rewizja i enabled PATCH wymagają `If-Match`, 428 brak, 412 konflikt.
+
+Import/validate używa `{yaml:string}`; test dodaje `events` ze schematu
+NormalizedSecurityEvent, 1–25. YAML ma 1–65536 bajtów UTF-8, import JSON
+do 262144 bajtów, test JSON do 1048576. Capabilities zwraca pełne limity,
+pola/aliasy, logsource, operatory, wersję wykonawcy i ograniczenia.
+Walidacja/test nie zapisują reguły, alertu, ryzyka ani incydentu.
+Limity per osoba: validate/test 30/min, import/revisions 20/min.
+
+GET rules zwraca `{items:[RuleView]}` do 100. RuleView ma `id`/`sigma_id`,
+rewizję i jej UUID, title/description/severity/mitre/guidance/references,
+evaluator/source_types/source_sha256/compiled_sha256/mitre_mapping oraz
+enabled/version/updated_at/updated_by. Szczegół dodaje definition_yaml,
+compiled AST i do 20 historycznych VersionView. Historia zawiera numery,
+UUID, hashe, created_at/created_by, a źródłem bieżącego szczegółu jest
+wybrana niezmienna rewizja.
+
+Pierwszy import daje 201, rewizję 1 i enabled=false. Identyczny bieżący
+source hash daje 200 istniejącego wpisu bez dodatkowych zapisów. Inne źródło
+tego UUID daje 409 `sigma_rule_exists`. POST versions zachowuje UUID, tworzy
+201 kolejną rewizję i wyłącza publikację; unchanged/id mismatch/limit daje409.
+PATCH `{enabled:boolean}` daje200; ten sam stan daje409. Niedostępna albo
+niespójna utrwalona rewizja daje503 bez ujawniania treści źródła.
+
+Alert ma `detection_type=sigma`, wykonawcę `sigma-subset-v1` oraz historyczne
+source/revision/AST. Risk policy v3 rozdziela deklarowaną severity od
+kontrolowanych rodzin C/E. [Semantyka](sigma.md), [decyzja](adr/0011-versioned-sigma-rules.md).

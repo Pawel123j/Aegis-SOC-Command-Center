@@ -84,4 +84,6 @@ historia i jawny brak przyszłego kontekstu. [ADR 0009](adr/0009-explainable-ris
 określa zasady. Etap 4: [lokalny katalog i coverage MITRE](validation-mitre.md),
 osobne historyczne mapowania oraz nazwy w panelu.
 [ADR 0010](adr/0010-versioned-attack-mappings.md) oddziela skojarzenie
-techniki od potwierdzenia ataku. Kolejny przyrost: Sigma.
+techniki od potwierdzenia ataku. Etap 5: [Sigma](sigma.md),
+niezmienne rewizje i kontrolowana publikacja w istniejącym detektorze.
+[Walidacja](validation-sigma.md) opisuje wykonane kontrole i granice dowodu. Kolejny przyrost: encje.

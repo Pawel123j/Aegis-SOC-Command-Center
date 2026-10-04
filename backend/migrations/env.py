@@ -21,6 +21,7 @@ from app.modules.ingestion import models as ingestion_models  # noqa: F401
 from app.modules.mitre import models as mitre_models  # noqa: F401
 from app.modules.normalization import models as normalization_models  # noqa: F401
 from app.modules.risk import models as risk_models  # noqa: F401
+from app.modules.sigma import models as sigma_models  # noqa: F401
 from app.modules.users.models import User  # noqa: F401
 
 config = context.config

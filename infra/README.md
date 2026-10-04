@@ -12,6 +12,10 @@ MITRE Etapu 4 używa tych samych procesów i lokalnego katalogu w obrazie.
 Migracja `0008_mitre` dodaje append-only snapshoty i indeksy agregacji;
 role runtime zachowują wyłącznie SELECT/INSERT do historii mapowań.
 [Walidacja Etapu 4](../docs/validation-mitre.md).
+Sigma Etapu 5 dodaje `0009_sigma` bez nowego portu lub procesu. Definicje
+są append-only; kontrolowana funkcja wybiera utrwaloną rewizję w deployment.
+Nie przyznaje runtime ogólnych uprawnień zmiany wersji reguł.
+[Walidacja Etapu 5](../docs/validation-sigma.md).
 PostgreSQL migruje oddzielny Alembic w backend/migrations, role runtime nie mają DDL.
 [Granice infrastruktury](../docs/architecture.md).
 [Uruchomienie](../docs/local-start.md), [walidacja korelacji](../docs/validation-correlation.md).

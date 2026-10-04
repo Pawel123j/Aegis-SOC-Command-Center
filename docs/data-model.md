@@ -164,6 +164,16 @@ Nazwy w szczegółach sprawy pochodzą z aktywnych alertów bez false positives,
 z deduplikacją catalogue_hash/technique_id. Stare pole mitre_techniques
 pozostaje kompatybilną adnotacją; nowy panel używa jawnej projekcji.
 [Dokładne zasady](mitre.md).
+Etap 5 dodaje `sigma_rules` (UUID, jednoznaczny detection_id, autor/data)
+oraz `sigma_rule_versions` (UUID, FK rule_id, unikalna revision 1–20,
+bounded YAML, source/compiled SHA-256, JSON AST, evaluator i autor/data).
+Obie tabele są append-only dla runtime. Kontrolowana funkcja SQL tworzy
+wyłączone wdrożenie albo wybiera kolejną utrwaloną rewizję; istniejące
+granty nie pozwalają runtime dowolnie INSERT/UPDATE wersji RuleDeployment.
+Downgrade odmawia usunięcia historii Sigma. Snapshot alertu wskazuje
+oryginalną rewizję i deployment_version; wybór nowej wersji jej nie zmienia.
+RiskInput v3 dodaje severity_baselines poza kontrolowanymi Signal.family;
+historyczne obliczenia v2 pozostają niezmienne. [Sigma](sigma.md).
 Poniższa tabela obejmuje również dalsze, jeszcze niewdrożone encje.
 
 | Agregat | Planowane encje / constraints |

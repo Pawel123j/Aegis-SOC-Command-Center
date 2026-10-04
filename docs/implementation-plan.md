@@ -15,6 +15,9 @@ obliczenia i jawny brak przyszłego kontekstu; wykonane kontrole opisuje
 [katalog i coverage MITRE](mitre.md), [raport](validation-mitre.md).
 Nie zamyka pełnej historycznej PHASE 8: graf/storyline i filtry Event Search
 pozostają osobnymi przyrostami.
+Etap 5 dodaje [podzbiór Sigma](sigma.md) i jego wersjonowany import,
+publikację, wykonanie oraz [walidację](validation-sigma.md).
+Szerszy natywny authoring pozostaje dalszym zakresem.
 
 Plan odpowiada fazom 0–20 wskazanym w wymaganiach. Faza 0 dostarczyła analizę stanu, decyzje architektoniczne, szkielet repozytorium i dokumentację. Faza 1 dostarczyła zweryfikowany fundament backendu z integracją rzeczywistych usług (2026-09-28). SIEM, frontend i generator wymagają dalszych faz.
 

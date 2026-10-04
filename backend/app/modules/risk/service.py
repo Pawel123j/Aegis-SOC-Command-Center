@@ -92,6 +92,7 @@ def score_subject(
         dataset_id=subject.dataset_id,
         run_id=subject.run_id,
         exclude_false_positive=kind == "incident",
+        db=db,
     )
     input_hash = hashlib.sha256(canonical_json(snapshot)).hexdigest()
     prior = (

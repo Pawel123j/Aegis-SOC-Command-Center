@@ -13,11 +13,12 @@ from app.modules.risk.schemas import (
     RiskInput,
     RiskLevel,
     RiskResult,
+    SeverityBaseline,
     Signal,
     SignalUnit,
 )
 
-POLICY_VERSION = "risk-policy-v2"
+POLICY_VERSION = "risk-policy-v3"
 SEVERITY_POINTS = {"informational": 5, "low": 15, "medium": 30, "high": 45, "critical": 55}
 CONTEXTS = (
     "host_criticality",
@@ -66,8 +67,13 @@ POLICY: dict[str, Any] = {
     "tactics": "min(6,2*(min(distinct verified tactics,verified families)-1))",
     "history": "confirmed_malicious strong identity; previous30days; "
     "no current/alias/evidenceoverlap/samereplayrun/crossdataset",
-    "eligibility": "controlled complete predicate proof; successful login alone not independent",
-    "empty": "no recognized evidence => all components not_applicable and score0",
+    "eligibility": "controlled builtin complete predicate proof for behaviour; verified persisted "
+    "Sigma predicate for severity only; successful login alone not independent",
+    "empty": "no controlled signal proof or verified Sigma severity baseline => "
+    "all components not_applicable and score0",
+    "sigma": "verified immutable revision + source/compiled hashes + full declarative predicate; "
+    "declared severity contributes D only, confidence unknown; no behaviour family, "
+    "independent-unit or qualified-event bonus; old builtin arithmetic unchanged",
 }
 POLICY_HASH = hashlib.sha256(canonical_json(POLICY)).hexdigest()
 
@@ -115,7 +121,8 @@ def _units(signals: list[Signal]) -> list[SignalUnit]:
 
 
 def _context_points(fact: ContextFact, data: RiskInput) -> int:
-    qualifying_ids = {identity for signal in data.signals for identity in signal.evidence_ids}
+    qualifying_sources: list[Signal | SeverityBaseline] = [*data.signals, *data.severity_baselines]
+    qualifying_ids = {identity for signal in qualifying_sources for identity in signal.evidence_ids}
     start = min(item.timestamp for item in data.evidence if item.id in qualifying_ids)
     if not _active_context(fact, start):
         return 0
@@ -163,12 +170,19 @@ def _active_context(fact: ContextFact, start: Any) -> bool:
 def calculate(data: RiskInput) -> RiskResult:
     signals = _unique_signals(data.signals)
     units = _units(signals)
-    evidence_ids = sorted({identity for signal in signals for identity in signal.evidence_ids})
+    baselines = sorted(data.severity_baselines, key=lambda item: item.id)
+    if len({item.id for item in baselines}) != len(baselines):
+        raise ValueError("severity baseline identities must be unique")
+    candidates_sources: list[Signal | SeverityBaseline] = [*signals, *baselines]
+    controlled_ids = sorted({identity for signal in signals for identity in signal.evidence_ids})
+    evidence_ids = sorted(
+        {identity for signal in candidates_sources for identity in signal.evidence_ids}
+    )
     components = []
-    confidence_values = {item.confidence is not None for item in signals}
+    confidence_values = {item.confidence is not None for item in candidates_sources}
     confidence_status: Literal["known", "unknown", "mixed", "not_applicable"] = (
         "not_applicable"
-        if not signals
+        if not candidates_sources
         else "mixed"
         if len(confidence_values) > 1
         else "known"
@@ -183,13 +197,13 @@ def calculate(data: RiskInput) -> RiskResult:
             item.id,
             item,
         )
-        for item in signals
+        for item in candidates_sources
     ]
     winner = sorted(candidates, key=lambda item: (-item[0], item[1]))[0] if candidates else None
     base = {
         "D": winner[0] if winner else 0,
         "C": min(9, 3 * max(0, len(units) - 1)),
-        "E": min(12, 2 * max(0, len(evidence_ids) - 1)),
+        "E": min(12, 2 * max(0, len(controlled_ids) - 1)),
     }
     codes = dict(zip(CONTEXTS, ("A", "U", "I", "T", "H", "P"), strict=True))
     missing = [
@@ -207,9 +221,14 @@ def calculate(data: RiskInput) -> RiskResult:
             points, status, reason = 0, "not_applicable", "Brak kwalifikujących się dowodów."
         elif code in base:
             points, status = base[code], "known"
+            if code in {"C", "E"} and baselines and not signals:
+                status = "unknown"
             if code == "D":
                 reason = (
-                    "Maksimum punktów severity pomnożonych przez udokumentowane confidence."
+                    "Bazowe punkty severity zadeklarowanej w zweryfikowanej rewizji Sigma; "
+                    "bez potwierdzenia rodziny zachowania i confidence."
+                    if winner and winner[2] in baselines
+                    else "Maksimum punktów severity pomnożonych przez udokumentowane confidence."
                     if winner and winner[2].confidence is not None
                     else "Bazowe punkty severity; confidence pozostaje nieznane."
                     if winner
@@ -232,7 +251,10 @@ def calculate(data: RiskInput) -> RiskResult:
                 cited = sorted(set(winner[2].evidence_ids)) if winner else []
             else:
                 reason = (
-                    "Trzy punkty za każdą kolejną niezależną jednostkę; "
+                    "Reguła Sigma nie ustanawia kontrolowanej rodziny zachowania; "
+                    "brak kwalifikujących się niezależnych sygnałów i premii za zdarzenia."
+                    if baselines and not signals
+                    else "Trzy punkty za każdą kolejną niezależną jednostkę; "
                     "nakładające się dowody tej samej rodziny liczą się raz."
                     if code == "C"
                     else "Dwa punkty za każde kolejne unikalne zdarzenie; maksimum 12."
@@ -240,9 +262,9 @@ def calculate(data: RiskInput) -> RiskResult:
                 details = (
                     {"independent_units": len(units)}
                     if code == "C"
-                    else {"unique_events": len(evidence_ids)}
+                    else {"unique_events": len(controlled_ids)}
                 )
-                cited = evidence_ids
+                cited = controlled_ids
         else:
             kind = next(name for name, component_code in codes.items() if component_code == code)
             facts = sorted(

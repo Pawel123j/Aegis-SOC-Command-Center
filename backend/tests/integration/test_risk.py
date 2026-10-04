@@ -39,7 +39,7 @@ def test_new_alert_and_automatic_case_have_reproducible_distinct_assessments(
             reproduced = calculate(RiskInput.model_validate(row.input_snapshot["scoring_input"]))
             assert reproduced.model_dump(mode="json") == row.explanation
     detail = admin.client.get(f"/api/v1/alerts/{alert.id}", headers=admin.authorization).json()
-    assert detail["risk_explanation"]["policy_version"] == "risk-policy-v2"
+    assert detail["risk_explanation"]["policy_version"] == "risk-policy-v3"
     assert detail["risk_explanation"]["confidence_status"] == "unknown"
 
 
@@ -88,6 +88,6 @@ def test_downgrade_refuses_to_destroy_existing_risk_history(case: Case, admin: L
     with pytest.raises(DBAPIError):
         migrate(case.database.owner, "0006_correlation", downgrade=True)
     with case.database.runtime.connect() as db:
-        assert db.scalar(text("SELECT version_num FROM alembic_version")) == "0008_mitre"
+        assert db.scalar(text("SELECT version_num FROM alembic_version")) == "0009_sigma"
         assert db.scalar(text("SELECT count(*) FROM risk_calculations")) == 2
     assert alerts(case)[0].risk_calculation_id == record.risk_calculation_id

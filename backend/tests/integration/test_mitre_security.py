@@ -418,7 +418,7 @@ def test_owner_downgrade_refuses_to_destroy_nonempty_mitre_history(
     assert getattr(rejected.value.orig, "sqlstate", None) == "23514"
     assert domain_counts(case) == before
     with case.database.runtime.connect() as db:
-        assert db.scalar(text("SELECT version_num FROM alembic_version")) == "0008_mitre"
+        assert db.scalar(text("SELECT version_num FROM alembic_version")) == "0009_sigma"
     response = admin.client.get(f"/api/v1/alerts/{record.id}", headers=admin.authorization)
     assert response.status_code == 200
     assert response.json()["mitre_mapping"]["status"] == "mapped"

@@ -119,9 +119,20 @@ class ContextFact(StrictInput):
         return self
 
 
+class SeverityBaseline(StrictInput):
+    """Verified declarative match with declared severity, without a behavioural family."""
+
+    id: str = Field(min_length=1, max_length=128)
+    severity: Literal["informational", "low", "medium", "high", "critical"]
+    evidence_ids: list[UUID] = Field(min_length=1, max_length=100)
+    alert_ids: list[UUID] = Field(default_factory=list, max_length=100)
+    confidence: None = None
+
+
 class RiskInput(StrictInput):
     evidence: list[EvidenceReference] = Field(default_factory=list, max_length=10000)
     signals: list[Signal] = Field(default_factory=list, max_length=500)
+    severity_baselines: list[SeverityBaseline] = Field(default_factory=list, max_length=500)
     contexts: list[ContextFact] = Field(default_factory=list, max_length=100)
     known_contexts: list[ContextKind] = Field(default_factory=list, max_length=6)
     subject_keys: list[str] = Field(default_factory=list, max_length=1000)
@@ -136,7 +147,11 @@ class RiskInput(StrictInput):
         events = {item.id: item for item in self.evidence}
         if len(events) != len(self.evidence):
             raise ValueError("evidence references must be unique")
-        facts: list[Signal | ContextFact] = [*self.signals, *self.contexts]
+        facts: list[Signal | SeverityBaseline | ContextFact] = [
+            *self.signals,
+            *self.severity_baselines,
+            *self.contexts,
+        ]
         for item in facts:
             if not set(item.evidence_ids) <= events.keys():
                 raise ValueError("all facts must cite supplied evidence")

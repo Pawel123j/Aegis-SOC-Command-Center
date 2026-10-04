@@ -33,7 +33,8 @@ const messages: Record<string, string> = {
   rate_limited: 'Za dużo żądań. Poczekaj chwilę i spróbuj ponownie.',
   ingest_capacity_exceeded: 'Magazyn przyjmowania logów osiągnął limit.',
   duplicate_event_id: 'Każde zdarzenie testu musi mieć inny event_id. Usuń powtórzone rekordy.',
-  body_too_large: 'Przesłany zestaw przekracza limit rozmiaru. Test może zawierać najwyżej 64 KiB.',
+  body_too_large:
+    'Przesłany zestaw przekracza limit rozmiaru. Sprawdź limit wskazany w formularzu.',
   rules_unavailable: 'Katalog reguł jest chwilowo niedostępny. Odśwież go przed kolejną zmianą.',
   rule_not_found: 'Nie znaleziono reguły. Odśwież katalog detekcji.',
   rule_unchanged: 'Reguła ma już ten stan. Odśwież katalog detekcji.',
@@ -49,6 +50,7 @@ export class ApiError extends Error {
     public status: number,
     public code: string,
     public requestId?: string,
+    public detail?: string,
   ) {
     super(
       messages[code] ??
@@ -123,14 +125,17 @@ export class ApiClient {
     }
     if (!response.ok) {
       const body = (await response.json().catch(() => ({}))) as {
-        error?: { code?: string; request_id?: string };
+        error?: { code?: string; request_id?: string; message?: unknown };
         code?: string;
         request_id?: string;
+        message?: unknown;
       };
+      const detail = body.error?.message ?? body.message;
       throw new ApiError(
         response.status,
         body.error?.code ?? body.code ?? 'http_error',
         body.error?.request_id ?? body.request_id,
+        typeof detail === 'string' && detail.length <= 500 ? detail : undefined,
       );
     }
     return response.status === 204 ? (undefined as T) : ((await response.json()) as T);

@@ -21,6 +21,9 @@ from app.modules.mitre.service import record_mapping
 from app.modules.normalization.models import NormalizedEvent
 from app.modules.normalization.schemas import NormalizedSecurityEvent
 from app.modules.risk.service import score_subject
+from app.modules.sigma.compiler import EVALUATOR_VERSION as SIGMA_EVALUATOR
+from app.modules.sigma.service import SigmaMatch, active_rules
+from app.modules.sigma.service import matches as sigma_matches
 
 
 class RuleConfigurationError(RuntimeError):
@@ -51,7 +54,7 @@ def enqueue_normalized(database: Database, limit: int) -> int:
         return len(rows)
 
 
-def _key(event: NormalizedSecurityEvent, match: Match) -> str:
+def _key(event: NormalizedSecurityEvent, match: Match | SigmaMatch) -> str:
     return hashlib.sha256(
         canonical_json(
             {
@@ -61,7 +64,9 @@ def _key(event: NormalizedSecurityEvent, match: Match) -> str:
                 "run_id": str(event.run_id),
                 "rule_id": match.rule.id,
                 "rule_version": match.rule.version,
-                "evaluator_version": EVALUATOR_VERSION,
+                "evaluator_version": SIGMA_EVALUATOR
+                if isinstance(match, SigmaMatch)
+                else EVALUATOR_VERSION,
             }
         )
     ).hexdigest()
@@ -112,7 +117,14 @@ def _process_one(database: Database) -> dict[str, int] | None:
             return {"processed": 0, "quarantined": 1, "alerts": 0}
         active = {rule.id for rule in BUILTIN_RULES if deployments[rule.id].enabled}
         try:
-            matches = [match for match in evaluate(snapshot.document) if match.rule.id in active]
+            sigma_rules = active_rules(session)
+        except (ValueError, TypeError, KeyError):
+            raise RuleConfigurationError("sigma_configuration_mismatch") from None
+        try:
+            matches: list[Match | SigmaMatch] = [
+                match for match in evaluate(snapshot.document) if match.rule.id in active
+            ]
+            matches.extend(sigma_matches(sigma_rules, snapshot.document))
         except Exception:
             job.state = "quarantined"
             job.error_code = "evaluation_failed"
@@ -121,6 +133,9 @@ def _process_one(database: Database) -> dict[str, int] | None:
             return {"processed": 0, "quarantined": 1, "alerts": 0}
         created = 0
         for match in matches:
+            evaluator_version = (
+                SIGMA_EVALUATOR if isinstance(match, SigmaMatch) else EVALUATOR_VERSION
+            )
             values: dict[str, Any] = {
                 "id": uuid4(),
                 "detection_key": _key(event, match),
@@ -131,7 +146,7 @@ def _process_one(database: Database) -> dict[str, int] | None:
                 "mode": event.mode,
                 "rule_id": match.rule.id,
                 "rule_version": match.rule.version,
-                "evaluator_version": EVALUATOR_VERSION,
+                "evaluator_version": evaluator_version,
                 "severity": match.rule.severity,
                 "title": match.rule.title,
                 "status": "new",
@@ -170,7 +185,7 @@ def _process_one(database: Database) -> dict[str, int] | None:
                         "event_id": str(event.event_id),
                         "rule_id": match.rule.id,
                         "rule_version": match.rule.version,
-                        "evaluator_version": EVALUATOR_VERSION,
+                        "evaluator_version": evaluator_version,
                     },
                 )
                 alert = session.get(Alert, alert_id)
@@ -191,6 +206,14 @@ def _process_one(database: Database) -> dict[str, int] | None:
             }
             for rule in BUILTIN_RULES
             if rule.id in active
+        ] + [
+            {
+                "id": rule.id,
+                "version": rule.version,
+                "deployment_version": rule.deployment.version,
+                "evaluator_version": SIGMA_EVALUATOR,
+            }
+            for rule in sigma_rules
         ]
         session.commit()
         return {"processed": 1, "quarantined": 0, "alerts": created}

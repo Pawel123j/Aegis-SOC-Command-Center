@@ -48,7 +48,7 @@ class AlertSummary(BaseModel):
     risk_level: RiskLevel | None = None
     risk_calculation_id: UUID | None = None
     event_count: int = 1
-    detection_type: Literal["single_event", "correlation"] = "single_event"
+    detection_type: Literal["single_event", "correlation", "sigma"] = "single_event"
 
 
 class EventEvidence(BaseModel):

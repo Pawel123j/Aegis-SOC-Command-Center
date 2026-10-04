@@ -118,6 +118,7 @@ export function Alerts({
                           {item.detection_type === 'correlation' && (
                             <small>Korelacja · liczba zdarzeń: {item.event_count}</small>
                           )}
+                          {item.detection_type === 'sigma' && <Badge>Sigma</Badge>}
                         </td>
                         <td>
                           <Badge tone={item.severity}>{item.severity}</Badge>
@@ -255,6 +256,7 @@ function AlertDialog({
               <Badge tone={resource.data.severity}>{resource.data.severity}</Badge>
               <Badge>{statusName[resource.data.status]}</Badge>
               <Badge>{resource.data.mode}</Badge>
+              {resource.data.detection_type === 'sigma' && <Badge>Sigma</Badge>}
             </div>
             <dl className="facts">
               <dt>
@@ -269,6 +271,12 @@ function AlertDialog({
               <dd>
                 {resource.data.rule_id} / {resource.data.rule_version}
               </dd>
+              {resource.data.evaluator_version && (
+                <>
+                  <dt>Wersja silnika</dt>
+                  <dd>{resource.data.evaluator_version}</dd>
+                </>
+              )}
               <dt>Potwierdzono</dt>
               <dd>{time(resource.data.acknowledged_at)}</dd>
               <dt>Ocena ryzyka</dt>
@@ -285,6 +293,12 @@ function AlertDialog({
               refreshPending={resource.pending}
             />
             <h3>Dlaczego powstał alert</h3>
+            {resource.data.detection_type === 'sigma' && (
+              <p className="notice">
+                Dopasowano zachowaną wersję reguły Sigma. Priorytet pochodzi z poziomu
+                zadeklarowanego przez autora; nie potwierdza pewności ani niezależnego zachowania.
+              </p>
+            )}
             <EventReason reason={resource.data.reason} />
             <MitreMapping mapping={resource.data.mitre_mapping} />
             <details>

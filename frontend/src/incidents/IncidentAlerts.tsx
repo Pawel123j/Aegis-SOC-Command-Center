@@ -87,6 +87,7 @@ export function IncidentAlerts({
                     {alert.detection_type === 'correlation' && (
                       <small>Korelacja · liczba zdarzeń: {alert.event_count}</small>
                     )}
+                    {alert.detection_type === 'sigma' && <Badge>Sigma</Badge>}
                   </td>
                   <td>
                     <Badge tone={alert.severity}>{alert.severity}</Badge>

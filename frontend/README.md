@@ -5,7 +5,7 @@ Panel działa za lokalnym proxy pod tym samym origin co API.
 
 Widoki: logowanie, przegląd, zdarzenia i dowody, alerty z decyzjami analityka,
 incydenty z notatkami i osią czasu, trzy reguły pojedynczych zdarzeń i pięć reguł
-korelacji, źródła z własnymi
+korelacji, importowane reguły Sigma, źródła z własnymi
 kluczami, status przetwarzania i retry, ocena ryzyka alertów i incydentów
 oraz MITRE ATT&CK Coverage.
 Dane i zachowane obliczenia pochodzą z API.
@@ -48,12 +48,47 @@ Sprawy live mogą łączyć alerty z wielu źródeł. Oś czasu rozróżnia czas
 od czasu działania analityka i pozwala otworzyć zachowany oryginał bez
 uzależnienia od dostępności wyszukiwarki zdarzeń.
 
-„Reguły detekcji” mają zakładki pojedynczych zdarzeń i korelacji. Korelacje
+„Reguły detekcji” mają zakładki pojedynczych zdarzeń, korelacji i Sigma. Korelacje
 pokazują kolejność etapów lub próg liczby zdarzeń, okno czasu, wspólne encje
 oraz warunki AND/OR. Widok szczegółów pobiera wersjonowaną regułę z API.
 Kierownik SOC i administrator mogą ją włączać i wyłączać z `If-Match`;
 analityk może przeprowadzić izolowany test, a osoba z rolą odczytu przeglądać
 warunki. Konflikt zmiany wymaga jawnego odświeżenia katalogu.
+
+Zakładka „Sigma” pobiera dane przy pierwszym otwarciu. Osoba z prawem
+odczytu detekcji może przejrzeć definicję, historię, obsługiwane źródła
+i sprawdzić własny YAML bez zapisywania. Kierownik SOC i administrator
+mogą użyć „Import Sigma Rule”: wkleić definicję albo wybrać plik, zweryfikować
+warunki i zapisać wyłączoną regułę. Dopiero osobne włączenie pozwala
+na detekcję kolejnych przetwarzanych zdarzeń. Powtórny import dokładnie
+tej samej bieżącej definicji zachowuje jej stan. Inna treść z tym samym
+Sigma ID wymaga jawnego dodania wersji w szczegółach.
+
+Nowa wersja zachowuje poprzednie definicje i wyłącza regułę. Zapis oraz
+zmiana włączenia używają wyświetlonej wersji stanu w `If-Match`. Konflikt
+wymaga jawnego odświeżenia; szkic pozostaje w formularzu i przed kolejnym
+zapisem trzeba go ponownie zweryfikować. Historia pokazuje identyfikator,
+autora, czas i SHA-256 każdej niezmiennej wersji. Referencje autora
+są wyświetlane jako tekst. Nie stanowią zaufanych odnośników.
+
+Obsługiwany podzbiór Sigma obejmuje porównania `equals`, `contains`,
+`startswith`, `endswith` oraz `AND`, `OR`, `NOT` i nawiasy. Panel pokazuje
+rzeczywisty zakres i aliasy pól z API, w tym odrzucane funkcje. Limit YAML
+wynosi 64 KiB UTF-8, katalogu 100 reguł, historii 20 wersji na regułę.
+Plik musi zawierać poprawny UTF-8; błędne bajty są odrzucane bez zastępowania
+znaków i bez zmiany wcześniejszego szkicu.
+Analityk z prawem testowania może przesłać od 1 do 25 pełnych
+znormalizowanych rekordów JSON; limit całego żądania testu wynosi 1 MiB.
+Test działa także dla wyłączonej reguły, sprawdza zachowany YAML i pozwala
+otworzyć dopasowane dowody. Nie zapisuje alertów ani incydentów.
+
+Poziom zadeklarowany przez autora Sigma wpływa na podstawowy priorytet
+alertu. Nie potwierdza pewności ani niezależnego zachowania. Etykiety
+ATT&CK są możliwymi powiązaniami. Zmiana konta lub uprawnień usuwa szkice;
+zmiana sesji blokuje formularze do sprawdzenia bieżącego konta.
+Spóźnione odpowiedzi nie pokazują podglądu ani wyniku z poprzedniej sesji.
+Szkic tego samego użytkownika pozostaje po przełączeniu zakładki
+i ponownym sprawdzeniu sesji.
 
 Pokrycie przetwarzania pokazuje liczniki kolejki, rekordy spóźnione,
 nieprawidłowy czas, kwarantannę i niekompletne dopasowania z rzeczywistego

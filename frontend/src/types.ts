@@ -129,6 +129,7 @@ export interface Alert {
   version: number;
   rule_id: string;
   rule_version: string;
+  evaluator_version?: string;
   source_id: string;
   dataset_id: string;
   mode: string;
@@ -137,7 +138,7 @@ export interface Alert {
   risk_level: RiskLevel | null;
   risk_calculation_id: string | null;
   event_count?: number;
-  detection_type?: 'single_event' | 'correlation';
+  detection_type?: 'single_event' | 'correlation' | 'sigma';
 }
 export interface AlertDetail extends Alert {
   mitre_mapping?: MitreMapping;

@@ -2,6 +2,7 @@
 
 from datetime import datetime
 from typing import Any
+from uuid import UUID
 
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -19,6 +20,9 @@ from app.modules.mitre.schemas import (
     TacticCoverage,
     TechniqueCoverage,
 )
+from app.modules.sigma.models import SigmaRuleVersion
+from app.modules.sigma.service import MAX_RULES, verified_version
+from app.modules.sigma.service import mapping as sigma_mapping
 
 _AGGREGATE = text("""
 WITH scoped AS MATERIALIZED (
@@ -64,7 +68,14 @@ SELECT jsonb_build_object(
   'tactics',COALESCE((SELECT jsonb_agg(to_jsonb(t)) FROM tactics t),'[]'::jsonb),
   'deployments',COALESCE((SELECT jsonb_object_agg(id,
     jsonb_build_object('version',rule_version,'enabled',enabled))
-    FROM public.rule_deployments WHERE id=ANY(CAST(:rule_ids AS text[]))),'{}'::jsonb)
+    FROM public.rule_deployments WHERE id=ANY(CAST(:rule_ids AS text[]))),'{}'::jsonb),
+  'sigma_rules',COALESCE((SELECT jsonb_agg(to_jsonb(configured)) FROM (
+    SELECT r.id AS rule_id,r.detection_id,d.enabled,d.rule_version,
+      to_jsonb(v) AS definition FROM public.sigma_rules r
+    LEFT JOIN public.rule_deployments d ON d.id=r.detection_id
+    LEFT JOIN public.sigma_rule_versions v ON v.rule_id=r.id AND v.revision::text=d.rule_version
+    ORDER BY r.id LIMIT 101
+  ) configured),'[]'::jsonb)
 )
 """)
 
@@ -102,18 +113,35 @@ def coverage(db: Session, filters: CoverageFilters, now: datetime) -> CoverageVi
     configured_tactics: dict[str, set[str]] = {}
     enabled_techniques: dict[str, set[str]] = {}
     enabled_tactics: dict[str, set[str]] = {}
+    configured = []
     for rule in rules:
         deployment = raw["deployments"].get(rule.id)
         if deployment is None or deployment["version"] != rule.version:
             raise ApiError(503, "rules_unavailable", "Rule deployment version is unavailable")
-        for technique in rule_mapping(rule.id).techniques:
-            configured_techniques.setdefault(technique.id, set()).add(rule.id)
-            if deployment["enabled"]:
-                enabled_techniques.setdefault(technique.id, set()).add(rule.id)
+        configured.append((rule.id, deployment["enabled"], rule_mapping(rule.id)))
+    try:
+        if len(raw["sigma_rules"]) > MAX_RULES:
+            raise ValueError("Sigma rule limit exceeded")
+        for item in raw["sigma_rules"]:
+            identity = UUID(item["rule_id"])
+            if item["detection_id"] != f"sigma:{identity}" or not isinstance(item["enabled"], bool):
+                raise ValueError("Sigma deployment unavailable")
+            row = SigmaRuleVersion(**{**item["definition"], "rule_id": identity})
+            if str(row.revision) != item["rule_version"]:
+                raise ValueError("Sigma selected revision unavailable")
+            compiled = verified_version(row)
+            configured.append((item["detection_id"], item["enabled"], sigma_mapping(compiled)))
+    except (ValueError, TypeError, KeyError):
+        raise ApiError(503, "sigma_revision_unavailable", "Sigma revision is unavailable") from None
+    for rule_id, enabled, view in configured:
+        for technique in view.techniques:
+            configured_techniques.setdefault(technique.id, set()).add(rule_id)
+            if enabled:
+                enabled_techniques.setdefault(technique.id, set()).add(rule_id)
             for tactic in technique.tactics:
-                configured_tactics.setdefault(tactic.id, set()).add(rule.id)
-                if deployment["enabled"]:
-                    enabled_tactics.setdefault(tactic.id, set()).add(rule.id)
+                configured_tactics.setdefault(tactic.id, set()).add(rule_id)
+                if enabled:
+                    enabled_tactics.setdefault(tactic.id, set()).add(rule_id)
     return CoverageView(
         catalogue=catalogue.catalogue,
         scope=CoverageScope(
@@ -148,7 +176,7 @@ def coverage(db: Session, filters: CoverageFilters, now: datetime) -> CoverageVi
             **{
                 key: value
                 for key, value in raw.items()
-                if key not in {"techniques", "tactics", "deployments"}
+                if key not in {"techniques", "tactics", "deployments", "sigma_rules"}
             },
             observed_techniques=len(technique_counts),
             observed_tactics=len(tactic_counts),

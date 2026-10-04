@@ -16,6 +16,7 @@
     "backend/app/modules/incidents",
     "backend/app/modules/mitre",
     "backend/app/modules/risk",
+    "backend/app/modules/sigma",
     "backend/app/modules/intelligence",
     "backend/app/modules/hunting",
     "backend/app/modules/soar",

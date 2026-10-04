@@ -1,8 +1,9 @@
 # Architektura docelowa
 
-Status 2026-10-03: fundament PHASE 1–3, pojedyncze detekcje, panel,
+Status 2026-10-04: fundament PHASE 1–3, pojedyncze detekcje, panel,
 incydenty i korelacja Etapu 2 są zaimplementowane; Etapy 3 ryzyka i 4 MITRE dodają osobne historyczne snapshoty i projekcje;
-wykonane kontrole opisują ich raporty walidacji.
+Sigma Etapu 5 dodaje niezmienne definicje i kontrolowane wykonanie;
+wykonane kontrole opisują raporty walidacji.
 PostgreSQL przechowuje
 niezmienne normalized snapshots; processor projektuje je do ClickHouse,
 a detector i correlator niezależnie oceniają fakty z PostgreSQL.
@@ -23,6 +24,14 @@ Coverage odczytuje indeksowane skojarzenia jednym zapytaniem PostgreSQL,
 ze wspólnym snapshotem liczników i deployments, limitem czasu 3 s.
 Nowy mapping zapisuje się w transakcji alert/risk/incident/audit;
 ClickHouse ani dodatkowa usługa nie uczestniczą w tych agregacjach.
+Sigma Etapu 5 również korzysta z istniejącego detectora i PostgreSQL.
+Parser i evaluator przekształcają ograniczoną deklarację w dane AST;
+warstwa API przechowuje niezmienne rewizje i jawne deploymenty.
+Przed wykonaniem i przy ocenie historycznej sprawdzane są utrwalone źródło,
+hashe oraz predykat zdarzenia. Publikacja i detektor współdzielą blokadę,
+a alert/risk/MITRE/incident/audit zachowują jedną transakcję.
+[ADR 0011](adr/0011-versioned-sigma-rules.md) wprowadza risk-policy-v3,
+rozdzielając severity importowanej reguły od dowodów niezależnych zachowań.
 Poziom produkcyjny oznacza świadome kontrakty, odporność i testy,
 nie deklarację wysokiej dostępności klastra uruchamianego na jednym laptopie.
 

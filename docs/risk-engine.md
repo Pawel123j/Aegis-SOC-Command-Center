@@ -6,7 +6,17 @@ Wynik jest jawnym priorytetem według polityki Aegis, nie statystycznym
 prawdopodobieństwem kompromitacji. Severity detekcji, risk i decyzja analityka
 o stanie incydentu są odrębnymi informacjami.
 
-## Polityka risk-policy-v2
+## Polityka risk-policy-v3 i historia v2
+
+Etap 5 rozwija kontrakt wejścia przez osobne `severity_baselines` Sigma.
+Wagi i arytmetyka kontrolowanych sygnałów opisanych niżej pozostają zachowane.
+Zweryfikowana utrwalona rewizja Sigma daje wyłącznie bazowy wkład D z własnej
+severity; nie nadaje confidence ani rodziny zachowania. Przy samej Sigma C/E
+mają zero punktów i status unknown. Przy mieszanych źródłach C/E liczą tylko
+dotychczasowe kontrolowane sygnały, bez premii za kolejną nazwę reguły.
+Nowe obliczenia mają wersję/hash v3. Zapisane v2 nadal zwracają swój oryginalny
+snapshot i hash, bez przeliczenia przy GET. [ADR 0011](adr/0011-versioned-sigma-rules.md),
+[walidacja Sigma](validation-sigma.md).
 
 Wszystkie operacje są całkowitoliczbowe. Kolejność wejścia, retry, nazwa nowego
 alertu oraz bieżący zegar nie zwiększają wyniku.
@@ -14,8 +24,9 @@ alertu oraz bieżący zegar nie zwiększają wyniku.
 ```text
 D = max severity_points(signal), gdy confidence nieznane
 D = max floor(severity_points(signal)*confidence(signal)/100), gdy udokumentowane
+D = max powyższych kandydatów oraz severity_points(verified Sigma baseline)
 C = min(9,3*max(0,independent_units-1))
-E = min(12,2*max(0,unique_events-1))
+E = min(12,2*max(0,unique_controlled_signal_events-1))
 raw = D+C+E+A+U+I+T+H+P
 score = min(100,raw)
 clipping = score-raw
@@ -30,7 +41,7 @@ zero i not_applicable, a rekord bez obliczenia nadal pokazuje null.
 | --- | ---: | --- |
 | D — detekcja | 55 | informational 5, low 15, medium 30, high 45, critical 55; udokumentowane confidence skaluje własną wagę |
 | C — niezależne sygnały | 9 | 3 za każdą jednostkę poza pierwszą; overlap tej samej rodziny scala się przechodnio |
-| E — zdarzenia dowodowe | 12 | 2 za każde unikalne zdarzenie poza pierwszym |
+| E — zdarzenia dowodowe | 12 | 2 za każde unikalne zdarzenie kontrolowanego sygnału poza pierwszym; Sigma baseline nie zwiększa E |
 | A — znaczenie hosta | 15 | low 0, medium 5, high 10, critical 15; maksimum z powiązanego kontekstu |
 | U — znaczenie konta | 10 | low 0, medium 3, high 6, critical 10; maksimum |
 | I — reputacja IOC | 15 | aktywne suspicious z confidence co najmniej 50: 8; malicious co najmniej 80: 15; maksimum |

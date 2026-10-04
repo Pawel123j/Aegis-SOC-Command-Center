@@ -91,5 +91,9 @@ class Alert(Base):
     @property
     def detection_type(self) -> str:
         return (
-            "correlation" if self.evaluator_version.startswith("correlation-") else "single_event"
+            "correlation"
+            if self.evaluator_version.startswith("correlation-")
+            else "sigma"
+            if self.evaluator_version.startswith("sigma-")
+            else "single_event"
         )

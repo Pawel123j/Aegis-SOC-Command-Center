@@ -1,6 +1,7 @@
 # Raport walidacji PHASE 2 — dowód historyczny
 
-Bieżący etap: [MITRE ATT&CK](validation-mitre.md); wcześniejsze
+Bieżący etap: [Sigma](validation-sigma.md); wcześniejsze
+[MITRE ATT&CK](validation-mitre.md),
 [Risk Engine](validation-risk.md),
 [Correlation Engine](validation-correlation.md) oraz
 [Incident Management](validation-incidents.md); poprzedni przyrost

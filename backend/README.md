@@ -4,7 +4,7 @@ FastAPI/Pydantic/SQLAlchemy tworzą modularny monolit z oddzielnym procesem Cele
 Runtime to **Python 3.12.14**, zgodny z obrazem Docker i konfiguracją CI. Zależności
 runtime i developerskie mają osobne lockfile z hashami.
 
-**Stan: PHASE 0–3, incydenty, korelacja, ryzyko i MITRE ATT&CK — 2026-10-03.**
+**Stan: PHASE 0–3, incydenty, korelacja, ryzyko, MITRE ATT&CK i Sigma — 2026-10-04.**
 Migracja `0004_initial_alerts`, osobny `app.detector`, API alerts/detections
 i atomowy checkpoint zapewniają trzy reguły pojedynczego zdarzenia.
 [Zakres i ograniczenia](../docs/initial-soc.md).
@@ -28,6 +28,11 @@ Etap 4 dodaje `app.modules.mitre`, lokalny przypięty katalog oraz migrację
 hash i nazwy; coverage liczy distinct alerty i aktywnie powiązane sprawy.
 Nie zmienia oryginalnych reguł ani polityki ryzyka.
 [Kontrakt](../docs/mitre.md), [wyniki](../docs/validation-mitre.md).
+Etap 5 dodaje `app.modules.sigma`, migrację `0009_sigma` i API `/api/v1/sigma`.
+YAML kompiluje się do ograniczonego AST; niezmienne rewizje są wyłączone przy
+imporcie. Bieżąca publikacja działa przy kolejnych jobach istniejącego detektora.
+Risk-policy-v3 przyjmuje deklarowaną severity osobno od kontrolowanych rodzin.
+[Kontrakt](../docs/sigma.md), [walidacja Etapu 5](../docs/validation-sigma.md).
 Fundament PHASE 1 obejmuje konfigurację i bezpieczne błędy, `/api/v1/auth`,
 `/api/v1/users`, `/api/v1/audit`, chronione `/api/v1/system/health`, sondy `/health`
 i `/ready`, wewnętrzne `/metrics` oraz OpenAPI pod `/api/v1/openapi.json`.
@@ -51,7 +56,8 @@ i pojemności. PHASE 3 dodaje sześć parserów, niezmienne snapshoty w PostgreS
 Osobny migrator archiwum stosuje SQL z checksum i rozdziela właściciela od runtime.
 API `/events/search` i `/events/{id}` udostępnia filtrowanie, podpisaną paginację
 i odczyt z deduplikacją przed zliczeniem. Detekcje i panel działają w
-początkowym przyroście SOC; Risk Engine rozwija Etap 3, Sigma i generator pozostają planowane.
+początkowym przyroście SOC; Risk Engine rozwija Etap 3, Sigma Etap 5,
+a generator pozostaje planowany.
 Rozbudowa: [plan 15 etapów](../docs/soc-expansion-plan.md).
 Wyniki: [raport PHASE 3](../docs/validation-phase3.md).
 

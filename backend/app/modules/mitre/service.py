@@ -17,6 +17,9 @@ from app.modules.mitre.catalogue import CATALOGUE_SHA256
 from app.modules.mitre.mapping import associate, legacy_mapping, rule_mapping
 from app.modules.mitre.models import AlertMitreMapping, AlertMitreSnapshot
 from app.modules.mitre.schemas import IncidentMapping, IncidentTechnique, MappingView
+from app.modules.sigma.compiler import EVALUATOR_VERSION as SIGMA_EVALUATOR
+from app.modules.sigma.service import mapping as sigma_mapping
+from app.modules.sigma.service import verified_alert
 
 
 def _input_hash(alert: Alert) -> str:
@@ -48,20 +51,23 @@ def record_mapping(db: Session, alert: Alert) -> None:
     """Called only after controlled worker evaluation, before the same commit."""
     try:
         verified_events(alert)
-        rule = next(
-            (item for item in (*BUILTIN_RULES, *CORRELATION_RULES) if item.id == alert.rule_id),
-            None,
-        )
-        frozen = {k: v for k, v in alert.rule_snapshot.items() if k != "deployment_version"}
-        if (
-            rule is None
-            or frozen != rule.snapshot()
-            or alert.rule_version != rule.version
-            or alert.evaluator_version != frozen["evaluator_version"]
-            or alert.severity != rule.severity
-        ):
-            raise ValueError("untrusted association rule")
-        view = rule_mapping(alert.rule_id)
+        if alert.evaluator_version == SIGMA_EVALUATOR:
+            view = sigma_mapping(verified_alert(db, alert))
+        else:
+            rule = next(
+                (item for item in (*BUILTIN_RULES, *CORRELATION_RULES) if item.id == alert.rule_id),
+                None,
+            )
+            frozen = {k: v for k, v in alert.rule_snapshot.items() if k != "deployment_version"}
+            if (
+                rule is None
+                or frozen != rule.snapshot()
+                or alert.rule_version != rule.version
+                or alert.evaluator_version != frozen["evaluator_version"]
+                or alert.severity != rule.severity
+            ):
+                raise ValueError("untrusted association rule")
+            view = rule_mapping(alert.rule_id)
         document = view.model_dump(mode="json")
         input_hash = _input_hash(alert)
         prior = db.get(AlertMitreSnapshot, alert.id)
@@ -127,6 +133,8 @@ def alert_mapping(db: Session, alert: Alert) -> MappingView:
         return legacy_mapping()
     try:
         verified_events(alert)
+        if alert.evaluator_version == SIGMA_EVALUATOR:
+            verified_alert(db, alert)
     except (KeyError, TypeError, ValueError):
         raise ApiError(
             409, "mitre_evidence_integrity_mismatch", "MITRE source proof changed"

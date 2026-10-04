@@ -3,7 +3,7 @@
 Projekt portfolio Security Engineering: docelowo lokalna platforma mini-SIEM, SOAR,
 Incident Response i Threat Hunting, z demonstracją opartą na prawdziwym pipeline logów.
 
-**Stan: PHASE 0–3, incydenty, korelacja, ryzyko i MITRE ATT&CK — 2026-10-03.**
+**Stan: PHASE 0–3, incydenty, korelacja, ryzyko, MITRE ATT&CK i Sigma — 2026-10-04.**
 Backend ma API źródeł, osobne tokeny ingestion, single/batch, idempotencję,
 PostgreSQL inbox/outbox, relay i worker z ograniczonym retry oraz kwarantanną.
 Sześć parserów tworzy niezmienne snapshoty w PostgreSQL, a osobny processor
@@ -23,10 +23,13 @@ prawdopodobieństwa ataku. [Polityka ryzyka](docs/risk-engine.md).
 Etap 4 dodaje lokalny wersjonowany katalog MITRE ATT&CK, nazwy technik/taktyk
 w regułach i dowodach oraz widok pokrycia z licznikami alertów i spraw.
 Mapowania są wskazówką do analizy, bez potwierdzania ataku.
-[Zakres i zasady](docs/mitre.md). Sigma i generator pozostają zaplanowane. Rozbudowa przebiega według
+[Zakres i zasady](docs/mitre.md). Etap 5 dodaje import, walidację, niezmienne
+rewizje i kontrolowane wykonanie reguł Sigma. [Podzbiór i zasady](docs/sigma.md),
+[walidacja Etapu 5](docs/validation-sigma.md). Generator pozostaje zaplanowany. Rozbudowa przebiega według
 [audytu i nowego planu 15 etapów](docs/soc-expansion-plan.md).
 Zakres: [incydenty](docs/incidents.md), [pierwsze alerty i panel](docs/initial-soc.md).
-Wyniki: [walidacja Etapu 4](docs/validation-mitre.md),
+Wyniki: [walidacja Etapu 5](docs/validation-sigma.md),
+[walidacja Etapu 4](docs/validation-mitre.md),
 [walidacja Etapu 3](docs/validation-risk.md),
 [walidacja Etapu 2](docs/validation-correlation.md),
 wcześniejszy [Etap 1](docs/validation-incidents.md).
@@ -173,8 +176,9 @@ logowanie po ataku, PowerShell, eskalację uprawnień, trafienie IOC, account co
 i nowe konto administratora. Każdy scenariusz zostanie powiązany z testami regresji.
 
 Screenshoty rzeczywistego dashboardu trafią do `docs/assets/` w PHASE 13/18.
-Pełna definicja ukończenia pozostaje otwarta. Bieżący przyrost to
-**Etap 1 — Incident Management**, a następny to **Correlation Engine**.
+Pełna definicja ukończenia pozostaje otwarta.
+Aktualny przyrost nowego planu: **Etap 5 — Sigma**, wdrożony i zweryfikowany automatycznie.
+Etapy 1–4 mają osobne raporty powyżej; następny to **Entity Profiles**.
 
 ## Zasady rozwoju
 

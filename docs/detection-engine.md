@@ -1,6 +1,11 @@
 # Detection Engine — projekt kontraktu
 
-**Status: projekt PHASE 0. Silnik, importer Sigma, endpointy i testy opisane poniżej nie są jeszcze zaimplementowane.** Dokument definiuje zachowanie do realizacji i bramki akceptacji, a nie deklarację działających funkcji.
+**Status:** działają trzy single-event oraz pięć trwałych reguł korelacji.
+Etap 5 dodaje importowany podzbiór Sigma; jego walidacja jest opisana
+w [raporcie](validation-sigma.md), a rzeczywisty kontrakt w [Sigma](sigma.md).
+Poniższe sekcje zachowują szerszy projekt PHASE 0, w tym przyszły natywny
+authoring i odmienne historyczne progi. Wykonaną korelację określa
+[jej kontrakt](correlation-engine.md); nie wszystkie dalsze propozycje są wdrożone.
 
 ## Granice modułu
 

@@ -1,0 +1,22 @@
+title: Aegis Encoded PowerShell Review
+id: 9eb0e4f0-6bf0-4bd7-92ac-9865506d4d9b
+status: experimental
+description: Review encoded PowerShell arguments, with an explicit maintenance exception.
+author: Aegis SOC Command Center
+license: BSD-3-Clause
+date: 2026-10-04
+logsource:
+    product: windows
+    category: process_creation
+detection:
+    selection:
+        Image|endswith: '\powershell.exe'
+        CommandLine|contains: '-EncodedCommand'
+    maintenance:
+        CommandLine|contains: 'aegis-approved-maintenance'
+    condition: selection and not maintenance
+falsepositives:
+    - Legitimate automation can use encoded arguments; review source evidence.
+level: high
+tags:
+    - attack.t1059.001
