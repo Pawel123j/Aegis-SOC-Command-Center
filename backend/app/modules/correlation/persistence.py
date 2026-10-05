@@ -13,6 +13,7 @@ from app.modules.audit.service import append_audit
 from app.modules.correlation.contracts import EVALUATOR_VERSION, CorrelationRule
 from app.modules.correlation.engine import detection_key
 from app.modules.detections.models import RuleDeployment
+from app.modules.entities.indexing import index_alert
 from app.modules.incidents.service import automatic_incident
 from app.modules.mitre.service import record_mapping
 from app.modules.normalization.models import NormalizedEvent
@@ -95,6 +96,7 @@ def persist_match(
     )
     alert = db.get(Alert, alert_id)
     assert alert is not None
+    index_alert(db, alert)
     score_subject(db, alert, request_id=request_id, trigger="alert_created")
     record_mapping(db, alert)
     automatic_incident(db, alert, request_id=request_id)

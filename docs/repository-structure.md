@@ -8,6 +8,11 @@ i testy przyjęcia zdarzeń powstały w PHASE 2. Przyszłe moduły
 nie zawierają pustych funkcji lub fałszywych endpointów. Poniżej ścieżki istniejącego
 szkieletu i odpowiedzialności planowanego kodu.
 
+Aktualizacja 2026-10-05: działający kod obejmuje także PHASE 3 i Etapy 1–6
+nowego planu. `entities` zawiera rzeczywistą politykę tożsamości, indeks,
+modele i zapytania, a `frontend/src/entities` widoki profili.
+Bieżącą bramkę dokumentuje [raport Etapu 6](validation-entities.md).
+
 ```text
 .
 ├── backend/
@@ -24,7 +29,7 @@ szkieletu i odpowiedzialności planowanego kodu.
 │       ├── api/
 │       └── regression/
 ├── frontend/
-│   ├── src/{app,api,components,features}/
+│   ├── src/{app,api,components,features,entities}/
 │   └── tests/e2e/
 ├── detection-content/
 │   └── {rules,sigma,fixtures,mitre,hunts,playbooks}/
@@ -57,6 +62,7 @@ szkieletu i odpowiedzialności planowanego kodu.
 | `incidents` | Case lifecycle, notes, evidence, timeline i investigations promotion |
 | `mitre` | Wersjonowany katalog i walidacja mappingu |
 | `risk` | Czysty algorytm i snapshoty obliczeń |
+| `entities` | Konserwatywna tożsamość obserwacji, indeks dowodów i ograniczone zapytania profili |
 | `intelligence` | IOC, wersje reputacji, inventory i dostawcy kontekstu |
 | `hunting` | Saved queries, bookmarks, investigations, draft detekcji |
 | `soar` | Definicje, run/step ledger, allowlista simulation actions |

@@ -4,7 +4,9 @@ FastAPI/Pydantic/SQLAlchemy tworzą modularny monolit z oddzielnym procesem Cele
 Runtime to **Python 3.12.14**, zgodny z obrazem Docker i konfiguracją CI. Zależności
 runtime i developerskie mają osobne lockfile z hashami.
 
-**Stan: PHASE 0–3, incydenty, korelacja, ryzyko, MITRE ATT&CK i Sigma — 2026-10-04.**
+**Stan: PHASE 0–3, incydenty, korelacja, ryzyko, MITRE ATT&CK, Sigma i profile encji — 2026-10-05.**
+Końcowa regresja Etapu 6: 1547 testów backendu PASS, coverage 93%.
+Uruchomienie i granice dowodu dokumentuje [raport](../docs/validation-entities.md).
 Migracja `0004_initial_alerts`, osobny `app.detector`, API alerts/detections
 i atomowy checkpoint zapewniają trzy reguły pojedynczego zdarzenia.
 [Zakres i ograniczenia](../docs/initial-soc.md).
@@ -33,6 +35,19 @@ YAML kompiluje się do ograniczonego AST; niezmienne rewizje są wyłączone prz
 imporcie. Bieżąca publikacja działa przy kolejnych jobach istniejącego detektora.
 Risk-policy-v3 przyjmuje deklarowaną severity osobno od kontrolowanych rodzin.
 [Kontrakt](../docs/sigma.md), [walidacja Etapu 5](../docs/validation-sigma.md).
+Etap 6 dodaje `app.modules.entities` i migrację `0010_entities`, która jest
+bieżącym head schematu. Profile hostów, kont z logów, IP i procesów łączą
+aktywność, wszystkie contributed events alertów oraz aktywne powiązania spraw.
+Niezmienny indeks powstaje atomowo w normalizer/detector/correlator; starsze
+dane uzupełnia jawny, ograniczony i audytowany backfill administratora.
+API `/api/v1/entities` zawiera osiem metod: siedem GET dla listy, `by-event/{id}`,
+`{id}`, `{id}/events`, `{id}/alerts`, `{id}/incidents` i `{id}/related` oraz
+POST `backfill`. Odczyt wymaga events:read, alerts:read i incidents:read;
+backfill wymaga system:manage. Ryzyko profilu wskazuje najwyższą istniejącą
+kwalifikującą się ocenę alertu; nie tworzy nowego score ani polityki encji.
+False positive nie uczestniczą w ryzyku i kandydackich skojarzeniach MITRE.
+[Kontrakt i ograniczenia](../docs/entities.md),
+[stan walidacji Etapu 6](../docs/validation-entities.md).
 Fundament PHASE 1 obejmuje konfigurację i bezpieczne błędy, `/api/v1/auth`,
 `/api/v1/users`, `/api/v1/audit`, chronione `/api/v1/system/health`, sondy `/health`
 i `/ready`, wewnętrzne `/metrics` oraz OpenAPI pod `/api/v1/openapi.json`.

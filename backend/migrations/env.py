@@ -16,6 +16,7 @@ from app.modules.audit.models import AuditLog  # noqa: F401
 from app.modules.auth.models import AuthSession, PreAuthSession, RefreshToken  # noqa: F401
 from app.modules.correlation import models as correlation_models  # noqa: F401
 from app.modules.detections import models as detection_models  # noqa: F401
+from app.modules.entities import models as entity_models  # noqa: F401
 from app.modules.incidents import models as incident_models  # noqa: F401
 from app.modules.ingestion import models as ingestion_models  # noqa: F401
 from app.modules.mitre import models as mitre_models  # noqa: F401

@@ -1,6 +1,7 @@
 # Raport walidacji PHASE 2 — dowód historyczny
 
-Bieżący etap: [Sigma](validation-sigma.md); wcześniejsze
+Bieżący etap: [profile encji](validation-entities.md); wcześniejsze
+[Sigma](validation-sigma.md),
 [MITRE ATT&CK](validation-mitre.md),
 [Risk Engine](validation-risk.md),
 [Correlation Engine](validation-correlation.md) oraz

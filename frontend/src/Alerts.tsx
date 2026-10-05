@@ -187,7 +187,7 @@ export function Alerts({
     </>
   );
 }
-function AlertDialog({
+export function AlertDialog({
   id,
   user,
   onClose,

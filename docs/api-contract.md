@@ -1,11 +1,11 @@
 # API v1 — zakres wdrożony i projekt dalszych faz
 
-Status: kod PHASE 1–3 i przyrostów SOC, stan 2026-10-04;
-wyniki wykonanych kontroli w [raporcie Sigma](validation-sigma.md)
+Status: kod PHASE 1–3 i przyrostów SOC, stan 2026-10-05;
+wyniki wykonanych kontroli w [raporcie profili encji](validation-entities.md)
 i wcześniejszych raportach walidacji.
 Kod obejmuje `/auth`, `/users`, `/audit`, `/system/health`, źródła, przyjęcie
 eventów, status batcha, retry, normalized event search, alerts/detections,
-incidents, correlations, risk, mitre, sigma oraz techniczne sondy/metryki.
+incidents, correlations, risk, mitre, sigma, entities oraz techniczne sondy/metryki.
 OpenAPI dla zaimplementowanych tras powstaje z modeli pod `/api/v1/openapi.json`.
 Zasoby oznaczone jako przyszłe poniżej nie są dostępne w tej implementacji.
 Weryfikację działania z rzeczywistymi usługami dokumentuje [raport walidacji](validation.md).
@@ -73,6 +73,7 @@ przeglądarkowy przepływ UI należy do PHASE 13.
 | Risk test | POST `/risk/test` | Detections:test; jawna symulacja wersjonowanego wejścia, bez zapisu efektów domenowych |
 | Risk recalculation | POST `/alerts/{id}/risk/recalculate`, `/incidents/{id}/risk/recalculate` | Właściwe alerts:manage/incidents:edit, If-Match decyzji analityka, ponowna autoryzacja po blokadzie; wynik z zachowanych dowodów |
 | Sigma | GET `/sigma/capabilities`, `/sigma/rules`, `/sigma/rules/{id}`; POST `/sigma/validate`, `/sigma/test`, `/sigma/rules`, `/sigma/rules/{id}/versions`; PATCH `/sigma/rules/{id}` | Odczyt/walidacja, bezstanowy test, import wyłączonej rewizji, publikacja z If-Match; szczegóły poniżej |
+| Encje | GET `/entities`, `/entities/by-event/{event_id}`, `/entities/{id}` i kolekcje events/alerts/incidents/related; POST `/entities/backfill` | Obserwowane profile, siedem odczytów i jedna audytowana partia indeksowania; szczegóły poniżej |
 
 Utworzenie źródła zwraca `{source, credential}` z tokenem widocznym tylko raz.
 Source ma server-generated dataset UUID, `mode=live` i zerowy `run_id`.
@@ -236,3 +237,46 @@ niespójna utrwalona rewizja daje503 bez ujawniania treści źródła.
 Alert ma `detection_type=sigma`, wykonawcę `sigma-subset-v1` oraz historyczne
 source/revision/AST. Risk policy v3 rozdziela deklarowaną severity od
 kontrolowanych rodzin C/E. [Semantyka](sigma.md), [decyzja](adr/0011-versioned-sigma-rules.md).
+
+## Profile encji — Etap 6
+
+Kontrakt implementowany w Etapie 6; wykonane wyniki zapisuje
+[raport](validation-entities.md). Prefiks `/api/v1/entities`.
+Wszystkie GET wymagają łącznie events:read, alerts:read i incidents:read.
+POST backfill wymaga system:manage i ponownej autoryzacji po blokadzie.
+
+| Metoda i ścieżka | Wynik |
+| --- | --- |
+| GET `/entities` | EntityPage z EntitySummary |
+| GET `/entities/by-event/{event_id}` | Profile encji zweryfikowanego eventu; bez indeksowania przy GET |
+| GET `/entities/{id}` | EntityDetail z kanoniczną podstawą, rolami, risk i MITRE |
+| GET `/entities/{id}/events` | Paginowana aktywność i role w oryginalnych zdarzeniach |
+| GET `/entities/{id}/alerts` | Paginowane alerty wszystkich contributed events |
+| GET `/entities/{id}/incidents` | Paginowane sprawy z aktywnymi powiązaniami |
+| GET `/entities/{id}/related?kind=host` | Profile hostów współobserwowanych w zdarzeniach |
+| POST `/entities/backfill` | Audytowany, ograniczony indeks starszych dowodów |
+
+Filtry query: mode live/replay, dataset_id/run_id dla dokładnego replay,
+UTC `from`/`to`, kind host/user/ip/process, literalne q do128 znaków,
+limit1–100 (domyślnie25), podpisany cursor. Domyślnie30 dni, maksimum366;
+past positive `[from,to)`, czas contributed event. Cursor wiąże zasób,
+filtry, okno i porządek. Zmiana filtrów wymaga rozpoczęcia od pierwszej strony.
+
+EntityPage zawiera scope, items, dokładny total, next_cursor i index_status.
+Summary zawiera UUID/kind/label, identity_policy/basis, inventory_verified=false,
+source_id, first_seen/last_seen w oknie, counts oraz nullable risk score/level.
+Counts rozdzielają distinct events, role observations, alerty kwalifikujące się,
+false positives i aktywnie powiązane incydenty; failed_logins są distinct event
+powiązane z encją niezależnie od roli, bez przypisywania jej własnych prób.
+Detail dodaje canonical_identity, role counts, related_host_count i pełną
+projekcję istniejącej oceny: strategy maximum_current_eligible_alert,
+entity_calculation=false, alert/calculation/policy i oryginalne explanation.
+MITRE claim candidate_association i confirmed_attack=false pozostają jawne.
+Alert false positive pozostaje w historii, bez udziału w ryzyku/MITRE.
+
+IndexStatus pending_events/pending_alerts/complete wskazuje niepełną historię.
+POST `{limit:25}` (strict integer1–100) obejmuje maksymalnie limit normalized
+events oraz limit alertów. Receipt zapewnia idempotencję. Backfill nie zmienia
+snapshotów, alertów ani wyników risk. Błąd integralności daje409 bez partial
+commit. Trzysekundowy limit SQL oraz ograniczona odpowiedź chronią koszt
+odczytu. Konserwatywną tożsamość i ograniczenia opisuje [entities](entities.md).

@@ -17,6 +17,7 @@ nie usuwa się historii uzasadnień.
 | [0009](0009-explainable-risk.md) | Wersjonowana ocena ryzyka, jawny brak kontekstu i niezmienna historia |
 | [0010](0010-versioned-attack-mappings.md) | Lokalny katalog ATT&CK, historyczne mapowania i odrębne liczniki zakresu |
 | [0011](0011-versioned-sigma-rules.md) | Niezmienne rewizje Sigma, kontrolowany podzbiór i jawne podstawy ryzyka |
+| [0012](0012-observed-entity-profiles.md) | Konserwatywna tożsamość encji, append-only obserwacje i projekcja ryzyka alertu |
 
 Każdy nowy ADR zawiera: kontekst, decyzję, alternatywy, konsekwencje, dowód
 akceptacji i warunek ponownego rozważenia.

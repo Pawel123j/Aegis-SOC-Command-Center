@@ -120,3 +120,10 @@ Panel przedstawia aktualny wynik, wkłady, nieznane dane i wcześniejsze oceny.
 Pierwszy wynik albo brak oceny są wyraźne; zero nie jest zastępowane pustą
 wartością. Szczegółowe wyniki i granice dowodu opisuje
 [raport Etapu 3](validation-risk.md).
+
+Etap 6 wyświetla na profilu encji maksimum aktualnych kwalifikujących się ocen
+alertów w wybranym oknie, wraz z istniejącym calculation ID i wyjaśnieniem.
+Nie dodaje entity scoring ani nowej wersji polityki. False positive nie
+uczestniczy w tej projekcji; brak oceny daje null. Obserwowana nazwa, SID,
+host lub IP nie stają się zweryfikowaną krytycznością/privilege context.
+[Profile i zakres](entities.md), [ADR 0012](adr/0012-observed-entity-profiles.md).

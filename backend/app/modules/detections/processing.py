@@ -15,6 +15,7 @@ from app.modules.alerts.models import Alert
 from app.modules.audit.service import append_audit
 from app.modules.detections.builtin import BUILTIN_RULES, EVALUATOR_VERSION, Match, evaluate
 from app.modules.detections.models import DetectionJob, RuleDeployment
+from app.modules.entities.indexing import index_alert
 from app.modules.incidents.service import automatic_incident
 from app.modules.ingestion.schemas import canonical_json
 from app.modules.mitre.service import record_mapping
@@ -190,6 +191,7 @@ def _process_one(database: Database) -> dict[str, int] | None:
                 )
                 alert = session.get(Alert, alert_id)
                 assert alert is not None
+                index_alert(session, alert)
                 score_subject(session, alert, request_id=str(uuid4()), trigger="alert_created")
                 record_mapping(session, alert)
                 automatic_incident(session, alert, request_id=str(uuid4()))

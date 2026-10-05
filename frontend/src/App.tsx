@@ -13,9 +13,20 @@ import { Incidents } from './incidents/Incidents';
 import { RiskScore } from './risk/RiskScore';
 import { MitreCoverage } from './mitre/MitreCoverage';
 import { canReadMitreCoverage } from './mitre/permissions';
+import { Entities } from './entities/Entities';
+import type { InitialEntityProfile } from './entities/Entities';
+import { canReadEntities } from './entities/permissions';
 
 type View =
-  'overview' | 'alerts' | 'events' | 'incidents' | 'detections' | 'mitre' | 'sources' | 'system';
+  | 'overview'
+  | 'alerts'
+  | 'events'
+  | 'incidents'
+  | 'detections'
+  | 'mitre'
+  | 'entities'
+  | 'sources'
+  | 'system';
 const links: { id: View; name: string; icon: string; permission?: string }[] = [
   { id: 'overview', name: 'Przegląd', icon: '◈' },
   { id: 'alerts', name: 'Alerty', icon: '◉', permission: 'alerts:read' },
@@ -23,6 +34,7 @@ const links: { id: View; name: string; icon: string; permission?: string }[] = [
   { id: 'events', name: 'Zdarzenia', icon: '⌕', permission: 'events:read' },
   { id: 'detections', name: 'Reguły detekcji', icon: '⌘', permission: 'detections:read' },
   { id: 'mitre', name: 'MITRE ATT&CK', icon: '▦' },
+  { id: 'entities', name: 'Profile encji', icon: '◫' },
   { id: 'sources', name: 'Źródła logów', icon: '⇄', permission: 'sources:manage' },
   { id: 'system', name: 'Stan systemu', icon: '▥', permission: 'system:read' },
 ];
@@ -37,6 +49,7 @@ export function App() {
   const [user, setUser] = useState<Me | null>(null);
   const identity = useRef<Me | null>(null);
   const authGeneration = useRef(0);
+  const [authorityVersion, setAuthorityVersion] = useState(0);
   const [starting, setStarting] = useState(true);
   const [startError, setStartError] = useState<unknown>(null);
   const [view, setView] = useState<View>('overview');
@@ -44,6 +57,7 @@ export function App() {
   const [query, setQuery] = useState('');
   const [incidentAlert, setIncidentAlert] = useState<Alert | null>(null);
   const [incidentSequence, setIncidentSequence] = useState(0);
+  const [entityProfile, setEntityProfile] = useState<InitialEntityProfile | null>(null);
   useEffect(() => {
     let active = true;
     const restoreGeneration = authGeneration.current;
@@ -68,6 +82,7 @@ export function App() {
         setUser(null);
         setSelected(null);
         setIncidentAlert(null);
+        setEntityProfile(null);
         setQuery('');
         setView('overview');
       } else {
@@ -83,10 +98,12 @@ export function App() {
                 !previous.permissions.every((permission) => me.permissions.includes(permission));
               identity.current = me;
               setUser(me);
+              setAuthorityVersion(generation);
               if (authorityChanged) {
                 setView('overview');
                 setSelected(null);
                 setIncidentAlert(null);
+                setEntityProfile(null);
                 setQuery('');
               }
             }
@@ -98,6 +115,7 @@ export function App() {
               setView('overview');
               setSelected(null);
               setIncidentAlert(null);
+              setEntityProfile(null);
               setQuery('');
             }
           });
@@ -127,6 +145,7 @@ export function App() {
           setView('overview');
           setSelected(null);
           setIncidentAlert(null);
+          setEntityProfile(null);
           setQuery('');
         }}
       />
@@ -162,14 +181,19 @@ export function App() {
             .filter((item) =>
               item.id === 'mitre'
                 ? canReadMitreCoverage(user)
-                : !item.permission || allowed(item.permission),
+                : item.id === 'entities'
+                  ? canReadEntities(user)
+                  : !item.permission || allowed(item.permission),
             )
             .map((item) => (
               <button
                 key={item.id}
                 className={`nav-item ${view === item.id ? 'active' : ''}`}
                 aria-current={view === item.id ? 'page' : undefined}
-                onClick={() => setView(item.id)}
+                onClick={() => {
+                  if (item.id === 'entities') setEntityProfile(null);
+                  setView(item.id);
+                }}
               >
                 <span aria-hidden="true">{item.icon}</span>
                 {item.name}
@@ -239,6 +263,19 @@ export function App() {
             <Detections user={user} onEvent={setSelected} />
           )}
           {view === 'mitre' && canReadMitreCoverage(user) && <MitreCoverage user={user} />}
+          {view === 'entities' && canReadEntities(user) && (
+            <Entities
+              key={authorityVersion}
+              user={user}
+              initialProfile={entityProfile}
+              onEvent={setSelected}
+              onCreateIncident={(alert) => {
+                setIncidentAlert(alert);
+                setIncidentSequence((value) => value + 1);
+                setView('incidents');
+              }}
+            />
+          )}
           {view === 'sources' && allowed('sources:manage') && (
             <Sources
               onEventId={(id) => {
@@ -256,7 +293,20 @@ export function App() {
         </footer>
       </div>
       {selected && (
-        <EventDetail event={selected} onClose={() => setSelected(null)} onFilter={filterEntity} />
+        <EventDetail
+          event={selected}
+          onClose={() => setSelected(null)}
+          onFilter={filterEntity}
+          onProfile={
+            canReadEntities(user)
+              ? (id) => {
+                  setEntityProfile({ id, event: selected });
+                  setSelected(null);
+                  setView('entities');
+                }
+              : undefined
+          }
+        />
       )}
     </div>
   );

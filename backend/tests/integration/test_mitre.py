@@ -198,8 +198,11 @@ def test_retries_restarts_and_gets_do_not_duplicate_or_write_frozen_associations
 
 
 def test_additive_migration_keeps_legacy_alert_and_risk_history_byte_identical(
-    case: Case, admin: Login
+    case: Case, admin: Login, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    migrate(case.database.owner, "0009_sigma", downgrade=True)
+    monkeypatch.setattr("app.modules.normalization.processing.index_event", lambda *_: None)
+    monkeypatch.setattr("app.modules.detections.processing.index_alert", lambda *_: None)
     normalize_events(case, admin, [powershell()])
     detect_once(processing_database(case), case.database.settings)
     record = alerts(case)[0]

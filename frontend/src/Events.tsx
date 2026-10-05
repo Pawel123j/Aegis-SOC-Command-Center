@@ -4,6 +4,7 @@ import type { FormEvent } from 'react';
 import { api } from './api';
 import { Badge, Empty, ErrorNotice, JsonView, Loading, Panel } from './components';
 import type { SearchInput, SearchResult, SecurityEvent } from './types';
+import { EventProfiles } from './entities/EventProfiles';
 
 function localInput(date: Date) {
   return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
@@ -213,10 +214,12 @@ export function EventDetail({
   event,
   onClose,
   onFilter,
+  onProfile,
 }: {
   event: SecurityEvent;
   onClose: () => void;
   onFilter: (field: string, value: string) => void;
+  onProfile?: (id: string) => void;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   useEffect(() => {
@@ -318,6 +321,7 @@ export function EventDetail({
           <dt>Proces</dt>
           <dd>{event.process.executable ?? '—'}</dd>
         </dl>
+        {onProfile && <EventProfiles key={event.event_id} event={event} onProfile={onProfile} />}
         {event.quality.length > 0 && (
           <div className="notice">
             <strong>Jakość danych</strong>

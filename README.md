@@ -3,7 +3,7 @@
 Projekt portfolio Security Engineering: docelowo lokalna platforma mini-SIEM, SOAR,
 Incident Response i Threat Hunting, z demonstracją opartą na prawdziwym pipeline logów.
 
-**Stan: PHASE 0–3, incydenty, korelacja, ryzyko, MITRE ATT&CK i Sigma — 2026-10-04.**
+**Stan: PHASE 0–3, incydenty, korelacja, ryzyko, MITRE ATT&CK, Sigma i profile encji — 2026-10-05.**
 Backend ma API źródeł, osobne tokeny ingestion, single/batch, idempotencję,
 PostgreSQL inbox/outbox, relay i worker z ograniczonym retry oraz kwarantanną.
 Sześć parserów tworzy niezmienne snapshoty w PostgreSQL, a osobny processor
@@ -25,10 +25,18 @@ w regułach i dowodach oraz widok pokrycia z licznikami alertów i spraw.
 Mapowania są wskazówką do analizy, bez potwierdzania ataku.
 [Zakres i zasady](docs/mitre.md). Etap 5 dodaje import, walidację, niezmienne
 rewizje i kontrolowane wykonanie reguł Sigma. [Podzbiór i zasady](docs/sigma.md),
-[walidacja Etapu 5](docs/validation-sigma.md). Generator pozostaje zaplanowany. Rozbudowa przebiega według
+[walidacja Etapu 5](docs/validation-sigma.md).
+Etap 6 dodaje profile obserwowanych użytkowników, hostów, IP i procesów:
+aktywność, alerty, sprawy, role, first/last seen, powiązane hosty oraz
+wyjaśnienie najwyższej kwalifikującej się istniejącej oceny alertu.
+Tożsamość i niepełność indeksu są jawne; starsze dane administrator indeksuje
+ograniczonymi partiami. [Zasady profili](docs/entities.md),
+[walidacja Etapu 6](docs/validation-entities.md).
+Generator pozostaje zaplanowany. Rozbudowa przebiega według
 [audytu i nowego planu 15 etapów](docs/soc-expansion-plan.md).
 Zakres: [incydenty](docs/incidents.md), [pierwsze alerty i panel](docs/initial-soc.md).
-Wyniki: [walidacja Etapu 5](docs/validation-sigma.md),
+Wyniki: [walidacja Etapu 6](docs/validation-entities.md),
+[walidacja Etapu 5](docs/validation-sigma.md),
 [walidacja Etapu 4](docs/validation-mitre.md),
 [walidacja Etapu 3](docs/validation-risk.md),
 [walidacja Etapu 2](docs/validation-correlation.md),

@@ -19,6 +19,7 @@ from app.api import (
     auth,
     correlations,
     detections,
+    entities,
     event_search,
     events,
     health,
@@ -107,6 +108,7 @@ def _create_app(settings: Settings | None = None) -> FastAPI:
         risk.router,
         mitre.router,
         sigma.router,
+        entities.router,
     ):
         application.include_router(router)
 

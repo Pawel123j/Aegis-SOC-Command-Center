@@ -117,6 +117,15 @@ Append-only dotyczy użytkowników aplikacji i roli runtime. Administrator syste
 
 ## Sekrety, zależności i błędy
 
+Profile encji Etapu 6 wymagają łącznie events:read, alerts:read i incidents:read.
+Backfill starszych dowodów wymaga system:manage oraz ponownej kontroli roli
+i sesji po blokadzie. Cursor jest podpisany i związany z użytkownikiem, ścieżką
+oraz filtrami; odczyty mają ograniczone okno, stronę i SQL timeout.
+Tożsamość jest twierdzeniem źródła, nie weryfikacją inwentarza. Nowe wpisy indeksu
+odwołują się do oryginalnych, sprawdzonych dowodów; append-only nie potwierdza
+semantyki nowego INSERT po przejęciu runtime. [Granice](entities.md),
+[testy i wynik](validation-entities.md).
+
 Właściwe sekrety znajdują się w lokalnym ignorowanym pliku środowiska lub wstrzykiwanym środowisku, nigdy w `.env.example`, obrazie czy Git. Bootstrap ma generować niezależne wartości CSPRNG i jednorazowe dane pierwszego Admina, bez uniwersalnego hasła demo. Start odrzuca brakujące/puste sekrety, znane placeholdery i wartości zbyt krótkie. Sama walidacja długości nie dowodzi losowości; zapewnia ją generator.
 
 Kontenery runtime działają bez root, bez Docker socket, bez uprawnień hosta i bez montowania katalogu domowego. Logi nie ujawniają sekretów, a zewnętrzne API TI nie są potrzebne. Adaptery infrastrukturalne SOAR nie istnieją w rejestrze MVP. Komunikacja z wewnętrznymi bazami pozostaje dozwolona; zakaz sieciowy SOAR dotyczy akcji do celów wskazanych w logach/playbooku i publicznego egress.

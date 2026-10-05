@@ -1,0 +1,75 @@
+.entity-filters label {
+  min-width: min(12rem, 100%);
+}
+.entity-scope {
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.entity-scope small {
+  display: block;
+  margin-top: 0.5rem;
+}
+.entity-label {
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+.entity-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.entity-grid .panel {
+  margin-bottom: 0;
+}
+.entity-profile > .metrics {
+  margin-top: 1rem;
+}
+.entity-backfill {
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+}
+.entity-backfill .button-row {
+  align-items: end;
+}
+.entity-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1.25rem 0;
+}
+.entity-tabs button[aria-pressed='true'] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.entity-roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.entity-techniques {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.entity-techniques li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0.75rem 0;
+}
+.entity-event-links {
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  margin: 1rem 0;
+}
+.entity-event-links .button-row {
+  align-items: center;
+  flex-wrap: wrap;
+}
+@media (max-width: 900px) {
+  .entity-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -385,14 +385,19 @@ def test_downgrade_refuses_nonempty_sigma_identity_and_preserves_source(
     with pytest.raises(DBAPIError) as rejected:
         migrate(case.database.owner, "0008_mitre", downgrade=True)
     assert getattr(rejected.value.orig, "sqlstate", None) == "23514"
+    assert "Sigma history exists" in str(rejected.value)
     assert domain_counts(case) == before and view(admin, rule["id"]) == rule
     with case.database.runtime.connect() as db:
-        assert db.scalar(text("SELECT version_num FROM alembic_version")) == "0009_sigma"
+        assert db.scalar(text("SELECT version_num FROM alembic_version")) == "0010_entities"
 
 
 def test_nonempty_v2_history_survives_sigma_upgrade_and_only_explicit_recalc_creates_v3(
-    case: Case, admin: Login
+    case: Case, admin: Login, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    # Build the historical fixture before profiles exist, without their writers.
+    migrate(case.database.owner, "0009_sigma", downgrade=True)
+    monkeypatch.setattr("app.modules.normalization.processing.index_event", lambda *_: None)
+    monkeypatch.setattr("app.modules.detections.processing.index_alert", lambda *_: None)
     normalize_events(case, admin, [powershell()])
     detect_once(processing_database(case), case.database.settings)
     record = alerts(case)[0]

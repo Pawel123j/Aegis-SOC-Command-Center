@@ -7,7 +7,7 @@ Widoki: logowanie, przegląd, zdarzenia i dowody, alerty z decyzjami analityka,
 incydenty z notatkami i osią czasu, trzy reguły pojedynczych zdarzeń i pięć reguł
 korelacji, importowane reguły Sigma, źródła z własnymi
 kluczami, status przetwarzania i retry, ocena ryzyka alertów i incydentów
-oraz MITRE ATT&CK Coverage.
+oraz MITRE ATT&CK Coverage i profile obserwowanych encji.
 Dane i zachowane obliczenia pochodzą z API.
 
 Incydenty można tworzyć ręcznie lub z alertu, łączyć z kolejnymi alertami,
@@ -129,6 +129,45 @@ Zmiana zakresu, konta lub sesji usuwa wynik pokrycia; spóźnione odpowiedzi
 nie nadpisują nowego zakresu. Metadane wyświetlane są jako tekst,
 a odnośniki źródłowe są ograniczone do oficjalnych stron MITRE.
 
+Etap 6 dodaje „Profile encji”: konta zaobserwowane w logach, hosty, adresy IP
+i procesy. Lista i odnośniki w szczegółach zdarzenia otwierają profil ustalony
+przez API z zachowanego dowodu. Dostęp wymaga jednocześnie `events:read`,
+`alerts:read` i `incidents:read`. Profil pokazuje historię aktywności, wszystkie
+powiązane alerty, incydenty z aktywnymi powiązaniami i hosty występujące w tych
+samych zdarzeniach. Alert korelacyjny może łączyć encję przez dowolne zdarzenie
+dowodowe, także inne niż końcowe. Alert otwiera pełny zachowany dowód, a incydent
+swój istniejący przebieg analizy. Otwarcie zdarzenia z historii profilu korzysta
+z archiwum; jego niedostępność jest jawna i pozwala ponowić żądanie.
+
+Tożsamość profilu pochodzi z informacji przekazanych przez źródło logów.
+Nie potwierdza właściciela hosta, osoby ani wpisu w ewidencji zasobów. Podstawa
+łączenia i wersja zasad są widoczne; sama nazwa lub PID nie skleja różnych
+uruchomień procesu. Pierwsza i ostatnia obserwacja dotyczą wybranego okna,
+domyślnie ostatnich 30 dni live, maksymalnie 366 dni. Replay wymaga jednego
+niezerowego Dataset ID i Run ID. Zakres `[from,to)` używa czasu zdarzeń dowodowych,
+a stronicowanie i liczniki obejmują cały wybrany zakres. „Zdarzenia z nieudanym
+logowaniem” liczą powiązane zdarzenia niezależnie od roli encji; nie przypisują
+jej własnych prób logowania.
+
+Ryzyko profilu jest najwyższą bieżącą oceną kwalifikującego się powiązanego
+alertu. Panel podaje istniejące obliczenie i uzasadnienie; nie tworzy osobnej
+oceny encji ani nie sumuje nakładających się dowodów. Fałszywe alarmy pozostają
+w historii, ale są pomijane w ryzyku i możliwych powiązaniach MITRE. Brak oceny
+nie oznacza zera, a mapowanie MITRE nie potwierdza udanego ataku.
+
+Nowe obserwacje są indeksowane podczas przetwarzania. Dla starszych danych
+panel pokazuje zaległe zdarzenia i alerty; niepełny indeks nie potwierdza braku
+aktywności. Administrator z `system:manage` może uzupełnić jedną ograniczoną
+partię: do 100 zdarzeń i do 100 alertów. Operacja obejmuje zaległe dowody całego
+systemu, także poza wybranymi filtrami; nie przelicza ryzyka ani nie uruchamia
+reguł ponownie. Zmiana zakresu lub konta resetuje stronicowanie i szczegóły,
+a odpowiedzi z wcześniejszej sesji są odrzucane.
+
+Weryfikacja panelu etapu 6 z 2026-10-05: 148 testów przeszło, w tym 35 nowych
+przypadków profili, w 21,88 s. TypeScript, ESLint i Prettier przeszły dla całego
+frontendu. [Zakres i zasady profili](../docs/entities.md),
+[raport weryfikacji etapu 6](../docs/validation-entities.md).
+
 Test korelacji przyjmuje od 1 do 100 pełnych znormalizowanych rekordów JSON,
 maksymalnie 64 KiB. Wyświetla liczbę dopasowań, wersję silnika, uzasadnienie
 i każdy rekord dowodowy z przesłanego zestawu. Nie zapisuje alertu ani
@@ -143,8 +182,9 @@ udostępniają wszystkie oryginalne zdarzenia dopasowania. Dla wielu rekordów
 można wybrać konkretny dowód, sprawdzić jego SHA-256 oraz pierwszy i ostatni
 czas. Starsze alerty nadal otwierają swój pojedynczy rekord. Odpięcie alertu
 z incydentu zachowuje całą sekwencję dowodową. Dane logów i notatki są
-wyświetlane jako tekst. Każde kliknięcie encji w oryginalnym zdarzeniu prowadzi
-do rzeczywistego wyszukiwania w Event Explorer.
+wyświetlane jako tekst. Przyciski pól encji w oryginalnym zdarzeniu prowadzą
+do rzeczywistego wyszukiwania w Event Explorer; osobne przyciski profili
+otwierają tożsamości ustalone przez API.
 
 ```text
 pnpm install --frozen-lockfile --ignore-scripts

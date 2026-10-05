@@ -15,6 +15,7 @@ from sqlalchemy.dialects.postgresql import insert
 
 from app.core.config import Settings
 from app.infrastructure.database import Database, utcnow
+from app.modules.entities.indexing import index_event
 from app.modules.ingestion.models import IngestionSource, OutboxJob, RawEvent
 from app.modules.ingestion.processing import (
     EventSnapshot,
@@ -172,17 +173,18 @@ def run_claim(
                 # Snapshot and progress commit together, only under the current lease.
                 normalized = normalize_timestamp(document["timestamp"])
                 processed = normalize_timestamp(document["processed_at"])
-                session.add(
-                    NormalizedEvent(
-                        event_id=claim.event_id,
-                        timestamp=normalized,
-                        processed_at=processed,
-                        schema_version=document["schema_version"],
-                        parser_version=document["parser_version"],
-                        document=document,
-                        document_sha256=hashlib.sha256(canonical_json(document)).hexdigest(),
-                    )
+                stored = NormalizedEvent(
+                    event_id=claim.event_id,
+                    timestamp=normalized,
+                    processed_at=processed,
+                    schema_version=document["schema_version"],
+                    parser_version=document["parser_version"],
+                    document=document,
+                    document_sha256=hashlib.sha256(canonical_json(document)).hexdigest(),
                 )
+                session.add(stored)
+                session.flush()
+                index_event(session, stored)
                 job.state = "normalized"
             else:
                 job.state = "projected"

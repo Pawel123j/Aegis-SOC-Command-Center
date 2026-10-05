@@ -1,10 +1,11 @@
 # Model danych i normalizacja
 
-Status 2026-10-01: PHASE 1–3, początkowe detekcje/alerty i incydenty
-są zaimplementowane, wraz z regułami wielozdarzeniowej korelacji Etapu 2.
+Status 2026-10-05: PHASE 1–3, detekcje/alerty i incydenty,
+korelacja, ryzyko, MITRE, Sigma oraz profile encji są zaimplementowane.
 Kontrakt działającej normalizacji opisuje
 [normalization](normalization.md), a spraw [incidents](incidents.md).
-Dalsze encje i wcześniejsze szkice oznaczono jako projekt poniżej.
+Profile obserwowanych encji Etapu 6 opisuje [entities](entities.md);
+dalszy inwentarz i wcześniejsze szkice oznaczono jako projekt poniżej.
 Nazwy pól nie są deklaracją pełnej zgodności ECS/OTel.
 
 ## RawEvent
@@ -174,7 +175,27 @@ Downgrade odmawia usunięcia historii Sigma. Snapshot alertu wskazuje
 oryginalną rewizję i deployment_version; wybór nowej wersji jej nie zmienia.
 RiskInput v3 dodaje severity_baselines poza kontrolowanymi Signal.family;
 historyczne obliczenia v2 pozostają niezmienne. [Sigma](sigma.md).
-Poniższa tabela obejmuje również dalsze, jeszcze niewdrożone encje.
+
+## Indeks obserwowanych encji — Etap 6
+
+Migracja `0010_entities` wprowadza pięć append-only tabel. `entity_identities`
+przechowuje deterministyczny UUID, hash i kanoniczny klucz z wersją polityki,
+rodzajem, zakresem oraz podstawą identyfikacji. `entity_index_receipts`
+wiąże normalized event/hash z liczbą obserwacji, także zerową.
+`entity_observations` ma PK entity/event/role, czas zdarzenia, hash dowodu
+i ograniczone observed attributes do wyboru najnowszej etykiety profilu.
+`entity_alert_receipts` deklaruje liczbę contributed events;
+`alert_event_references` ma PK alert/event i hash oryginalnego snapshotu.
+
+FK i triggery sprawdzają scope, źródło, czas, hash i kompletność receipt przy
+commit. Indeksy wspierają odczyt entity/time/event i event/alert.
+Runtime ma SELECT/INSERT; UPDATE/DELETE/TRUNCATE są blokowane, a niepusty
+downgrade odmawia utraty historii. Autor nowych INSERT nadal jest zaufany.
+Nowa normalizacja i publikacja alertu indeksują swoje dowody atomowo.
+Starszy zakres uzupełnia ograniczony, audytowany backfill, bez zmiany źródła.
+[Zasady profilu](entities.md), [ADR 0012](adr/0012-observed-entity-profiles.md).
+
+Poniższa tabela obejmuje dalsze, jeszcze niewdrożone agregaty.
 
 | Agregat | Planowane encje / constraints |
 | --- | --- |

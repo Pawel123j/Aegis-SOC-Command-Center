@@ -86,4 +86,8 @@ osobne historyczne mapowania oraz nazwy w panelu.
 [ADR 0010](adr/0010-versioned-attack-mappings.md) oddziela skojarzenie
 techniki od potwierdzenia ataku. Etap 5: [Sigma](sigma.md),
 niezmienne rewizje i kontrolowana publikacja w istniejącym detektorze.
-[Walidacja](validation-sigma.md) opisuje wykonane kontrole i granice dowodu. Kolejny przyrost: encje.
+[Walidacja](validation-sigma.md) opisuje wykonane kontrole i granice dowodu.
+Etap 6: [profile encji](entities.md), konserwatywna tożsamość obserwacji,
+wszystkie dowody alertu, historia i projekcja istniejącego ryzyka.
+[Walidacja Etapu 6](validation-entities.md) podaje aktualny stan bramki.
+Kolejny przyrost po jej zamknięciu: lokalne Threat Intelligence i IOC.

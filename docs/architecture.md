@@ -1,8 +1,9 @@
 # Architektura docelowa
 
-Status 2026-10-04: fundament PHASE 1–3, pojedyncze detekcje, panel,
+Status 2026-10-05: fundament PHASE 1–3, pojedyncze detekcje, panel,
 incydenty i korelacja Etapu 2 są zaimplementowane; Etapy 3 ryzyka i 4 MITRE dodają osobne historyczne snapshoty i projekcje;
-Sigma Etapu 5 dodaje niezmienne definicje i kontrolowane wykonanie;
+Sigma Etapu 5 dodaje niezmienne definicje i kontrolowane wykonanie,
+a Etap 6 indeks obserwowanych encji i profile w panelu;
 wykonane kontrole opisują raporty walidacji.
 PostgreSQL przechowuje
 niezmienne normalized snapshots; processor projektuje je do ClickHouse,
@@ -32,6 +33,13 @@ hashe oraz predykat zdarzenia. Publikacja i detektor współdzielą blokadę,
 a alert/risk/MITRE/incident/audit zachowują jedną transakcję.
 [ADR 0011](adr/0011-versioned-sigma-rules.md) wprowadza risk-policy-v3,
 rozdzielając severity importowanej reguły od dowodów niezależnych zachowań.
+Profile encji Etapu 6 czytają append-only obserwacje i indeks wszystkich
+contributed events alertu w PostgreSQL. Zapis normalizacji oraz alertu dopisuje
+indeks w swoich transakcjach. Jawny, ograniczony backfill uzupełnia starsze
+dowody; GET nie zapisuje stanu. Jeden SQL snapshot obejmuje stronę, liczniki
+i wybraną istniejącą ocenę ryzyka. Podstawa tożsamości pozostaje obserwacją
+źródła, a własna ocena encji ani inwentarz nie powstają automatycznie.
+[ADR 0012](adr/0012-observed-entity-profiles.md), [zakres](entities.md).
 Poziom produkcyjny oznacza świadome kontrakty, odporność i testy,
 nie deklarację wysokiej dostępności klastra uruchamianego na jednym laptopie.
 

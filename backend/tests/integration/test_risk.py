@@ -81,12 +81,22 @@ def test_history_reads_are_bounded_and_never_write_scores(case: Case, admin: Log
     )
 
 
-def test_downgrade_refuses_to_destroy_existing_risk_history(case: Case, admin: Login) -> None:
+def test_downgrade_refuses_to_destroy_existing_risk_history(
+    case: Case,
+    admin: Login,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    migrate(case.database.owner, "0009_sigma", downgrade=True)
+    monkeypatch.setattr("app.modules.normalization.processing.index_event", lambda *_: None)
+    monkeypatch.setattr("app.modules.detections.processing.index_alert", lambda *_: None)
+    # Keep MITRE empty so that the rejection proves the older risk guard itself.
+    monkeypatch.setattr("app.modules.detections.processing.record_mapping", lambda *_: None)
     normalize_events(case, admin, [powershell()])
     detect_once(processing_database(case), case.database.settings)
     record = alerts(case)[0]
-    with pytest.raises(DBAPIError):
+    with pytest.raises(DBAPIError) as rejected:
         migrate(case.database.owner, "0006_correlation", downgrade=True)
+    assert "risk history exists" in str(rejected.value)
     with case.database.runtime.connect() as db:
         assert db.scalar(text("SELECT version_num FROM alembic_version")) == "0009_sigma"
         assert db.scalar(text("SELECT count(*) FROM risk_calculations")) == 2

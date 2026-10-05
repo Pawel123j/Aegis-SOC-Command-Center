@@ -16,7 +16,7 @@ from app.core.observability import REGISTRY
 
 router = APIRouter(tags=["health"])
 logger = logging.getLogger(__name__)
-EXPECTED_REVISION = "0009_sigma"
+EXPECTED_REVISION = "0010_entities"
 DEPENDENCY_TIMEOUT_SECONDS = 2.0
 
 
