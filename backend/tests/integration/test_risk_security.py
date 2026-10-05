@@ -21,6 +21,8 @@ from app.modules.auth.models import AuthSession
 from app.modules.incidents.models import Incident, IncidentTimeline
 from app.modules.ingestion.schemas import canonical_json
 from app.modules.normalization.models import NormalizedEvent
+from app.modules.risk import engine, engine_v4
+from app.modules.risk.schemas import RiskInput
 from app.modules.users.models import User
 
 from .helper_ingestion import enroll, processing_database
@@ -587,11 +589,11 @@ def test_history_bonus_excludes_current_related_later_and_other_scope_cases(
         ("inactive", 0),
         ("expired", 0),
         ("expired_as_of", 0),
-        ("low_confidence", 0),
+        ("low_confidence", 5),
         ("verified", 15),
     ],
 )
-def test_ioc_context_requires_active_unexpired_and_sufficiently_confident_record(
+def test_ioc_context_uses_v4_and_preserves_v3_eligibility_and_history(
     case: Case, admin: Login, state: str, bonus: int
 ) -> None:
     value = simulated_input(1)
@@ -608,8 +610,18 @@ def test_ioc_context_requires_active_unexpired_and_sufficiently_confident_record
     elif state == "low_confidence":
         fact["confidence"] = 79
     value["contexts"] = [fact]
+    # V4 gives qualifying malicious records a small floor; the unchanged v3
+    # implementation must still reproduce its historical confidence threshold.
+    legacy_bonus = 0 if state == "low_confidence" else bonus
+    assert engine.calculate(RiskInput.model_validate(value)).score == 45 + legacy_bonus
     response = simulation(admin, value)
     assert response.status_code == 200, response.text
+    assert response.json()["policy_version"] == engine_v4.POLICY_VERSION
+    assert response.json()["policy_hash"] == engine_v4.POLICY_HASH
+    assert (
+        next(part for part in response.json()["components"] if part["code"] == "I")["points"]
+        == bonus
+    )
     assert response.json()["score"] == 45 + bonus
 
 

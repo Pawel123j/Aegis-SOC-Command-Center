@@ -7,7 +7,7 @@ Widoki: logowanie, przegląd, zdarzenia i dowody, alerty z decyzjami analityka,
 incydenty z notatkami i osią czasu, trzy reguły pojedynczych zdarzeń i pięć reguł
 korelacji, importowane reguły Sigma, źródła z własnymi
 kluczami, status przetwarzania i retry, ocena ryzyka alertów i incydentów
-oraz MITRE ATT&CK Coverage i profile obserwowanych encji.
+oraz MITRE ATT&CK Coverage, profile obserwowanych encji i lokalny katalog IOC.
 Dane i zachowane obliczenia pochodzą z API.
 
 Incydenty można tworzyć ręcznie lub z alertu, łączyć z kolejnymi alertami,
@@ -167,6 +167,30 @@ Weryfikacja panelu etapu 6 z 2026-10-05: 148 testów przeszło, w tym 35 nowych
 przypadków profili, w 21,88 s. TypeScript, ESLint i Prettier przeszły dla całego
 frontendu. [Zakres i zasady profili](../docs/entities.md),
 [raport weryfikacji etapu 6](../docs/validation-entities.md).
+
+Etap 7 dodaje „Threat Intelligence”: lokalny katalog IP, domen, URL i hash,
+filtry, dokładne sprawdzenie i historię niezmiennych rewizji. Manager i Admin
+z intelligence:manage mogą utworzyć IOC, zmienić metadane, wyłączyć wpis
+albo zaimportować od 1 do 100 rekordów JSON, do 1 MiB. Odczyt wymaga
+intelligence:read; Analyst ma obecnie odczyt, bez formularza propozycji.
+Typ i wartość istniejącego IOC są stałe. PATCH wymaga If-Match; konflikt
+zachowuje szkic i wymaga odświeżenia. Reputacja oraz confidence są deklaracją
+źródła, a brak confidence pozostaje nieznany. URL i inne metadane są tekstem;
+panel nie otwiera ani nie pobiera adresów IOC i nie pyta zewnętrznych providerów.
+
+Szczegóły zdarzenia pokazują zachowane dopasowane pola, oryginalną rewizję
+i hash albo jawną informację o oczekiwaniu na analizę. Brak dopasowań po
+analizie nie potwierdza bezpieczeństwa. Alert TI wskazuje zachowany dowód
+oraz ocenę do analizy, bez technik MITRE przypisanych z samej reputacji.
+Administrator może uzupełnić jedną partię 25 starszych zdarzeń bez receipts;
+operacja nie tworzy historycznych alertów ani nie przelicza ryzyka.
+Import i edycja katalogu nie zmieniają wcześniejszych dopasowań. Zmiana sesji
+ukrywa odczyty, blokuje formularze i odrzuca spóźnione wyniki. Odświeżenie
+katalogu tej samej osoby z tą samą rolą i uprawnieniami zachowuje szkic;
+zmiana konta, roli lub uprawnień w panelu usuwa go.
+[Zakres IOC](../docs/intelligence.md),
+[końcowa walidacja Etapu 7](../docs/validation-intelligence.md): 206 testów
+panelu PASS oraz rzeczywisty build/HTTP; zalogowany browser E2E pozostaje otwarty.
 
 Test korelacji przyjmuje od 1 do 100 pełnych znormalizowanych rekordów JSON,
 maksymalnie 64 KiB. Wyświetla liczbę dopasowań, wersję silnika, uzasadnienie

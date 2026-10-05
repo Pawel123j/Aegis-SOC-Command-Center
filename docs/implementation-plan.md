@@ -21,7 +21,11 @@ Szerszy natywny authoring pozostaje dalszym zakresem.
 Etap 6 wprowadza [profile obserwowanych encji](entities.md), konserwatywną
 tożsamość, indeks wszystkich dowodów i projekcję istniejącej oceny alertu.
 [Raport Etapu 6](validation-entities.md) rozdziela implementację od wykonanych
-kontroli. Threat Intelligence jest następnym przyrostem nowego planu.
+kontroli. Etap 7 implementuje [lokalne Threat Intelligence](intelligence.md):
+kanoniczny katalog, rewizje, pierwsze dopasowania, API/panel i opt-in risk v4.
+[Raport Etapu 7](validation-intelligence.md) potwierdza 1966 testów backendu,
+206 panelu oraz lokalne wdrożenie; zalogowany browser E2E, online dependency
+audit i hostowane CI pozostają otwarte. Następny przyrost to Attack Timeline.
 
 Plan odpowiada fazom 0–20 wskazanym w wymaganiach. Faza 0 dostarczyła analizę stanu, decyzje architektoniczne, szkielet repozytorium i dokumentację. Faza 1 dostarczyła zweryfikowany fundament backendu z integracją rzeczywistych usług (2026-09-28). SIEM, frontend i generator wymagają dalszych faz.
 

@@ -17,8 +17,8 @@ są append-only; kontrolowana funkcja wybiera utrwaloną rewizję w deployment.
 Nie przyznaje runtime ogólnych uprawnień zmiany wersji reguł.
 [Walidacja Etapu 5](../docs/validation-sigma.md).
 Profile encji Etapu 6 działają w istniejących procesach API/processor/detector/
-correlator i korzystają z PostgreSQL. Migracja `0010_entities` jest bieżącym
-head wymaganym przez readiness; dodaje pięć append-only tabel z grantami
+correlator i korzystają z PostgreSQL. Migracja `0010_entities`
+dodaje pięć append-only tabel z grantami
 SELECT/INSERT dla runtime, kontrolą kompletności receipts i odmową niepustego
 downgrade. Osiem metod `/api/v1/entities` (siedem GET i jeden POST backfill)
 korzysta z istniejącego proxy. Profile nie dodają kontenera, portu ani zależności.
@@ -27,6 +27,17 @@ bez nowego obliczenia encji. Implementacja jest gotowa; końcową regresję
 i uruchomienie Etapu 6 opisuje raport wraz z granicami dowodu.
 [Kontrakt profili](../docs/entities.md),
 [stan walidacji Etapu 6](../docs/validation-entities.md).
+Etap 7 dodaje head `0011_intelligence` dla nowych źródeł i readiness,
+bez nowego procesu ani portu. Lokalny katalog IOC, rewizje i receipts/matches
+mają granty SELECT/INSERT oraz kontrolowaną funkcję publikacji pointer.
+Downgrade odmawia utraty istniejącej historii; pusta warstwa jest odwracalna.
+Detektor, API i risk engine używają istniejącego PostgreSQL; ClickHouse nie
+przechowuje tego ledgeru. Provider działa lokalnie bez DNS, pobierania URL,
+kluczy zewnętrznych usług ani demo IOC. Idna 3.20, już obecna w lockfile,
+jest jawną zależnością normalizacji domen. Końcowa regresja 1966 testów,
+fresh install i główny upgrade 0010 → 0011 oraz restart procesów przeszły
+kontrolę. Dane, konfiguracja i wolumeny zachowane. [Kontrakt](../docs/intelligence.md),
+[raport](../docs/validation-intelligence.md).
 PostgreSQL migruje oddzielny Alembic w backend/migrations, role runtime nie mają DDL.
 [Granice infrastruktury](../docs/architecture.md).
 [Uruchomienie](../docs/local-start.md), [walidacja korelacji](../docs/validation-correlation.md).

@@ -86,7 +86,7 @@ class ContextFact(StrictInput):
         options = {
             "host_criticality": {"low", "medium", "high", "critical"},
             "user_importance": {"low", "medium", "high", "critical"},
-            "ioc_reputation": {"unknown", "suspicious", "malicious"},
+            "ioc_reputation": {"unknown", "clean", "suspicious", "malicious"},
             "prior_privileges": {"standard", "privileged", "administrator"},
             "confirmed_history": {"confirmed_malicious"},
         }

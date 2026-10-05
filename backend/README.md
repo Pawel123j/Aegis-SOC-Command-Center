@@ -4,9 +4,11 @@ FastAPI/Pydantic/SQLAlchemy tworzą modularny monolit z oddzielnym procesem Cele
 Runtime to **Python 3.12.14**, zgodny z obrazem Docker i konfiguracją CI. Zależności
 runtime i developerskie mają osobne lockfile z hashami.
 
-**Stan: PHASE 0–3, incydenty, korelacja, ryzyko, MITRE ATT&CK, Sigma i profile encji — 2026-10-05.**
-Końcowa regresja Etapu 6: 1547 testów backendu PASS, coverage 93%.
-Uruchomienie i granice dowodu dokumentuje [raport](../docs/validation-entities.md).
+**Stan: PHASE 0–3 i Etapy 1–7 ukończone lokalnie — 2026-10-05.**
+Historyczna regresja Etapu 6: 1547 testów backendu PASS, coverage 93%.
+Końcowe wyniki i uruchomienie nowego przyrostu zapisuje
+[raport Etapu 7](../docs/validation-intelligence.md); 1966 testów PASS,
+lokalna migracja i uruchomienie sprawdzone, z opisanymi granicami dowodu.
 Migracja `0004_initial_alerts`, osobny `app.detector`, API alerts/detections
 i atomowy checkpoint zapewniają trzy reguły pojedynczego zdarzenia.
 [Zakres i ograniczenia](../docs/initial-soc.md).
@@ -35,8 +37,8 @@ YAML kompiluje się do ograniczonego AST; niezmienne rewizje są wyłączone prz
 imporcie. Bieżąca publikacja działa przy kolejnych jobach istniejącego detektora.
 Risk-policy-v3 przyjmuje deklarowaną severity osobno od kontrolowanych rodzin.
 [Kontrakt](../docs/sigma.md), [walidacja Etapu 5](../docs/validation-sigma.md).
-Etap 6 dodaje `app.modules.entities` i migrację `0010_entities`, która jest
-bieżącym head schematu. Profile hostów, kont z logów, IP i procesów łączą
+Etap 6 dodaje `app.modules.entities` i migrację `0010_entities`.
+Profile hostów, kont z logów, IP i procesów łączą
 aktywność, wszystkie contributed events alertów oraz aktywne powiązania spraw.
 Niezmienny indeks powstaje atomowo w normalizer/detector/correlator; starsze
 dane uzupełnia jawny, ograniczony i audytowany backfill administratora.
@@ -48,6 +50,23 @@ kwalifikującą się ocenę alertu; nie tworzy nowego score ani polityki encji.
 False positive nie uczestniczą w ryzyku i kandydackich skojarzeniach MITRE.
 [Kontrakt i ograniczenia](../docs/entities.md),
 [stan walidacji Etapu 6](../docs/validation-entities.md).
+Etap 7 dodaje `app.modules.intelligence` i head `0011_intelligence` wymagany
+przez readiness nowych źródeł. Cztery tabele przechowują tożsamości IOC,
+niezmienne rewizje, receipts pierwszej analizy oraz dokładne field matches.
+Dziesięć metod `/api/v1/intelligence` obsługuje katalog, wersjonowaną zmianę
+metadanych, historię, import, lookup, lokalnego providera, dowód zdarzenia
+i administracyjny backfill. Publikacja wymaga intelligence:manage i kontroli
+sesji po wspólnej blokadzie; odczyt intelligence:read. Runtime ma SELECT/INSERT,
+a ograniczona funkcja wybiera nową rewizję z zachowaniem audytu i historii.
+Detektor utrwala również zero matches, bez ponownego wyboru katalogu przy retry.
+Wykorzystuje wyłącznie typowane IP, URL/referrer i ich host oraz process/file hash;
+nie szuka IOC w raw logu ani command line i nie wykonuje wywołań sieciowych.
+Risk-policy-v4 dodaje maksimum I=15; malicious przy nieznanym lub niższym
+confidence daje 5. Stałe medium TI daje D30, C/E0; brak TI zachowuje v3.
+Reputacja i confidence pozostają deklaracją źródła, a odczyt nie przelicza ocen.
+[Kontrakt IOC](../docs/intelligence.md),
+[decyzja](../docs/adr/0013-local-intelligence.md),
+[walidacja Etapu 7](../docs/validation-intelligence.md).
 Fundament PHASE 1 obejmuje konfigurację i bezpieczne błędy, `/api/v1/auth`,
 `/api/v1/users`, `/api/v1/audit`, chronione `/api/v1/system/health`, sondy `/health`
 i `/ready`, wewnętrzne `/metrics` oraz OpenAPI pod `/api/v1/openapi.json`.

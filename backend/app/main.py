@@ -24,6 +24,7 @@ from app.api import (
     events,
     health,
     incidents,
+    intelligence,
     mitre,
     pipeline,
     risk,
@@ -109,6 +110,7 @@ def _create_app(settings: Settings | None = None) -> FastAPI:
         mitre.router,
         sigma.router,
         entities.router,
+        intelligence.router,
     ):
         application.include_router(router)
 

@@ -68,7 +68,7 @@ Każdy endpoint ma nazwaną permission i domyślnie odmawia dostępu. Role ludzk
 | Reopen zamkniętego incydentu | Tak | Tak | Nie | Nie |
 | Draft i test detekcji | Tak | Tak | Tak | Nie |
 | Import Sigma, publikacja/aktywacja reguł | Tak | Tak | Nie | Nie |
-| Kuracja lokalnej bazy IOC | Tak | Tak | Tylko propozycja | Nie |
+| Kuracja lokalnej bazy IOC | Tak | Tak | Nie; propozycje dopiero planowane | Nie |
 | Edycja, publikacja i wyłączenie playbooka | Tak | Tak | Nie | Nie |
 | Start/anulowanie zatwierdzonego playbooka simulation | Tak | Tak | Tak | Nie |
 | Uruchomienie kontrolowanego scenariusza demo (`demo:run`) | Tak | Tak | Nie | Nie |
@@ -125,6 +125,38 @@ Tożsamość jest twierdzeniem źródła, nie weryfikacją inwentarza. Nowe wpis
 odwołują się do oryginalnych, sprawdzonych dowodów; append-only nie potwierdza
 semantyki nowego INSERT po przejęciu runtime. [Granice](entities.md),
 [testy i wynik](validation-entities.md).
+
+Etap 7 wprowadza intelligence:read dla katalogu/lookup/historii/providerów,
+intelligence:manage dla jawnej publikacji, PATCH i atomowego importu oraz
+system:manage dla backfill. Dowód eventu wymaga także events:read. Analyst
+ma obecnie odczyt, bez endpointu propozycji. API i funkcja publikacji
+współdzielą ADMIN_LOCK_ID; API po oczekiwaniu ponownie sprawdza rolę i sesję.
+If-Match zabezpiecza PATCH przed zmianą nieaktualnej rewizji.
+
+IOCIdentity ma niezmienny typ/kanoniczną wartość; runtime ma SELECT/INSERT
+do czterech tabel, bez bezpośredniej aktualizacji pointer ani usuwania historii.
+SECURITY DEFINER ma stały search_path, sprawdza aktywnego manager/admin
+i wybiera kolejną utrwaloną rewizję. Publiczne wykonanie funkcji jest odebrane.
+Granty oraz triggery źródła/hash/scope i deferred completeness chronią historię,
+a Python sprawdza typowaną ekstrakcję i oryginalny raw/normalized proof.
+INSERT nadal jest granicą zaufanego writera, bez deklaracji forensic WORM.
+Receipt utrwala również zero matches, więc późniejszy import nie zmienia retry.
+
+Limit 1000 IOC, 50 rewizji, 100 rekordów importu, 32 matches/event i 100
+risk facts utrzymuje ograniczony koszt. Body importu ma 1 MiB, inne mutacje
+64 KiB; JSON odrzuca duplikaty kluczy, nadmierną głębokość i liczby niefinitywne.
+Katalog ma literalne parametryzowane q, signed principal/path/filter cursor
+i SQL timeout. Metadane odrzucają NUL, niedozwolone controls i surrogates;
+błędy nie odbijają wejścia. Domain/URL/hash/IP mają wersjonowaną normalizację.
+
+Provider jest lokalny: nie wykonuje DNS, zewnętrznego lookup, pobrania URL,
+favicon ani otwierania adresu z logów. UI wyświetla URL jako tekst.
+Ekstrakcja ogranicza się do typowanych source/destination IP, process/file hash,
+URL/referrer i ich host; nie interpretuje raw logu, command line ani extensions.
+Reputacja/confidence to deklaracja źródła, bez potwierdzania ataku lub technik
+MITRE. [Kontrakt i granice](intelligence.md),
+[decyzja](adr/0013-local-intelligence.md),
+[bieżąca walidacja](validation-intelligence.md).
 
 Właściwe sekrety znajdują się w lokalnym ignorowanym pliku środowiska lub wstrzykiwanym środowisku, nigdy w `.env.example`, obrazie czy Git. Bootstrap ma generować niezależne wartości CSPRNG i jednorazowe dane pierwszego Admina, bez uniwersalnego hasła demo. Start odrzuca brakujące/puste sekrety, znane placeholdery i wartości zbyt krótkie. Sama walidacja długości nie dowodzi losowości; zapewnia ją generator.
 

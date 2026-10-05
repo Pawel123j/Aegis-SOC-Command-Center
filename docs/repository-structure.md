@@ -8,10 +8,15 @@ i testy przyjęcia zdarzeń powstały w PHASE 2. Przyszłe moduły
 nie zawierają pustych funkcji lub fałszywych endpointów. Poniżej ścieżki istniejącego
 szkieletu i odpowiedzialności planowanego kodu.
 
-Aktualizacja 2026-10-05: działający kod obejmuje także PHASE 3 i Etapy 1–6
+Aktualizacja 2026-10-05: działający kod obejmuje także PHASE 3 i Etapy 1–7
 nowego planu. `entities` zawiera rzeczywistą politykę tożsamości, indeks,
 modele i zapytania, a `frontend/src/entities` widoki profili.
-Bieżącą bramkę dokumentuje [raport Etapu 6](validation-entities.md).
+Etap 7 dodaje rzeczywisty moduł `intelligence`: normalizację, ekstrakcję,
+modele/rewizje, lokalnego providera i ledger dopasowań; panel jest w
+`frontend/src/intelligence`. `risk/engine_v4.py` rozwija kontekst IOC,
+zachowując `engine.py` jako v3 fallback. Head nowych źródeł to
+`0011_intelligence`; [bieżący raport](validation-intelligence.md) potwierdza
+regresję i lokalne uruchomienie, z opisanymi granicami dowodu.
 
 ```text
 .
@@ -29,7 +34,7 @@ Bieżącą bramkę dokumentuje [raport Etapu 6](validation-entities.md).
 │       ├── api/
 │       └── regression/
 ├── frontend/
-│   ├── src/{app,api,components,features,entities}/
+│   ├── src/{app,api,components,features,entities,intelligence}/
 │   └── tests/e2e/
 ├── detection-content/
 │   └── {rules,sigma,fixtures,mitre,hunts,playbooks}/
@@ -56,14 +61,14 @@ Bieżącą bramkę dokumentuje [raport Etapu 6](validation-entities.md).
 | `ingestion` | Admission, batch, inbox/outbox, idempotencja, kwarantanna |
 | `normalization` | Rejestr parserów i schema mapping |
 | `events` | Event repository, bounded query i projekcje ClickHouse |
-| `detections` | Native rules, Sigma, evaluator, stan okien, rule testing |
+| `detections` | Native rules, Sigma, lokalny TI match, evaluator, stan okien, rule testing |
 | `alerts` | Match → alert, explanation, wersje evidence i powiązania |
 | `correlation` | Silne relacje, komponenty i decyzje grupowania |
 | `incidents` | Case lifecycle, notes, evidence, timeline i investigations promotion |
 | `mitre` | Wersjonowany katalog i walidacja mappingu |
 | `risk` | Czysty algorytm i snapshoty obliczeń |
 | `entities` | Konserwatywna tożsamość obserwacji, indeks dowodów i ograniczone zapytania profili |
-| `intelligence` | IOC, wersje reputacji, inventory i dostawcy kontekstu |
+| `intelligence` | Lokalny katalog IOC, niezmienne rewizje, dokładne dopasowania typowanych pól i provider interface |
 | `hunting` | Saved queries, bookmarks, investigations, draft detekcji |
 | `soar` | Definicje, run/step ledger, allowlista simulation actions |
 | `audit` | Append-only zapis zdarzeń audytowych i kontrolowany odczyt |
@@ -77,16 +82,18 @@ module. Pure domain może korzystać ze wspólnego modelu, ale nie z transportu 
 
 `detection-content` to wersjonowana treść z fixtures, metadanymi i pochodzeniem,
 nie wykonywalne pluginy. `demo` emituje logi; nie ma prawa do repozytorium alertów.
-`backend/tests/integration` użyje prawdziwych usług. `frontend/tests/e2e` sprawdzi
+`backend/tests/integration` używa prawdziwych usług. `frontend/tests/e2e` sprawdzi
 interakcję przeglądarki z API, włącznie z odmowami uprawnień.
 
-Nie ma jeszcze `compose.yaml`, Dockerfile, pyproject/package.json ani migracji SQL.
-Powstaną razem z działającym runtime, w fazach 1/3/13. Sam pusty manifest zależności
-nie stanowi implementacji fundamentu. `infra` oddziela konfigurację deploymentu od domeny.
+`compose.yaml`, Dockerfile backendu, pyproject/package.json, lockfile i migracje
+SQL należą do istniejącego runtime. Nowe moduły używają tego samego obrazu
+i migratora, zamiast tworzyć osobne usługi. `infra` oddziela konfigurację
+deploymentu od domeny. Końcowe wyniki Etapu 7 zapisuje jego raport walidacji.
 
 ## Walidacja szkieletu
 
 [Manifest](../scripts/repository_manifest.json) wymienia wymagane katalogi i dokumenty.
 [Walidator](../scripts/validate_repository.py) sprawdza je bez zewnętrznych bibliotek,
-wraz z numeracją 21 faz, 37 wymagań, sześcioma ADR, linkami lokalnymi i formatem tekstu.
+wraz z numeracją 21 faz, 37 wymagań, co najmniej sześcioma ADR, linkami lokalnymi
+i formatem tekstu. Indeks obejmuje obecnie ADR 0001–0013.
 Nie pobiera stron z linków internetowych i nie testuje renderowania diagramów Mermaid.

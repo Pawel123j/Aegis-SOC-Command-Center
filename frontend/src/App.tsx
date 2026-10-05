@@ -16,6 +16,7 @@ import { canReadMitreCoverage } from './mitre/permissions';
 import { Entities } from './entities/Entities';
 import type { InitialEntityProfile } from './entities/Entities';
 import { canReadEntities } from './entities/permissions';
+import { Intelligence } from './intelligence/Intelligence';
 
 type View =
   | 'overview'
@@ -25,6 +26,7 @@ type View =
   | 'detections'
   | 'mitre'
   | 'entities'
+  | 'intelligence'
   | 'sources'
   | 'system';
 const links: { id: View; name: string; icon: string; permission?: string }[] = [
@@ -35,6 +37,7 @@ const links: { id: View; name: string; icon: string; permission?: string }[] = [
   { id: 'detections', name: 'Reguły detekcji', icon: '⌘', permission: 'detections:read' },
   { id: 'mitre', name: 'MITRE ATT&CK', icon: '▦' },
   { id: 'entities', name: 'Profile encji', icon: '◫' },
+  { id: 'intelligence', name: 'Threat Intelligence', icon: '◌', permission: 'intelligence:read' },
   { id: 'sources', name: 'Źródła logów', icon: '⇄', permission: 'sources:manage' },
   { id: 'system', name: 'Stan systemu', icon: '▥', permission: 'system:read' },
 ];
@@ -263,6 +266,7 @@ export function App() {
             <Detections user={user} onEvent={setSelected} />
           )}
           {view === 'mitre' && canReadMitreCoverage(user) && <MitreCoverage user={user} />}
+          {view === 'intelligence' && allowed('intelligence:read') && <Intelligence user={user} />}
           {view === 'entities' && canReadEntities(user) && (
             <Entities
               key={authorityVersion}
@@ -297,6 +301,7 @@ export function App() {
           event={selected}
           onClose={() => setSelected(null)}
           onFilter={filterEntity}
+          intelligenceUser={allowed('intelligence:read') ? user : undefined}
           onProfile={
             canReadEntities(user)
               ? (id) => {

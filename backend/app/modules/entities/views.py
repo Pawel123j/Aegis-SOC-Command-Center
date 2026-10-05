@@ -19,6 +19,8 @@ from app.modules.entities.schemas import (
 from app.modules.ingestion.schemas import canonical_json
 from app.modules.mitre.catalogue import CATALOGUE_SHA256, catalogue_view
 from app.modules.risk.engine import POLICY_HASH, POLICY_VERSION
+from app.modules.risk.engine_v4 import POLICY_HASH as INTELLIGENCE_POLICY_HASH
+from app.modules.risk.engine_v4 import POLICY_VERSION as INTELLIGENCE_POLICY_VERSION
 from app.modules.risk.models import RiskCalculation
 from app.modules.risk.schemas import RiskInput
 from app.modules.risk.service import calculation_view
@@ -26,6 +28,7 @@ from app.modules.risk.service import calculation_view
 _POLICIES = {
     "risk-policy-v2": "fe87d0dd228f33d01ce32434cd8ac6620f4cf1d3723ebd077ca2add7b466e85c",
     POLICY_VERSION: POLICY_HASH,
+    INTELLIGENCE_POLICY_VERSION: INTELLIGENCE_POLICY_HASH,
 }
 
 

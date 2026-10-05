@@ -18,6 +18,7 @@ nie usuwa się historii uzasadnień.
 | [0010](0010-versioned-attack-mappings.md) | Lokalny katalog ATT&CK, historyczne mapowania i odrębne liczniki zakresu |
 | [0011](0011-versioned-sigma-rules.md) | Niezmienne rewizje Sigma, kontrolowany podzbiór i jawne podstawy ryzyka |
 | [0012](0012-observed-entity-profiles.md) | Konserwatywna tożsamość encji, append-only obserwacje i projekcja ryzyka alertu |
+| [0013](0013-local-intelligence.md) | Lokalny katalog IOC, niezmienne rewizje i pierwsze dopasowania; osobny wkład ryzyka v4 bez przepisywania v3 |
 
 Każdy nowy ADR zawiera: kontekst, decyzję, alternatywy, konsekwencje, dowód
 akceptacji i warunek ponownego rozważenia.

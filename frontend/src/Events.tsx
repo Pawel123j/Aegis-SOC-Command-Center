@@ -3,8 +3,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { api } from './api';
 import { Badge, Empty, ErrorNotice, JsonView, Loading, Panel } from './components';
-import type { SearchInput, SearchResult, SecurityEvent } from './types';
+import type { Me, SearchInput, SearchResult, SecurityEvent } from './types';
 import { EventProfiles } from './entities/EventProfiles';
+import { EventIntelligence } from './intelligence/EventIntelligence';
 
 function localInput(date: Date) {
   return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
@@ -215,11 +216,13 @@ export function EventDetail({
   onClose,
   onFilter,
   onProfile,
+  intelligenceUser,
 }: {
   event: SecurityEvent;
   onClose: () => void;
   onFilter: (field: string, value: string) => void;
   onProfile?: (id: string) => void;
+  intelligenceUser?: Me;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   useEffect(() => {
@@ -322,6 +325,7 @@ export function EventDetail({
           <dd>{event.process.executable ?? '—'}</dd>
         </dl>
         {onProfile && <EventProfiles key={event.event_id} event={event} onProfile={onProfile} />}
+        {intelligenceUser && <EventIntelligence eventId={event.event_id} user={intelligenceUser} />}
         {event.quality.length > 0 && (
           <div className="notice">
             <strong>Jakość danych</strong>

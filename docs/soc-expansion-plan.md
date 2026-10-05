@@ -90,4 +90,12 @@ niezmienne rewizje i kontrolowana publikacja w istniejącym detektorze.
 Etap 6: [profile encji](entities.md), konserwatywna tożsamość obserwacji,
 wszystkie dowody alertu, historia i projekcja istniejącego ryzyka.
 [Walidacja Etapu 6](validation-entities.md) podaje aktualny stan bramki.
-Kolejny przyrost po jej zamknięciu: lokalne Threat Intelligence i IOC.
+Etap 7: [lokalne Threat Intelligence i IOC](intelligence.md), kanoniczny
+katalog i niezmienne rewizje, exact typed matches oraz receipts pierwszej
+analizy, medium TI alert i osobny maksymalny wkład I w risk-policy-v4.
+Provider jest lokalny bez wywołań DNS/URL; reputacja/confidence są deklaracją
+źródła. Brak TI zachowuje niezmienione v3, a import nie zmienia starych dowodów.
+[ADR 0013](adr/0013-local-intelligence.md) opisuje granice,
+[walidacja Etapu 7](validation-intelligence.md) potwierdza regresję i lokalne
+wdrożenie; zalogowany browser E2E, online audit i hostowane CI pozostają otwarte.
+Kolejny przyrost: Attack Timeline.

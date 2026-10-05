@@ -12,8 +12,8 @@ from app.core.permissions import Permission
 from app.core.rate_limit import rate_limit
 from app.modules.alerts.models import Alert
 from app.modules.incidents.models import Incident
-from app.modules.risk import service
-from app.modules.risk.engine import POLICY_HASH, POLICY_VERSION, calculate, policy_view
+from app.modules.risk import engine_v4, service
+from app.modules.risk.engine import POLICY_HASH, POLICY_VERSION, calculate
 from app.modules.risk.schemas import BackfillInput, RiskHistory, RiskInput
 
 router = APIRouter(prefix="/api/v1", tags=["risk"])
@@ -36,7 +36,7 @@ def _read(db: DB, identifier: UUID, kind: Literal["alert", "incident"]) -> Alert
 @router.get("/risk/policy")
 def policy(response: Response, principal: Reader) -> dict[str, Any]:
     response.headers["Cache-Control"] = "no-store"
-    return policy_view()
+    return engine_v4.policy_view()
 
 
 @router.post("/risk/test")
@@ -46,13 +46,14 @@ def test_risk(
     rate_limit(request, "risk-test", str(principal.user.id), 30, window_seconds=60)
     response.headers["Cache-Control"] = "no-store"
     try:
-        result = calculate(data)
+        intelligence = engine_v4.uses_intelligence(data)
+        result = engine_v4.calculate(data) if intelligence else calculate(data)
     except ValueError:
         raise ApiError(422, "invalid_risk_input", "Risk inputs conflict") from None
     return {
         "simulation": True,
-        "policy_version": POLICY_VERSION,
-        "policy_hash": POLICY_HASH,
+        "policy_version": engine_v4.POLICY_VERSION if intelligence else POLICY_VERSION,
+        "policy_hash": engine_v4.POLICY_HASH if intelligence else POLICY_HASH,
         **result.model_dump(mode="json"),
     }
 

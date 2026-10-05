@@ -8,6 +8,7 @@ from uuid import uuid4
 
 from sqlalchemy import exists, select, text
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.orm import Session
 
 from app.core.config import Settings
 from app.infrastructure.database import ADMIN_LOCK_ID, Database, utcnow
@@ -18,6 +19,9 @@ from app.modules.detections.models import DetectionJob, RuleDeployment
 from app.modules.entities.indexing import index_alert
 from app.modules.incidents.service import automatic_incident
 from app.modules.ingestion.schemas import canonical_json
+from app.modules.intelligence.contracts import EVALUATOR_VERSION as INTELLIGENCE_EVALUATOR
+from app.modules.intelligence.contracts import RULE_ID, RULE_VERSION, IntelligenceMatch
+from app.modules.intelligence.matching import alert_match, evaluate_event
 from app.modules.mitre.service import record_mapping
 from app.modules.normalization.models import NormalizedEvent
 from app.modules.normalization.schemas import NormalizedSecurityEvent
@@ -29,6 +33,20 @@ from app.modules.sigma.service import matches as sigma_matches
 
 class RuleConfigurationError(RuntimeError):
     """A deployment/catalog mismatch leaves the checkpoint pending for repair."""
+
+
+def _intelligence_evaluation(
+    db: Session, snapshot: NormalizedEvent
+) -> tuple[RuleDeployment | None, IntelligenceMatch | None]:
+    deployment = db.get(RuleDeployment, RULE_ID)
+    if deployment is None or deployment.rule_version != RULE_VERSION:
+        raise RuleConfigurationError("intelligence_configuration_mismatch")
+    try:
+        evaluate_event(db, snapshot)
+        match = alert_match(db, snapshot, deployment.version) if deployment.enabled else None
+    except (KeyError, TypeError, ValueError):
+        raise RuleConfigurationError("intelligence_evidence_integrity_mismatch") from None
+    return deployment, match
 
 
 def enqueue_normalized(database: Database, limit: int) -> int:
@@ -55,7 +73,17 @@ def enqueue_normalized(database: Database, limit: int) -> int:
         return len(rows)
 
 
-def _key(event: NormalizedSecurityEvent, match: Match | SigmaMatch) -> str:
+def _evaluator(match: Match | SigmaMatch | IntelligenceMatch) -> str:
+    return (
+        SIGMA_EVALUATOR
+        if isinstance(match, SigmaMatch)
+        else INTELLIGENCE_EVALUATOR
+        if isinstance(match, IntelligenceMatch)
+        else EVALUATOR_VERSION
+    )
+
+
+def _key(event: NormalizedSecurityEvent, match: Match | SigmaMatch | IntelligenceMatch) -> str:
     return hashlib.sha256(
         canonical_json(
             {
@@ -65,9 +93,7 @@ def _key(event: NormalizedSecurityEvent, match: Match | SigmaMatch) -> str:
                 "run_id": str(event.run_id),
                 "rule_id": match.rule.id,
                 "rule_version": match.rule.version,
-                "evaluator_version": SIGMA_EVALUATOR
-                if isinstance(match, SigmaMatch)
-                else EVALUATOR_VERSION,
+                "evaluator_version": _evaluator(match),
             }
         )
     ).hexdigest()
@@ -122,7 +148,7 @@ def _process_one(database: Database) -> dict[str, int] | None:
         except (ValueError, TypeError, KeyError):
             raise RuleConfigurationError("sigma_configuration_mismatch") from None
         try:
-            matches: list[Match | SigmaMatch] = [
+            matches: list[Match | SigmaMatch | IntelligenceMatch] = [
                 match for match in evaluate(snapshot.document) if match.rule.id in active
             ]
             matches.extend(sigma_matches(sigma_rules, snapshot.document))
@@ -132,11 +158,14 @@ def _process_one(database: Database) -> dict[str, int] | None:
             job.processed_at = now
             session.commit()
             return {"processed": 0, "quarantined": 1, "alerts": 0}
+        # Freeze even empty matches; retries and later catalog revisions cannot
+        # change this event. The shared authority lock serializes publication.
+        intelligence_deployment, intelligence_match = _intelligence_evaluation(session, snapshot)
+        if intelligence_match is not None:
+            matches.append(intelligence_match)
         created = 0
         for match in matches:
-            evaluator_version = (
-                SIGMA_EVALUATOR if isinstance(match, SigmaMatch) else EVALUATOR_VERSION
-            )
+            evaluator_version = _evaluator(match)
             values: dict[str, Any] = {
                 "id": uuid4(),
                 "detection_key": _key(event, match),
@@ -217,6 +246,16 @@ def _process_one(database: Database) -> dict[str, int] | None:
             }
             for rule in sigma_rules
         ]
+        if intelligence_deployment is not None and intelligence_deployment.enabled:
+            job.evaluated_rules = [
+                *job.evaluated_rules,
+                {
+                    "id": RULE_ID,
+                    "version": RULE_VERSION,
+                    "deployment_version": intelligence_deployment.version,
+                    "evaluator_version": INTELLIGENCE_EVALUATOR,
+                },
+            ]
         session.commit()
         return {"processed": 1, "quarantined": 0, "alerts": created}
 

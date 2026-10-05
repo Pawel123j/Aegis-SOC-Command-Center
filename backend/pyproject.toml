@@ -8,6 +8,7 @@ version = "0.1.0"
 description = "Aegis SOC Command Center backend foundation"
 requires-python = ">=3.12,<3.13"
 dependencies = [
+  "idna==3.20",
   "alembic>=1.16,<2",
   "argon2-cffi>=25.1,<26",
   "celery[redis]>=5.5,<6",

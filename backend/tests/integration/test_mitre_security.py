@@ -411,10 +411,16 @@ def test_runtime_normalized_association_cannot_disagree_with_its_frozen_parent(
 def test_owner_downgrade_refuses_to_destroy_nonempty_mitre_history(
     case: Case, admin: Login, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    migrate(case.database.owner, "0010_entities", downgrade=True)
     migrate(case.database.owner, "0009_sigma", downgrade=True)
-    monkeypatch.setattr("app.modules.normalization.processing.index_event", lambda *_: None)
-    monkeypatch.setattr("app.modules.detections.processing.index_alert", lambda *_: None)
-    record = signals(case, admin)[0]
+    with monkeypatch.context() as patch:
+        patch.setattr("app.modules.normalization.processing.index_event", lambda *_: None)
+        patch.setattr("app.modules.detections.processing.index_alert", lambda *_: None)
+        patch.setattr(
+            "app.modules.detections.processing._intelligence_evaluation", lambda *_: (None, None)
+        )
+        patch.setattr("app.modules.risk.inputs.risk_contexts", lambda *_: ([], {}))
+        record = signals(case, admin)[0]
     before = domain_counts(case)
     with pytest.raises(DBAPIError) as rejected:
         migrate(case.database.owner, "0007_risk", downgrade=True)
@@ -423,6 +429,8 @@ def test_owner_downgrade_refuses_to_destroy_nonempty_mitre_history(
     assert domain_counts(case) == before
     with case.database.runtime.connect() as db:
         assert db.scalar(text("SELECT version_num FROM alembic_version")) == "0009_sigma"
+    migrate(case.database.owner)
+    assert domain_counts(case) == before
     response = admin.client.get(f"/api/v1/alerts/{record.id}", headers=admin.authorization)
     assert response.status_code == 200
     assert response.json()["mitre_mapping"]["status"] == "mapped"

@@ -2,9 +2,11 @@
 
 Status 2026-10-05: PHASE 1–3, detekcje/alerty i incydenty,
 korelacja, ryzyko, MITRE, Sigma oraz profile encji są zaimplementowane.
+Etap 7 dodaje lokalne IOC i ledger dopasowań; końcowa regresja i migracje PASS.
 Kontrakt działającej normalizacji opisuje
 [normalization](normalization.md), a spraw [incidents](incidents.md).
 Profile obserwowanych encji Etapu 6 opisuje [entities](entities.md);
+dopasowania i rewizje IOC opisuje [intelligence](intelligence.md);
 dalszy inwentarz i wcześniejsze szkice oznaczono jako projekt poniżej.
 Nazwy pól nie są deklaracją pełnej zgodności ECS/OTel.
 
@@ -195,13 +197,44 @@ Nowa normalizacja i publikacja alertu indeksują swoje dowody atomowo.
 Starszy zakres uzupełnia ograniczony, audytowany backfill, bez zmiany źródła.
 [Zasady profilu](entities.md), [ADR 0012](adr/0012-observed-entity-profiles.md).
 
+## Lokalny katalog IOC i ledger dopasowań — Etap 7
+
+Migracja `0011_intelligence` jest head nowych źródeł. Dodaje cztery tabele:
+
+| Tabela | Dane i ograniczenia |
+| --- | --- |
+| `ioc_identities` | UUID, niezmienne kind/canonical_value/normalization_version i autor/data; unikalny typ + wartość; pointer i wersja wybierane ograniczoną funkcją |
+| `ioc_revisions` | UUID, FK IOC, unikalna rewizja 1–50; oryginalny JSON, jego kanoniczne UTF-8 i SHA-256, autor/data |
+| `int_event_receipts` | PK/FK normalized event, oryginalny hash, normalization version, mode/dataset/run, evaluated_at i match_count 0–32, także zero |
+| `int_event_matches` | FK event receipt/IOC/rewizji; unikalny event + revision + field; observed_value do 8192, canonical_value do 2048, pełny snapshot rewizji i hash |
+
+Rewizja przechowuje reputację unknown/clean/suspicious/malicious, nullable
+confidence 0–100, source, świadome first/last seen, tagi, opis i active.
+Reputacja i confidence są deklaracją źródła. Typ i kanoniczna wartość nie
+zmieniają się; edycja i archiwizacja tworzą nową rewizję. Limity katalogu
+1000, rewizji 50 i atomowego importu 100 obejmują także wyłączone wpisy.
+Runtime ma SELECT/INSERT; funkcja SECURITY DEFINER sprawdza aktora i wybiera
+kolejną rewizję. FK, scope/hash guards i deferred cardinality sprawdzają
+kompletność przy commit. UPDATE/DELETE/TRUNCATE historii i niepusty downgrade
+są blokowane; INSERT pozostaje granicą zaufanego aplikacyjnego writera.
+
+Receipt utrwala katalog użyty przy pierwszej analizie eventu, także pustą
+listę. Replay jest związany z konkretnym event/dataset/run, bez założenia,
+że reputacja była znana w historycznym czasie zdarzenia. Import/PATCH nie
+zmieniają receipts, starych alertów ani ocen. Risk v4 wskazuje oryginalny
+match/revision proof; v2/v3 zachowują oryginalne wejścia i hash. GET nie
+tworzy dopasowań; jawny backfill obejmuje tylko zdarzenia bez receipt.
+[Zasady i ograniczenia](intelligence.md),
+[ADR 0013](adr/0013-local-intelligence.md),
+[walidacja Etapu 7](validation-intelligence.md).
+
 Poniższa tabela obejmuje dalsze, jeszcze niewdrożone agregaty.
 
 | Agregat | Planowane encje / constraints |
 | --- | --- |
 | Detection | rules, immutable rule_versions, detection_state, matches, alert_revisions, alert_events |
 | Incidents | incidents z version, incident_alerts, notes, evidence_snapshots, incident_iocs, timeline |
-| Context | assets, identities, iocs, enrichment_versions; wejście do risk i match IOC |
+| Context | Zweryfikowane assets/identities i dalsze enrichment_versions; lokalne iocs i match IOC opisano wyżej |
 | Hunting | saved_queries, bookmarks, investigations, investigation_events, draft_rules |
 | SOAR | playbooks, versions, runs, steps, attempts, notifications; unikalny execution key |
 | Governance | audit_log append-only, replay_runs, risk_policy_versions, mitre_catalog_versions |

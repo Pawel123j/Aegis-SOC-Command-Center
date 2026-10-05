@@ -216,7 +216,10 @@ function Build-Frontend {
             & $pnpmPath install --frozen-lockfile --ignore-scripts --store-dir $frontendStore
             if ($LASTEXITCODE -ne 0) { throw 'Nie udalo sie przygotowac zaleznosci panelu; TLS pozostaje wlaczony.' }
         }
-        & $pnpmPath run build
+        # The explicit frozen/offline install above is the dependency check.
+        # pnpm 11's implicit pre-run install drops those options and may replace
+        # the local store or access the network even in BuildMode=offline.
+        & $pnpmPath '--config.verify-deps-before-run=false' run build
         if ($LASTEXITCODE -ne 0) { throw 'Budowanie panelu nie powiodlo sie.' }
         if (-not (Test-Path -LiteralPath (Join-Path $frontendRoot 'dist\index.html') -PathType Leaf)) {
             throw 'Brak gotowego panelu po budowaniu.'

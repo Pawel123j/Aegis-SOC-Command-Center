@@ -9,6 +9,7 @@ import { EventReason } from './evidence/EventReason';
 import { RiskScore } from './risk/RiskScore';
 import { RiskPanel } from './risk/RiskPanel';
 import { MitreMapping } from './mitre/MitreMapping';
+import { AlertIntelligence } from './intelligence/AlertIntelligence';
 
 export function Alerts({
   user,
@@ -119,6 +120,9 @@ export function Alerts({
                             <small>Korelacja · liczba zdarzeń: {item.event_count}</small>
                           )}
                           {item.detection_type === 'sigma' && <Badge>Sigma</Badge>}
+                          {item.detection_type === 'intelligence' && (
+                            <Badge>Threat Intelligence</Badge>
+                          )}
                         </td>
                         <td>
                           <Badge tone={item.severity}>{item.severity}</Badge>
@@ -257,6 +261,9 @@ export function AlertDialog({
               <Badge>{statusName[resource.data.status]}</Badge>
               <Badge>{resource.data.mode}</Badge>
               {resource.data.detection_type === 'sigma' && <Badge>Sigma</Badge>}
+              {resource.data.detection_type === 'intelligence' && (
+                <Badge>Threat Intelligence</Badge>
+              )}
             </div>
             <dl className="facts">
               <dt>
@@ -299,7 +306,16 @@ export function AlertDialog({
                 zadeklarowanego przez autora; nie potwierdza pewności ani niezależnego zachowania.
               </p>
             )}
+            {resource.data.detection_type === 'intelligence' && (
+              <p className="notice">
+                Dopasowano zachowaną deklarację lokalnego katalogu IOC. Reputacja pochodzi ze
+                wskazanego źródła; dopasowanie nie potwierdza ataku ani złośliwego działania.
+              </p>
+            )}
             <EventReason reason={resource.data.reason} />
+            {resource.data.detection_type === 'intelligence' && (
+              <AlertIntelligence reason={resource.data.reason} />
+            )}
             <MitreMapping mapping={resource.data.mitre_mapping} />
             <details>
               <summary>Sprawdzone pola i pełne uzasadnienie</summary>

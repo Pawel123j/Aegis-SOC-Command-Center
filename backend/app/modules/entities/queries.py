@@ -131,7 +131,9 @@ SELECT jsonb_build_object('total',(SELECT count(*) FROM candidates),
         || CASE WHEN a.evaluator_version='sigma-subset-v1' THEN jsonb_build_object(
           'sigma_revision_id',a.rule_snapshot->>'revision_id',
           'sigma_source_sha256',a.rule_snapshot->>'source_sha256',
-          'sigma_compiled_sha256',a.rule_snapshot->>'compiled_sha256') ELSE '{}'::jsonb END)
+          'sigma_compiled_sha256',a.rule_snapshot->>'compiled_sha256') ELSE '{}'::jsonb END
+        || CASE WHEN a.evaluator_version='intelligence-match-v1' THEN jsonb_build_object(
+          'intelligence_proof_sha256',a.reason->>'proof_sha256') ELSE '{}'::jsonb END)
     FROM associated s JOIN public.alerts a ON a.id=s.alert_id
     JOIN public.risk_calculations rc ON rc.id=a.risk_calculation_id
     WHERE s.entity_id=i.id AND a.status<>'false_positive'

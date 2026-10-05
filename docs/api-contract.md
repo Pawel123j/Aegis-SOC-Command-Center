@@ -1,11 +1,14 @@
 # API v1 — zakres wdrożony i projekt dalszych faz
 
 Status: kod PHASE 1–3 i przyrostów SOC, stan 2026-10-05;
-wyniki wykonanych kontroli w [raporcie profili encji](validation-entities.md)
-i wcześniejszych raportach walidacji.
+Etap 7 implementuje lokalne IOC. Jego końcowe wyniki zapisuje
+[raport Threat Intelligence](validation-intelligence.md): regresja i lokalne
+uruchomienie potwierdzone, z jawnymi ograniczeniami testu przeglądarkowego.
+Historyczne kontrole opisują raporty wcześniejszych etapów.
 Kod obejmuje `/auth`, `/users`, `/audit`, `/system/health`, źródła, przyjęcie
 eventów, status batcha, retry, normalized event search, alerts/detections,
-incidents, correlations, risk, mitre, sigma, entities oraz techniczne sondy/metryki.
+incidents, correlations, risk, mitre, sigma, entities, intelligence oraz
+techniczne sondy/metryki.
 OpenAPI dla zaimplementowanych tras powstaje z modeli pod `/api/v1/openapi.json`.
 Zasoby oznaczone jako przyszłe poniżej nie są dostępne w tej implementacji.
 Weryfikację działania z rzeczywistymi usługami dokumentuje [raport walidacji](validation.md).
@@ -19,7 +22,7 @@ Wspólny prefiks zasobów: `/api/v1`. Role i scopes: [security](security.md).
   maksymalnie 100 rekordów; ten limit obowiązuje również incidents i ich kolekcje.
   Wyszukiwanie eventów: domyślnie 24 h, max 7 dni na żądanie interaktywne,
   bez dowolnego SQL. Większy zakres jako kontrolowany job.
-- Mutacja case/rule/playbook wymaga oczekiwanej wersji (ETag/If-Match): brak `428`,
+- Mutacja case/rule/IOC/playbook wymaga oczekiwanej wersji (ETag/If-Match): brak `428`,
   nieaktualna wersja `412`. Niedozwolone przejście stanu daje `409`.
 - Idempotency-Key na ingest i tworzenie incydentu; w przyszłości start demo/replay
   i start playbook. Ponowienie zwraca
@@ -74,6 +77,7 @@ przeglądarkowy przepływ UI należy do PHASE 13.
 | Risk recalculation | POST `/alerts/{id}/risk/recalculate`, `/incidents/{id}/risk/recalculate` | Właściwe alerts:manage/incidents:edit, If-Match decyzji analityka, ponowna autoryzacja po blokadzie; wynik z zachowanych dowodów |
 | Sigma | GET `/sigma/capabilities`, `/sigma/rules`, `/sigma/rules/{id}`; POST `/sigma/validate`, `/sigma/test`, `/sigma/rules`, `/sigma/rules/{id}/versions`; PATCH `/sigma/rules/{id}` | Odczyt/walidacja, bezstanowy test, import wyłączonej rewizji, publikacja z If-Match; szczegóły poniżej |
 | Encje | GET `/entities`, `/entities/by-event/{event_id}`, `/entities/{id}` i kolekcje events/alerts/incidents/related; POST `/entities/backfill` | Obserwowane profile, siedem odczytów i jedna audytowana partia indeksowania; szczegóły poniżej |
+| Intelligence | GET/POST `/intelligence/iocs`; GET/PATCH `/intelligence/iocs/{id}`; GET historia/providers/event proof; POST import/lookup/backfill | Lokalny katalog i zachowane pierwsze dopasowania, dziesięć metod; szczegóły poniżej |
 
 Utworzenie źródła zwraca `{source, credential}` z tokenem widocznym tylko raz.
 Source ma server-generated dataset UUID, `mode=live` i zerowy `run_id`.
@@ -103,7 +107,6 @@ punktów, policy/input hashes i odniesienie do poprzedniego obliczenia.
 | Rule authoring | POST `/detections`; wersjonowane definicje | Draft/version/import oprócz obecnego stałego katalogu |
 | Hunts | GET/POST `/hunts`; PATCH `/hunts/{id}`; POST `/hunts/{id}/runs`, `/hunts/{id}/bookmarks`, `/hunts/{id}/investigations`, `/hunts/{id}/draft-detections` | Saved query, evidence, investigation, draft rule |
 | Investigations | POST `/investigations/{id}/promote` | Jednorazowa, audytowana promocja do sprawy |
-| TI | GET/POST `/iocs`; PATCH `/iocs/{id}` | Typowana lokalna reputacja, wersje i audit |
 | Playbooks | GET/POST `/playbooks`; POST `/playbooks/{id}/versions`, `/playbooks/{id}/publish`, `/playbooks/{id}/runs` | Publikowane wersje i wykonanie simulation |
 | SOAR runs | GET `/playbook-runs/{id}`; POST `/playbook-runs/{id}/cancel` | Historia kroków, prób i wyników |
 | SOC metrics | GET `/metrics`, `/dashboard` | JSON metryk domenowych, auth |
@@ -280,3 +283,63 @@ events oraz limit alertów. Receipt zapewnia idempotencję. Backfill nie zmienia
 snapshotów, alertów ani wyników risk. Błąd integralności daje409 bez partial
 commit. Trzysekundowy limit SQL oraz ograniczona odpowiedź chronią koszt
 odczytu. Konserwatywną tożsamość i ograniczenia opisuje [entities](entities.md).
+
+## Threat Intelligence — Etap 7
+
+Prefiks `/api/v1/intelligence`, osiem ścieżek i dziesięć metod:
+
+| Metoda i ścieżka pod prefiksem | Dostęp i wynik |
+| --- | --- |
+| GET `/iocs` | intelligence:read; IOCPage, dokładny total, next_cursor, normalization_version i limity |
+| POST `/iocs` | intelligence:manage; IOCView, 201 nowy albo 200 identyczny bieżący wpis |
+| GET `/iocs/{id}` | intelligence:read; IOCView i ETag bieżącej rewizji |
+| PATCH `/iocs/{id}` | intelligence:manage; nowa rewizja metadanych/active z If-Match; no-op zachowuje wersję |
+| GET `/iocs/{id}/history` | intelligence:read; oryginalne rewizje, hashe, autor/data, total i signed next_cursor |
+| POST `/import` | intelligence:manage; atomowe `{items:[IOCInput]}`, wynik items/created/unchanged |
+| POST `/lookup` | intelligence:read; dokładne `{type,value}`, wynik canonical_value/found/item, także wpis nieaktywny |
+| GET `/providers` | intelligence:read; rzeczywiście dostępny lokalny provider i brak network_access |
+| GET `/events/{event_id}` | intelligence:read i events:read; pending albo evaluated, oryginalne field matches i receipt |
+| POST `/backfill` | system:manage; jawna partia do 100 starszych events bez receipt, bez nowych alertów/recalculation |
+
+IOCInput: type ip/domain/url/hash, value 1–2048, reputation
+unknown/clean/suspicious/malicious, nullable strict confidence 0–100,
+source 1–128, opcjonalne świadome czasy first_seen/last_seen, do 16 różnych
+tagów po 1–64, description do 2048 oraz strict active (domyślnie true).
+Nieznane pola, kontrolne znaki metadanych i niepoprawne wskaźniki są odrzucane.
+Source i tagi mają znormalizowane zewnętrzne spacje; daty są UTC i first≤last.
+Reputacja oraz confidence są deklaracją źródła, bez gwarancji prawdopodobieństwa.
+
+IOCView dodaje id, canonical_value, normalization_version, revision,
+revision_id, document_sha256, version, created_at/by i updated_at/by.
+Value jest kanoniczna; typ/wartość/ID nie podlegają PATCH. Zmiana active=false
+archiwizuje przez rewizję, bez DELETE. Version odpowiada numerowi rewizji.
+Brak If-Match daje 428 version_required, nieaktualna wersja 412 version_conflict.
+Inne metadane istniejącej tożsamości przy POST dają 409 ioc_exists.
+
+Katalog ma limit 1000 także dla wpisów wyłączonych, historia 50 rewizji na IOC,
+a import 1–100 rekordów i body do 1 MiB. Pozostałe mutacje mają limit 64 KiB.
+Duplikaty kanoniczne w imporcie dają 422 ioc_import_duplicates; dowolny błąd
+albo brak audytu wycofuje całą partię. Limity katalogu/rewizji dają 409.
+Publikacja/import/PATCH ponownie sprawdzają rolę i aktywną sesję po blokadzie.
+Analyst ma obecnie odczyt; endpointu intelligence:propose nie dostarczono.
+
+Lista filtruje kind, reputation, active i literalne q do 128 znaków.
+Limit 1–100 (domyślnie 25); historia domyślnie 50, maksimum 100 na stronę.
+Cursor do 4096 znaków wiąże principal, path, filtry i limit; niepoprawny daje
+422 invalid_cursor. Count/page katalogu mają jedną migawkę SQL. Timestamp
+anchor nie jest commit timestamp ani wspólną migawką wszystkich stron;
+zmiana bieżącej rewizji może zmienić filtr następnej strony.
+
+Dowód eventu zawiera event_id, status, document_sha256, normalization_version,
+evaluator_version, evaluated_at, match_count i matches. Match zachowuje IOC
+i revision IDs, field, observed/canonical value, pełny revision_snapshot/hash.
+Reputation_origin=source_assertion i confirmed_attack=false są jawne. Receipt
+zero matches oznacza wykonaną analizę; pending nie oznacza braku wskaźników.
+GET nigdy nie tworzy dopasowań. Import/PATCH nie zmieniają pierwszego wyniku.
+Backfill `{limit:25}` (strict 1–100) nie resetuje DetectionJob i nie przelicza
+historycznych ocen; jawne risk/recalculate może utworzyć kolejną ocenę.
+
+Dokładne reguły kanonikalizacji, typowane pola i semantykę medium TI oraz
+opt-in risk v4 z fallback v3 opisuje [intelligence](intelligence.md).
+[ADR 0013](adr/0013-local-intelligence.md),
+[walidacja Etapu 7](validation-intelligence.md).

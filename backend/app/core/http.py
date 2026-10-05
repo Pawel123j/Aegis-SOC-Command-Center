@@ -62,9 +62,12 @@ class BodyLimitMiddleware:
         headers = dict(scope["headers"])
         is_ingest = scope["method"] == "POST" and scope["path"].rstrip("/") == "/api/v1/events"
         is_sigma = scope["method"] == "POST" and scope["path"].startswith("/api/v1/sigma/")
+        is_intelligence = scope["path"].startswith("/api/v1/intelligence/")
         limit = 1048576 if is_ingest else self.limit
         if is_sigma:
             limit = 1048576 if scope["path"].rstrip("/") == "/api/v1/sigma/test" else 262144
+        if is_intelligence and scope["path"].rstrip("/") == "/api/v1/intelligence/import":
+            limit = 1048576
         content_type = headers.get(b"content-type", b"").split(b";")[0].strip().lower()
         if content_type not in {b"", b"application/json"} or b"content-encoding" in headers:
             await self.reject(scope, receive, send, 415, "json_required")
@@ -89,7 +92,7 @@ class BodyLimitMiddleware:
             if not message.get("more_body", False):
                 break
         body = b"".join(chunks)
-        if is_ingest or is_sigma:
+        if is_ingest or is_sigma or is_intelligence:
             try:
                 validate_ingest_json(body)
             except (ValueError, RecursionError):

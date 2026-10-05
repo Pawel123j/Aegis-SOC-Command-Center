@@ -138,7 +138,7 @@ export interface Alert {
   risk_level: RiskLevel | null;
   risk_calculation_id: string | null;
   event_count?: number;
-  detection_type?: 'single_event' | 'correlation' | 'sigma';
+  detection_type?: 'single_event' | 'correlation' | 'sigma' | 'intelligence';
 }
 export interface AlertDetail extends Alert {
   mitre_mapping?: MitreMapping;

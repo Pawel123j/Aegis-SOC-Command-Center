@@ -380,6 +380,8 @@ def test_import_and_detection_audit_failures_roll_back_entire_transaction(
 def test_downgrade_refuses_nonempty_sigma_identity_and_preserves_source(
     case: Case, admin: Login
 ) -> None:
+    migrate(case.database.owner, "0010_entities", downgrade=True)
+    migrate(case.database.owner, "0009_sigma", downgrade=True)
     rule = import_rule(admin)
     before = domain_counts(case)
     with pytest.raises(DBAPIError) as rejected:
@@ -388,18 +390,30 @@ def test_downgrade_refuses_nonempty_sigma_identity_and_preserves_source(
     assert "Sigma history exists" in str(rejected.value)
     assert domain_counts(case) == before and view(admin, rule["id"]) == rule
     with case.database.runtime.connect() as db:
-        assert db.scalar(text("SELECT version_num FROM alembic_version")) == "0010_entities"
+        assert db.scalar(text("SELECT version_num FROM alembic_version")) == "0009_sigma"
+    migrate(case.database.owner)
+    assert domain_counts(case) == {
+        **before,
+        "rule_deployments": before["rule_deployments"] + 1,
+    }
+    assert view(admin, rule["id"]) == rule
 
 
 def test_nonempty_v2_history_survives_sigma_upgrade_and_only_explicit_recalc_creates_v3(
     case: Case, admin: Login, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    # Build the historical fixture before profiles exist, without their writers.
+    # Build the historical fixture before profiles and intelligence exist.
+    migrate(case.database.owner, "0010_entities", downgrade=True)
     migrate(case.database.owner, "0009_sigma", downgrade=True)
-    monkeypatch.setattr("app.modules.normalization.processing.index_event", lambda *_: None)
-    monkeypatch.setattr("app.modules.detections.processing.index_alert", lambda *_: None)
-    normalize_events(case, admin, [powershell()])
-    detect_once(processing_database(case), case.database.settings)
+    with monkeypatch.context() as patch:
+        patch.setattr("app.modules.normalization.processing.index_event", lambda *_: None)
+        patch.setattr("app.modules.detections.processing.index_alert", lambda *_: None)
+        patch.setattr(
+            "app.modules.detections.processing._intelligence_evaluation", lambda *_: (None, None)
+        )
+        patch.setattr("app.modules.risk.inputs.risk_contexts", lambda *_: ([], {}))
+        normalize_events(case, admin, [powershell()])
+        detect_once(processing_database(case), case.database.settings)
     record = alerts(case)[0]
     # Reproduce a pre-Sigma row from a real builtin proof. The v2 policy hash is
     # fixed from the previous release; v2 inputs had no severity_baselines key.

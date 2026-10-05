@@ -95,5 +95,7 @@ class Alert(Base):
             if self.evaluator_version.startswith("correlation-")
             else "sigma"
             if self.evaluator_version.startswith("sigma-")
+            else "intelligence"
+            if self.evaluator_version.startswith("intelligence-")
             else "single_event"
         )

@@ -3,7 +3,7 @@
 Projekt portfolio Security Engineering: docelowo lokalna platforma mini-SIEM, SOAR,
 Incident Response i Threat Hunting, z demonstracją opartą na prawdziwym pipeline logów.
 
-**Stan: PHASE 0–3, incydenty, korelacja, ryzyko, MITRE ATT&CK, Sigma i profile encji — 2026-10-05.**
+**Stan: PHASE 0–3 i Etapy 1–7 ukończone lokalnie — 2026-10-05.**
 Backend ma API źródeł, osobne tokeny ingestion, single/batch, idempotencję,
 PostgreSQL inbox/outbox, relay i worker z ograniczonym retry oraz kwarantanną.
 Sześć parserów tworzy niezmienne snapshoty w PostgreSQL, a osobny processor
@@ -32,10 +32,20 @@ wyjaśnienie najwyższej kwalifikującej się istniejącej oceny alertu.
 Tożsamość i niepełność indeksu są jawne; starsze dane administrator indeksuje
 ograniczonymi partiami. [Zasady profili](docs/entities.md),
 [walidacja Etapu 6](docs/validation-entities.md).
+Etap 7 dodaje lokalny katalog IP, domen, URL i hash, niezmienne rewizje,
+dokładne sprawdzenie i atomowy import. Detektor zachowuje dowód pierwszego
+dopasowania, także pustego; malicious IOC tworzy medium alert do analizy.
+Reputacja i confidence są deklaracją źródła. Osobny wkład I w risk-policy-v4
+ma maksimum 15, a brak TI zachowuje dotychczasową politykę v3. Panel pokazuje
+katalog, historię i oryginalne dopasowane pola. Dostępny provider jest lokalny;
+aplikacja nie pobiera URL ani reputacji z zewnętrznych usług.
+[Zakres i ograniczenia](docs/intelligence.md),
+[walidacja Etapu 7](docs/validation-intelligence.md).
 Generator pozostaje zaplanowany. Rozbudowa przebiega według
 [audytu i nowego planu 15 etapów](docs/soc-expansion-plan.md).
 Zakres: [incydenty](docs/incidents.md), [pierwsze alerty i panel](docs/initial-soc.md).
-Wyniki: [walidacja Etapu 6](docs/validation-entities.md),
+Wyniki bieżącego przyrostu: [walidacja Etapu 7](docs/validation-intelligence.md).
+Historyczne wyniki: [walidacja Etapu 6](docs/validation-entities.md),
 [walidacja Etapu 5](docs/validation-sigma.md),
 [walidacja Etapu 4](docs/validation-mitre.md),
 [walidacja Etapu 3](docs/validation-risk.md),
@@ -85,6 +95,7 @@ flowchart LR
     Parser --> Normalize[Normalization]
     Normalize --> Storage[Event Storage]
     Storage --> Detection[Detection Engine]
+    IOC[Local IOC revisions] --> Detection
     Detection --> Correlation[Correlation Engine]
     Correlation --> Risk[Risk Engine]
     Risk --> Alert[Alert]
@@ -170,7 +181,8 @@ rozbudowy wyznacza [plan 15 etapów](docs/soc-expansion-plan.md).
 - [Detekcje, Sigma i testowanie reguł](docs/detection-engine.md).
 - [Korelacja i attack storyline](docs/correlation-engine.md), [jawny risk scoring](docs/risk-engine.md).
 - [Obsługa incydentów i evidence](docs/incident-response.md).
-- [Threat Hunting](docs/threat-hunting.md) i lokalne IOC.
+- [Lokalny katalog IOC i dowody dopasowania](docs/intelligence.md).
+- [Threat Hunting](docs/threat-hunting.md).
 - [SOAR w trybie simulation](docs/soar.md).
 - [JWT, RBAC, audyt i model zagrożeń](docs/security.md).
 - [Obserwowalność i metryki SOC](docs/observability.md).
@@ -185,8 +197,11 @@ i nowe konto administratora. Każdy scenariusz zostanie powiązany z testami reg
 
 Screenshoty rzeczywistego dashboardu trafią do `docs/assets/` w PHASE 13/18.
 Pełna definicja ukończenia pozostaje otwarta.
-Aktualny przyrost nowego planu: **Etap 5 — Sigma**, wdrożony i zweryfikowany automatycznie.
-Etapy 1–4 mają osobne raporty powyżej; następny to **Entity Profiles**.
+Ukończony przyrost nowego planu: **Etap 7 — Threat Intelligence**;
+1966 testów backendu i 206 panelu PASS, lokalne wdrożenie sprawdzone.
+Etapy 1–6 mają osobne raporty powyżej. Zalogowany test przeglądarkowy,
+internetowy audyt zależności i hostowane CI pozostają otwarte, zgodnie z raportem.
+Następny przyrost to **Attack Timeline**.
 
 ## Zasady rozwoju
 

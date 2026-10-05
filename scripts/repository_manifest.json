@@ -73,6 +73,8 @@
     "docs/risk-engine.md",
     "docs/entities.md",
     "docs/validation-entities.md",
+    "docs/intelligence.md",
+    "docs/validation-intelligence.md",
     "docs/incident-response.md",
     "docs/security.md",
     "docs/threat-hunting.md",
@@ -87,6 +89,7 @@
     "docs/adr/0004-detection-semantics.md",
     "docs/adr/0005-frontend-and-auth.md",
     "docs/adr/0006-local-demo-and-safe-soar.md",
-    "docs/adr/0012-observed-entity-profiles.md"
+    "docs/adr/0012-observed-entity-profiles.md",
+    "docs/adr/0013-local-intelligence.md"
   ]
 }

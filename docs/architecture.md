@@ -3,7 +3,9 @@
 Status 2026-10-05: fundament PHASE 1–3, pojedyncze detekcje, panel,
 incydenty i korelacja Etapu 2 są zaimplementowane; Etapy 3 ryzyka i 4 MITRE dodają osobne historyczne snapshoty i projekcje;
 Sigma Etapu 5 dodaje niezmienne definicje i kontrolowane wykonanie,
-a Etap 6 indeks obserwowanych encji i profile w panelu;
+a Etap 6 indeks obserwowanych encji i profile w panelu.
+Etap 7 dodaje lokalny katalog IOC i zachowane dopasowania;
+jego końcowa regresja i lokalne uruchomienie są potwierdzone w raporcie;
 wykonane kontrole opisują raporty walidacji.
 PostgreSQL przechowuje
 niezmienne normalized snapshots; processor projektuje je do ClickHouse,
@@ -13,7 +15,7 @@ High/Critical w jednej transakcji. Finalizację opisuje
 [ADR 0008](adr/0008-temporal-correlation.md), a wykonane kontrole
 [raport Etapu 2](validation-correlation.md).
 Poniższe diagramy i zakres dalszych modułów zachowują architekturę docelową
-PHASE 0; IOC, SOAR, graf/merge i generator pozostają projektem.
+PHASE 0; SOAR, graf/merge i generator pozostają projektem.
 Ocena ryzyka jest czystym modułem wywoływanym przy zapisie alertów i zmianach
 dowodów sprawy, bez osobnej usługi. Niezmienne obliczenia, bieżąca projekcja
 i audyt mają jedną transakcję; odczyt nie przelicza stanu.
@@ -40,6 +42,19 @@ dowody; GET nie zapisuje stanu. Jeden SQL snapshot obejmuje stronę, liczniki
 i wybraną istniejącą ocenę ryzyka. Podstawa tożsamości pozostaje obserwacją
 źródła, a własna ocena encji ani inwentarz nie powstają automatycznie.
 [ADR 0012](adr/0012-observed-entity-profiles.md), [zakres](entities.md).
+Threat Intelligence Etapu 7 również działa w istniejącym detektorze i API.
+Rewizje lokalnego katalogu oraz ledger dopasowań należą do PostgreSQL.
+Detektor pod wspólną blokadą publikacji weryfikuje raw/normalized source,
+porównuje aktywny katalog i zapisuje receipt, także dla zero matches.
+Receipt, oryginalna rewizja IOC, alert, ryzyko i checkpoint są atomowe.
+Retry używa zachowanego wyniku; import nie przepisuje starych dowodów.
+Ekstrakcja czyta typowane source/destination IP, process/file hash oraz
+URL/referrer i ich host; nie analizuje dowolnego tekstu i nie wykonuje DNS/HTTP.
+Risk-policy-v4 dodaje maksymalny wkład lokalnej reputacji I, a bez TI pozostaje
+niezmienione v3. Reputacja i confidence są twierdzeniem źródła.
+Nie powstaje nowy kontener ani zewnętrzny provider.
+[ADR 0013](adr/0013-local-intelligence.md), [zakres](intelligence.md),
+[bieżąca walidacja](validation-intelligence.md).
 Poziom produkcyjny oznacza świadome kontrakty, odporność i testy,
 nie deklarację wysokiej dostępności klastra uruchamianego na jednym laptopie.
 
@@ -109,10 +124,13 @@ do Docker socket ani poświadczeń prawdziwej infrastruktury.
    liczby accepted/normalized/quarantined/processed/projected oraz błędy per record.
 4. Domena ocenia unikalne normalized events ze stanem okien w PostgreSQL. Logiczne
    `DetectionMatch` zawiera evidence, wersję reguły i explanation. Nie jest jeszcze
-   osobnym publicznym alertem. Rozdzielenie umożliwia atomową publikację wyniku.
+   osobnym publicznym alertem. Detektor zachowuje także pierwsze dopasowania
+   lokalnych IOC w osobnym ledgerze, z oryginalną rewizją i zerowymi receipts.
+   Rozdzielenie umożliwia atomową publikację wyniku.
 5. W transakcji zapisu efektów dopasowania korelacja wybiera lub zakłada case,
    risk engine liczy wkłady, a alert, powiązania, timeline, stan incydentu i audyt
-   stają się widoczne razem. Do wdrożenia PHASE 6 działa sam alert bez case.
+   stają się widoczne razem. Sprawy nowych High/Critical alertów działają
+   od Etapu 1; medium alert TI wymaga decyzji analityka o powiązaniu.
 6. Projekcja do ClickHouse ma oddzielne retry i checkpoint. Dane mogą być chwilowo
    niewidoczne w explorerze, ale evidence alertu jest od razu dostępne z PostgreSQL.
    UI pokazuje opóźnienie indeksowania. ClickHouse outage nie unieważnia już

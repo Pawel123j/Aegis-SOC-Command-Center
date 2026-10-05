@@ -14,6 +14,9 @@ from app.modules.correlation.contracts import EVALUATOR_VERSION as CORRELATION_E
 from app.modules.correlation.engine import condition_matches, entity_keys, evaluate_anchor
 from app.modules.detections.builtin import BUILTIN_RULES, EVALUATOR_VERSION, evaluate_rule
 from app.modules.ingestion.schemas import canonical_json
+from app.modules.intelligence.contracts import EVALUATOR_VERSION as INTELLIGENCE_EVALUATOR
+from app.modules.intelligence.matching import risk_contexts
+from app.modules.intelligence.matching import verified_alert as verified_intelligence_alert
 from app.modules.normalization.schemas import NormalizedSecurityEvent
 from app.modules.risk.schemas import EvidenceReference, Family, RiskInput, SeverityBaseline, Signal
 from app.modules.sigma.compiler import EVALUATOR_VERSION as SIGMA_EVALUATOR
@@ -110,6 +113,7 @@ def build_input(
     db: Session | None = None,
 ) -> tuple[RiskInput, dict[str, Any]]:
     references: dict[UUID, EvidenceReference] = {}
+    source_events: dict[UUID, NormalizedSecurityEvent] = {}
     signals: list[Signal] = []
     baselines: list[SeverityBaseline] = []
     sources = []
@@ -156,6 +160,19 @@ def build_input(
                 source["sigma_revision_id"] = alert.rule_snapshot["revision_id"]
                 source["sigma_source_sha256"] = alert.rule_snapshot["source_sha256"]
                 source["sigma_compiled_sha256"] = alert.rule_snapshot["compiled_sha256"]
+            elif alert.evaluator_version == INTELLIGENCE_EVALUATOR:
+                if db is None or len(events) != 1:
+                    raise ValueError("Intelligence requires immutable persisted match proof")
+                verified_intelligence_alert(db, alert)
+                baselines.append(
+                    SeverityBaseline(
+                        id=f"{alert.id}:intelligence-severity",
+                        severity="medium",
+                        evidence_ids=[events[0].event_id],
+                        alert_ids=[alert.id],
+                    )
+                )
+                source["intelligence_proof_sha256"] = alert.reason["proof_sha256"]
             else:
                 signals.extend(_signals(alert, events))
             for event in events:
@@ -169,11 +186,16 @@ def build_input(
                 if reference.id in references and references[reference.id] != reference:
                     raise ValueError("conflicting event proof")
                 references[reference.id] = reference
+                source_events[event.event_id] = event
                 keys.update(value for value in entity_keys(event).values() if value is not None)
+        contexts, intelligence_metadata = (
+            risk_contexts(db, source_events) if db is not None else ([], {})
+        )
         data = RiskInput(
             evidence=sorted(references.values(), key=lambda item: item.id),
             signals=signals,
             severity_baselines=baselines,
+            contexts=contexts,
             subject_keys=sorted(keys),
             subject_id=subject_id,
             mode=cast(Literal["live", "replay"], mode),
@@ -194,4 +216,7 @@ def build_input(
         if mode == "live"
         else "unknown-context-as-of-replay",
     }
+    if contexts:
+        snapshot["context_origin"] = "frozen-local-ioc-at-first-evaluation"
+        snapshot["intelligence_selection"] = intelligence_metadata
     return data, snapshot

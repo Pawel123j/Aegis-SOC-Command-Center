@@ -12,6 +12,7 @@ from app.modules.alerts.models import Alert
 from app.modules.audit.service import append_audit
 from app.modules.incidents.models import Incident, IncidentAlert
 from app.modules.ingestion.schemas import canonical_json
+from app.modules.risk import engine_v4
 from app.modules.risk.engine import POLICY_HASH, POLICY_VERSION, calculate
 from app.modules.risk.inputs import build_input
 from app.modules.risk.models import RiskCalculation
@@ -95,12 +96,15 @@ def score_subject(
         db=db,
     )
     input_hash = hashlib.sha256(canonical_json(snapshot)).hexdigest()
+    intelligence = engine_v4.uses_intelligence(data)
+    policy_hash = engine_v4.POLICY_HASH if intelligence else POLICY_HASH
+    policy_version = engine_v4.POLICY_VERSION if intelligence else POLICY_VERSION
     prior = (
         db.get(RiskCalculation, subject.risk_calculation_id)
         if subject.risk_calculation_id
         else None
     )
-    if prior is not None and prior.policy_hash == POLICY_HASH and prior.input_sha256 == input_hash:
+    if prior is not None and prior.policy_hash == policy_hash and prior.input_sha256 == input_hash:
         return prior
     revision = (
         int(
@@ -113,7 +117,7 @@ def score_subject(
         )
         + 1
     )
-    result = calculate(data)
+    result = engine_v4.calculate(data) if intelligence else calculate(data)
     row = RiskCalculation(
         id=uuid4(),
         subject_type=kind,
@@ -122,8 +126,8 @@ def score_subject(
         actor_id=actor_id,
         trigger=trigger,
         previous_id=prior.id if prior else None,
-        policy_version=POLICY_VERSION,
-        policy_hash=POLICY_HASH,
+        policy_version=policy_version,
+        policy_hash=policy_hash,
         input_sha256=input_hash,
         input_snapshot=snapshot,
         explanation=result.model_dump(mode="json"),
@@ -151,7 +155,7 @@ def score_subject(
         details={
             "calculation_id": str(row.id),
             "subject_revision": revision,
-            "policy_version": POLICY_VERSION,
+            "policy_version": policy_version,
             "input_sha256": input_hash,
             "score": row.score,
             "previous_score": prior.score if prior else None,

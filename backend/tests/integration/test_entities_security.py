@@ -585,15 +585,27 @@ def test_backfill_audit_failure_rolls_back_all_index_writes(
     assert counts(case) == before and audit_count(case) == audits
 
 
-def test_downgrade_refuses_nonempty_entity_history(case: Case, admin: Login) -> None:
-    ids = seed(case, admin)
+def test_downgrade_refuses_nonempty_entity_history(
+    case: Case, admin: Login, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Remove the empty newer layer before producing authentic entity-only history.
+    migrate(case.database.owner, "0010_entities", downgrade=True)
+    with monkeypatch.context() as patch:
+        patch.setattr(
+            "app.modules.detections.processing._intelligence_evaluation", lambda *_: (None, None)
+        )
+        patch.setattr("app.modules.risk.inputs.risk_contexts", lambda *_: ([], {}))
+        ids = seed(case, admin)
     before = counts(case)
     with pytest.raises(DBAPIError) as rejected:
         migrate(case.database.owner, "0009_sigma", downgrade=True)
     assert getattr(rejected.value.orig, "sqlstate", None) == "23514"
+    assert "Entity history exists" in str(rejected.value)
     assert counts(case) == before
     with case.database.runtime.connect() as db:
         assert db.scalar(text("SELECT version_num FROM alembic_version")) == "0010_entities"
+    migrate(case.database.owner)
+    assert counts(case) == before
     assert read(admin, f"/by-event/{ids[0]}")["total"] > 0
 
 
@@ -608,4 +620,4 @@ def test_empty_entity_schema_can_downgrade_and_upgrade_without_touching_existing
     assert all(value == 0 for value in counts(case).values())
     assert audit_count(case) == audits
     with case.database.runtime.connect() as db:
-        assert db.scalar(text("SELECT version_num FROM alembic_version")) == "0010_entities"
+        assert db.scalar(text("SELECT version_num FROM alembic_version")) == "0011_intelligence"

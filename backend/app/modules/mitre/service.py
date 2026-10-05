@@ -13,6 +13,9 @@ from app.modules.correlation.builtin import BUILTIN_RULES as CORRELATION_RULES
 from app.modules.detections.builtin import BUILTIN_RULES
 from app.modules.incidents.models import IncidentAlert
 from app.modules.ingestion.schemas import canonical_json
+from app.modules.intelligence.contracts import EVALUATOR_VERSION as INTELLIGENCE_EVALUATOR
+from app.modules.intelligence.contracts import unmapped_view
+from app.modules.intelligence.matching import verified_alert as verified_intelligence_alert
 from app.modules.mitre.catalogue import CATALOGUE_SHA256
 from app.modules.mitre.mapping import associate, legacy_mapping, rule_mapping
 from app.modules.mitre.models import AlertMitreMapping, AlertMitreSnapshot
@@ -53,6 +56,9 @@ def record_mapping(db: Session, alert: Alert) -> None:
         verified_events(alert)
         if alert.evaluator_version == SIGMA_EVALUATOR:
             view = sigma_mapping(verified_alert(db, alert))
+        elif alert.evaluator_version == INTELLIGENCE_EVALUATOR:
+            verified_intelligence_alert(db, alert)
+            view = unmapped_view()
         else:
             rule = next(
                 (item for item in (*BUILTIN_RULES, *CORRELATION_RULES) if item.id == alert.rule_id),
@@ -135,6 +141,8 @@ def alert_mapping(db: Session, alert: Alert) -> MappingView:
         verified_events(alert)
         if alert.evaluator_version == SIGMA_EVALUATOR:
             verified_alert(db, alert)
+        elif alert.evaluator_version == INTELLIGENCE_EVALUATOR:
+            verified_intelligence_alert(db, alert)
     except (KeyError, TypeError, ValueError):
         raise ApiError(
             409, "mitre_evidence_integrity_mismatch", "MITRE source proof changed"
