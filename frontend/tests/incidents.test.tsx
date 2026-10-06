@@ -10,6 +10,7 @@ import { IncidentWorkflow } from '../src/incidents/IncidentWorkflow';
 import { incidentsApi } from '../src/incidents/api';
 import { permittedStatuses } from '../src/incidents/labels';
 import type { IncidentDetail } from '../src/incidents/types';
+import { attackTimelineFixture } from './attackTimelineFixtures';
 import {
   alert,
   alertDetail,
@@ -24,6 +25,11 @@ import {
 let incident: IncidentDetail;
 beforeEach(() => {
   incident = structuredClone(incidentFixture);
+  vi.spyOn(api, 'request').mockImplementation(async (path) => {
+    if (path.includes('/attack-timeline?'))
+      return { ...attackTimelineFixture, incident_version: incident.version };
+    throw new Error(`Unexpected request: ${path}`);
+  });
   vi.spyOn(api, 'get').mockImplementation(async (path) => {
     if (path.includes('/timeline?'))
       return { items: incident.timeline, next_cursor: null, total: incident.timeline.length };

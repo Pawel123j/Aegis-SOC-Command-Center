@@ -12,6 +12,7 @@ import type { RiskLevel } from '../src/risk/levels';
 import type { RiskHistory } from '../src/risk/types';
 import { alert, alertDetail, incidentFixture, reader } from './incidentFixtures';
 import { riskCalculation, riskPolicy } from './riskFixtures';
+import { attackTimelineFixture } from './attackTimelineFixtures';
 
 const scoredAlert = {
   ...alert,
@@ -21,6 +22,10 @@ const scoredAlert = {
 };
 const scoredDetail = { ...alertDetail, ...scoredAlert, risk_explanation: riskCalculation };
 beforeEach(() => {
+  vi.spyOn(api, 'request').mockImplementation(async (path) => {
+    if (path.includes('/attack-timeline?')) return attackTimelineFixture;
+    throw new Error(`Unexpected request: ${path}`);
+  });
   vi.spyOn(api, 'get').mockImplementation(async (path) => {
     if (path === '/risk/policy') return riskPolicy;
     if (path.startsWith(`/alerts/${alert.id}/risk`))

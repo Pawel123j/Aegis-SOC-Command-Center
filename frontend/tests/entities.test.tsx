@@ -20,6 +20,7 @@ import {
   entitySummary,
 } from './entityFixtures';
 import { alert, alertDetail, incidentFixture, original } from './incidentFixtures';
+import { attackTimelineFixture } from './attackTimelineFixtures';
 
 const listeners = new Set<(kind: 'logout' | 'session') => void>();
 beforeEach(() => {
@@ -29,6 +30,7 @@ beforeEach(() => {
     return () => listeners.delete(listener);
   });
   vi.spyOn(api, 'request').mockImplementation(async (path) => {
+    if (path.includes('/attack-timeline?')) return attackTimelineFixture;
     if (path.startsWith('/entities/by-event/')) return entityPage([entitySummary, entityHost]);
     if (path.startsWith(`/entities/${entitySummary.id}/events?`))
       return entityPage([entityActivity], 431);

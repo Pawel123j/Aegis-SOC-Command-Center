@@ -61,6 +61,37 @@ export interface IncidentEvidence {
   event_snapshots?: EventSnapshot[];
   reason: Json;
 }
+export interface AttackTimelineAlert {
+  id: string;
+  title: string;
+  severity: Alert['severity'];
+  status: Alert['status'];
+  detection_type: NonNullable<Alert['detection_type']>;
+  rule_id: string;
+  rule_version: string;
+  linked_at: string;
+}
+export interface AttackTimelineEvent extends EventSnapshot {
+  alerts: AttackTimelineAlert[];
+}
+export interface AttackTimelinePage {
+  incident_id: string;
+  incident_version: number;
+  mode: 'live' | 'replay';
+  dataset_id: string | null;
+  run_id: string;
+  projection_version: 'attack-timeline-v1';
+  view_fingerprint: string;
+  total: number;
+  index_status: {
+    eligible_alerts: number;
+    indexed_alerts: number;
+    pending_alerts: number;
+    complete: boolean;
+  };
+  items: AttackTimelineEvent[];
+  next_cursor: string | null;
+}
 export interface IncidentDetail extends Incident {
   mitre_mapping?: IncidentMitreMapping;
   risk_explanation: RiskCalculation | null;

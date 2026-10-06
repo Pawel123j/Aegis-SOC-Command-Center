@@ -1,6 +1,7 @@
 # Raport walidacji PHASE 2 — dowód historyczny
 
-Bieżący etap: [profile encji](validation-entities.md); wcześniejsze
+Bieżący etap: [Attack Timeline](validation-attack-timeline.md); wcześniejsze
+[Threat Intelligence](validation-intelligence.md), [profile encji](validation-entities.md),
 [Sigma](validation-sigma.md),
 [MITRE ATT&CK](validation-mitre.md),
 [Risk Engine](validation-risk.md),

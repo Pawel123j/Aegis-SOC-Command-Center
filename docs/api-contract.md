@@ -4,7 +4,8 @@ Status: kod PHASE 1–3 i przyrostów SOC, stan 2026-10-05;
 Etap 7 implementuje lokalne IOC. Jego końcowe wyniki zapisuje
 [raport Threat Intelligence](validation-intelligence.md): regresja i lokalne
 uruchomienie potwierdzone, z jawnymi ograniczeniami testu przeglądarkowego.
-Historyczne kontrole opisują raporty wcześniejszych etapów.
+Etap 8 dodaje odczyt chronologii dowodów sprawy; [jego raport](validation-attack-timeline.md)
+zapisuje nową bramkę. Historyczne kontrole opisują raporty wcześniejszych etapów.
 Kod obejmuje `/auth`, `/users`, `/audit`, `/system/health`, źródła, przyjęcie
 eventów, status batcha, retry, normalized event search, alerts/detections,
 incidents, correlations, risk, mitre, sigma, entities, intelligence oraz
@@ -343,3 +344,12 @@ Dokładne reguły kanonikalizacji, typowane pola i semantykę medium TI oraz
 opt-in risk v4 z fallback v3 opisuje [intelligence](intelligence.md).
 [ADR 0013](adr/0013-local-intelligence.md),
 [walidacja Etapu 7](validation-intelligence.md).
+
+## Attack Timeline — Etap 8
+
+`GET /incidents/{incident_id}/attack-timeline?limit=25&cursor=...` wymaga razem
+incidents:read, alerts:read i events:read. Strony 1–25, no-store, obserwowany
+czas ASC/UUID, zachowany event_snapshot/event_sha256 i wszystkie odnośniki
+aktywnych alertów. Signed cursor wiąże użytkownika, ścieżkę, limit i fingerprint.
+DTO, index_status oraz kody 409 opisuje [kontrakt chronologii](attack-timeline.md).
+Zmiana fingerprintu wymaga odświeżenia; pending nie uruchamia backfill w GET.

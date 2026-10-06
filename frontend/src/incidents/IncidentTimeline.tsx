@@ -42,7 +42,7 @@ export function IncidentTimeline({
   );
   const resource = usePage(loader);
   return (
-    <Panel title="Oś czasu incydentu">
+    <Panel title="Historia pracy analityka">
       <p className="muted">
         Od najnowszego wpisu. Czas działania analityka i czas oryginalnego zdarzenia są opisane
         oddzielnie.

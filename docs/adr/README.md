@@ -19,6 +19,7 @@ nie usuwa się historii uzasadnień.
 | [0011](0011-versioned-sigma-rules.md) | Niezmienne rewizje Sigma, kontrolowany podzbiór i jawne podstawy ryzyka |
 | [0012](0012-observed-entity-profiles.md) | Konserwatywna tożsamość encji, append-only obserwacje i projekcja ryzyka alertu |
 | [0013](0013-local-intelligence.md) | Lokalny katalog IOC, niezmienne rewizje i pierwsze dopasowania; osobny wkład ryzyka v4 bez przepisywania v3 |
+| [0014](0014-observed-attack-timeline.md) | Chronologia zachowanych obserwacji sprawy, indeksowane dowody i spójne strony |
 
 Każdy nowy ADR zawiera: kontekst, decyzję, alternatywy, konsekwencje, dowód
 akceptacji i warunek ponownego rozważenia.

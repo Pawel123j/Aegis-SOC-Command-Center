@@ -19,6 +19,7 @@
     "backend/app/modules/sigma",
     "backend/app/modules/entities",
     "backend/app/modules/intelligence",
+    "backend/app/modules/attack_timeline",
     "backend/app/modules/hunting",
     "backend/app/modules/soar",
     "backend/app/modules/audit",
@@ -75,6 +76,8 @@
     "docs/validation-entities.md",
     "docs/intelligence.md",
     "docs/validation-intelligence.md",
+    "docs/attack-timeline.md",
+    "docs/validation-attack-timeline.md",
     "docs/incident-response.md",
     "docs/security.md",
     "docs/threat-hunting.md",
@@ -90,6 +93,7 @@
     "docs/adr/0005-frontend-and-auth.md",
     "docs/adr/0006-local-demo-and-safe-soar.md",
     "docs/adr/0012-observed-entity-profiles.md",
-    "docs/adr/0013-local-intelligence.md"
+    "docs/adr/0013-local-intelligence.md",
+    "docs/adr/0014-observed-attack-timeline.md"
   ]
 }

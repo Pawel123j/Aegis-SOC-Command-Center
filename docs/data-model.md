@@ -258,3 +258,11 @@ Retry zachowuje cały klucz. Parametryzowane wyszukiwanie zawsze wymaga zakresu 
 projekcja adnotacji ma własny checkpoint. Brak natywnych FK do PostgreSQL oznacza
 okresowy test spójności i jawny status niedostępnej projekcji. Ostateczne DDL i
 indeksy wymagają benchmarku przed akceptacją fazy implementacyjnej.
+
+## Projekcja chronologii sprawy — Etap 8
+
+AttackTimeline, TimelineEvent, AlertReference i IndexStatus są DTO odczytu.
+Istniejące IncidentAlert łączą sprawę z alertami, EntityAlertReceipt określa
+gotowość indeksu, a AlertEventReference wskazuje event/hash. RawEvent oraz
+NormalizedEvent są źródłem oryginalnego dowodu. Nie ma nowej tabeli lub migracji;
+head pozostaje 0011_intelligence. [Zakres i weryfikacja](attack-timeline.md).

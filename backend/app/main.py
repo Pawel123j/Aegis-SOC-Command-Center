@@ -15,6 +15,7 @@ from starlette.responses import JSONResponse
 
 from app.api import (
     alerts,
+    attack_timeline,
     audit,
     auth,
     correlations,
@@ -106,6 +107,7 @@ def _create_app(settings: Settings | None = None) -> FastAPI:
         detections.router,
         correlations.router,
         incidents.router,
+        attack_timeline.router,
         risk.router,
         mitre.router,
         sigma.router,

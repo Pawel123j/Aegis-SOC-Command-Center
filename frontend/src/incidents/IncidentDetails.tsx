@@ -8,6 +8,7 @@ import { IncidentTimeline } from './IncidentTimeline';
 import { IncidentWorkflow } from './IncidentWorkflow';
 import { useIncident } from './useIncident';
 import { RiskPanel } from '../risk/RiskPanel';
+import { AttackTimeline } from './AttackTimeline';
 
 export function IncidentDetails({
   id,
@@ -56,6 +57,14 @@ export function IncidentDetails({
             canReadPolicy={user.permissions.includes('detections:read')}
             onRefresh={() => void resource.reload()}
             refreshPending={resource.pending}
+          />
+          <AttackTimeline
+            incident={incident}
+            user={user}
+            onEvent={onEvent}
+            onIncidentRefresh={resource.reload}
+            refreshKey={resource.refreshKey}
+            paused={disabled}
           />
           <div className="incident-grid">
             <div>

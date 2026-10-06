@@ -8,15 +8,20 @@ i testy przyjęcia zdarzeń powstały w PHASE 2. Przyszłe moduły
 nie zawierają pustych funkcji lub fałszywych endpointów. Poniżej ścieżki istniejącego
 szkieletu i odpowiedzialności planowanego kodu.
 
-Aktualizacja 2026-10-05: działający kod obejmuje także PHASE 3 i Etapy 1–7
+Aktualizacja 2026-10-06: działający kod obejmuje także PHASE 3 i Etapy 1–8
 nowego planu. `entities` zawiera rzeczywistą politykę tożsamości, indeks,
 modele i zapytania, a `frontend/src/entities` widoki profili.
 Etap 7 dodaje rzeczywisty moduł `intelligence`: normalizację, ekstrakcję,
 modele/rewizje, lokalnego providera i ledger dopasowań; panel jest w
 `frontend/src/intelligence`. `risk/engine_v4.py` rozwija kontekst IOC,
 zachowując `engine.py` jako v3 fallback. Head nowych źródeł to
-`0011_intelligence`; [bieżący raport](validation-intelligence.md) potwierdza
+`0011_intelligence`; [raport Etapu 7](validation-intelligence.md) potwierdza
 regresję i lokalne uruchomienie, z opisanymi granicami dowodu.
+Etap 8 dodaje `backend/app/modules/attack_timeline`, osobny router oraz
+`frontend/src/incidents/AttackTimeline.tsx` i hook chronologii. Korzysta
+z istniejącego indeksu, bez migracji; [nowy raport](validation-attack-timeline.md)
+zapisuje kontrole tego przyrostu. Stan na 2026-10-06: implementacja Etapu 8
+jest gotowa, a pełna regresja i lokalne wdrożenie zakończyły się poprawnie.
 
 ```text
 .
@@ -65,6 +70,7 @@ regresję i lokalne uruchomienie, z opisanymi granicami dowodu.
 | `alerts` | Match → alert, explanation, wersje evidence i powiązania |
 | `correlation` | Silne relacje, komponenty i decyzje grupowania |
 | `incidents` | Case lifecycle, notes, evidence, timeline i investigations promotion |
+| `attack_timeline` | Chronologia oryginalnych dowodów aktywnych alertów sprawy, kontrola źródła i stronicowanie |
 | `mitre` | Wersjonowany katalog i walidacja mappingu |
 | `risk` | Czysty algorytm i snapshoty obliczeń |
 | `entities` | Konserwatywna tożsamość obserwacji, indeks dowodów i ograniczone zapytania profili |
@@ -88,12 +94,14 @@ interakcję przeglądarki z API, włącznie z odmowami uprawnień.
 `compose.yaml`, Dockerfile backendu, pyproject/package.json, lockfile i migracje
 SQL należą do istniejącego runtime. Nowe moduły używają tego samego obrazu
 i migratora, zamiast tworzyć osobne usługi. `infra` oddziela konfigurację
-deploymentu od domeny. Końcowe wyniki Etapu 7 zapisuje jego raport walidacji.
+deploymentu od domeny. Bieżące wyniki Etapu 8 zapisuje
+[raport walidacji chronologii](validation-attack-timeline.md); wcześniejsze
+wyniki pozostają w raportach właściwych etapów.
 
 ## Walidacja szkieletu
 
 [Manifest](../scripts/repository_manifest.json) wymienia wymagane katalogi i dokumenty.
 [Walidator](../scripts/validate_repository.py) sprawdza je bez zewnętrznych bibliotek,
 wraz z numeracją 21 faz, 37 wymagań, co najmniej sześcioma ADR, linkami lokalnymi
-i formatem tekstu. Indeks obejmuje obecnie ADR 0001–0013.
+i formatem tekstu. Indeks obejmuje obecnie ADR 0001–0014.
 Nie pobiera stron z linków internetowych i nie testuje renderowania diagramów Mermaid.

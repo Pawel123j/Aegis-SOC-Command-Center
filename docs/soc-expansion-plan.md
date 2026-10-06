@@ -98,4 +98,10 @@ Provider jest lokalny bez wywołań DNS/URL; reputacja/confidence są deklaracj�
 [ADR 0013](adr/0013-local-intelligence.md) opisuje granice,
 [walidacja Etapu 7](validation-intelligence.md) potwierdza regresję i lokalne
 wdrożenie; zalogowany browser E2E, online audit i hostowane CI pozostają otwarte.
-Kolejny przyrost: Attack Timeline.
+Etap 8: [graficzna chronologia zdarzeń sprawy](attack-timeline.md), indeksowane
+oryginalne dowody, wszystkie odniesienia alertów, scope i jawne pending.
+[ADR 0014](adr/0014-observed-attack-timeline.md) opisuje snapshot i kursory,
+[walidacja Etapu 8](validation-attack-timeline.md) potwierdza lokalną bramkę.
+Stan na 2026-10-06: 2062 testy backendu i 238 panelu PASS;
+pełna regresja, uruchomienie i restart głównej instalacji sprawdzone.
+Kolejny przyrost: UEBA.

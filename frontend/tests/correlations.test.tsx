@@ -17,8 +17,13 @@ import {
   contributors,
 } from './correlationFixtures';
 import { alert, incidentFixture, reader, timestamp } from './incidentFixtures';
+import { attackTimelineFixture } from './attackTimelineFixtures';
 
 beforeEach(() => {
+  vi.spyOn(api, 'request').mockImplementation(async (path) => {
+    if (path.includes('/attack-timeline?')) return attackTimelineFixture;
+    throw new Error(`Unexpected request: ${path}`);
+  });
   vi.spyOn(api, 'get').mockImplementation(async (path) => {
     if (path === '/auth/me') return correlationAnalyst;
     if (path === '/correlations') return { items: [correlationRule], next_cursor: null };

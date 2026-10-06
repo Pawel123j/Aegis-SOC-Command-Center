@@ -233,3 +233,12 @@ i członkostwa są niemodyfikowalne dla roli runtime. Limity obejmują dane już
 przetworzone i metadane kolejnych batchy z duplikatami. Brak automatycznej retencji
 jest jawny: PHASE 3 wprowadzi cykl życia po normalizacji i projekcji. Aktualne
 limity, stany i obsługę awarii opisuje [instrukcja PHASE 2](phase2-operations.md).
+
+## Chronologia dowodów sprawy — Etap 8
+
+Odczyt aktywnych powiązań używa istniejących EntityAlertReceipt i
+AlertEventReference. Jeden SELECT CTE ustala scope, counts, fingerprint i stronę
+według czasu eventu/UUID; pełny source proof dotyczy wybranej strony.
+Signed cursor wykrywa zmiany powiązań, alertów i indeksu. GET nie zapisuje
+ani nie przelicza ocen. Panel ma odrębną chronologię zdarzeń i historię pracy
+analityka. [Kontrakt](attack-timeline.md), [ADR 0014](adr/0014-observed-attack-timeline.md).

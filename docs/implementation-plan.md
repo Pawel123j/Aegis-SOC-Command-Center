@@ -25,7 +25,12 @@ kontroli. Etap 7 implementuje [lokalne Threat Intelligence](intelligence.md):
 kanoniczny katalog, rewizje, pierwsze dopasowania, API/panel i opt-in risk v4.
 [Raport Etapu 7](validation-intelligence.md) potwierdza 1966 testów backendu,
 206 panelu oraz lokalne wdrożenie; zalogowany browser E2E, online dependency
-audit i hostowane CI pozostają otwarte. Następny przyrost to Attack Timeline.
+audit i hostowane CI pozostają otwarte. Etap 8 dodaje [chronologię zdarzeń](attack-timeline.md),
+deduplikację dowodów i przejście do oryginalnego logu. Stan na 2026-10-06:
+2062 testy backendu i 238 panelu PASS; pełna lokalna regresja oraz
+uruchomienie i restart głównej instalacji potwierdzone.
+[Raport Etapu 8](validation-attack-timeline.md) zawiera wyniki i granice dowodu.
+Następny przyrost to UEBA.
 
 Plan odpowiada fazom 0–20 wskazanym w wymaganiach. Faza 0 dostarczyła analizę stanu, decyzje architektoniczne, szkielet repozytorium i dokumentację. Faza 1 dostarczyła zweryfikowany fundament backendu z integracją rzeczywistych usług (2026-09-28). SIEM, frontend i generator wymagają dalszych faz.
 

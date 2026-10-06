@@ -175,3 +175,14 @@ Błąd API zawiera stabilny kod, bezpieczny opis i request ID; bez stack trace, 
 7. Wszystkie infrastrukturalne kroki SOAR zapisują wyłącznie wynik simulation. Test środowiskowy potwierdza brak próby połączenia do adresu z IOC.
 
 Dowody testów będą dołączane w fazach implementacyjnych. Ten dokument nie zastępuje niezależnego przeglądu bezpieczeństwa przed rzeczywistym wdrożeniem.
+
+## Chronologia incydentu — Etap 8
+
+Każdy odczyt wymaga aktualnej sesji oraz incidents:read, alerts:read i events:read.
+Parametryzowany SELECT CTE ma ograniczone strony, aktywne linki i referencje.
+Zakres metadata wszystkich aktywnych alertów oraz pełny oryginalny dowód
+pobranej strony są sprawdzane; copied snapshots muszą być dokładnie zgodne.
+Fingerprint i podpisany wygasający cursor wykrywają zmiany między stronami.
+Frontend czyści poprzedni dowód przy zmianie sprawy, wersji lub sesji,
+anuluje żądania i odrzuca spóźnione odpowiedzi/kliknięcia. Tekst nie jest HTML.
+[Granice i błędy](attack-timeline.md), [wyniki](validation-attack-timeline.md).

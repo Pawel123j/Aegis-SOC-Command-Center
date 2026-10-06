@@ -105,3 +105,12 @@ Korelacja połączy sekwencje z jawnym dowodem i granicami czasu. Risk Engine
 doda odtwarzalną ocenę z wyjaśnieniem. Katalog MITRE, entity pages, IOC,
 graficzny attack timeline, UEBA, SOAR i raporty nie są jeszcze częścią
 tego modułu; nie pokazujemy dla nich działających atrap.
+
+## Graficzna chronologia zdarzeń — Etap 8
+
+Panel Chronologia zdarzeń pokazuje unikalne oryginalne eventy aktywnie
+powiązanych alertów od najstarszego czasu logu. Jeden event może mieć kilka
+odnośników do alertów; FP pozostaje widoczne. Otwórz oryginalne zdarzenie
+przechodzi do istniejącego widoku logu. Historia pracy analityka zachowuje
+czas mutacji sprawy, a zachowane dowody obejmują również odpięte powiązania.
+[Zakres, indeks, strony i sesja](attack-timeline.md).
