@@ -5,6 +5,7 @@ import { IncidentDetails } from '../incidents/IncidentDetails';
 import { incidentStatuses } from '../incidents/labels';
 import { RiskScore } from '../risk/RiskScore';
 import type { Alert, Me, SecurityEvent } from '../types';
+import { UebaProfile } from '../ueba/UebaProfile';
 import { statusName, time } from '../utilities';
 import { EntityTable, IndexNotice, ScopeNotice } from './presentation';
 import { entityKinds } from './labels';
@@ -51,6 +52,13 @@ export function EntityProfile({
       {resource.data && (
         <>
           <ProfileSummary detail={resource.data} />
+          <UebaProfile
+            id={id}
+            kind={resource.data.kind}
+            params={params}
+            user={user}
+            onEvent={onEvent}
+          />
           <EntityCollections
             id={id}
             params={params}

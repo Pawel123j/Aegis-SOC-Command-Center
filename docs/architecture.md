@@ -242,3 +242,11 @@ według czasu eventu/UUID; pełny source proof dotyczy wybranej strony.
 Signed cursor wykrywa zmiany powiązań, alertów i indeksu. GET nie zapisuje
 ani nie przelicza ocen. Panel ma odrębną chronologię zdarzeń i historię pracy
 analityka. [Kontrakt](attack-timeline.md), [ADR 0014](adr/0014-observed-attack-timeline.md).
+
+## Analiza zachowania profilu — Etap 9
+
+Moduł UEBA porównuje wybraną zakończoną dobę UTC z 28 wcześniejszymi dobami.
+Źródłem są zweryfikowane raw/normalized oraz indeks tożsamości. Obliczenie
+na żądanie zachowuje izolację źródła i replay, pokazuje brak dostatecznej
+historii i nie zmienia istniejących ocen ryzyka. [Kontrakt](ueba.md),
+[ADR 0015](adr/0015-observed-behavior-baselines.md).

@@ -186,3 +186,11 @@ Fingerprint i podpisany wygasający cursor wykrywają zmiany między stronami.
 Frontend czyści poprzedni dowód przy zmianie sprawy, wersji lub sesji,
 anuluje żądania i odrzuca spóźnione odpowiedzi/kliknięcia. Tekst nie jest HTML.
 [Granice i błędy](attack-timeline.md), [wyniki](validation-attack-timeline.md).
+
+## Analiza zachowania — Etap 9
+
+UEBA wymaga tych samych trzech uprawnień odczytu co profil encji. Odczyt
+weryfikuje źródłowe dowody i tożsamość, izoluje replay, ogranicza okno, liczbę
+zdarzeń, rozmiar i czas SQL. Brak historii lub indeksu pozostaje jawny.
+GET nie publikuje alertów, nie przelicza ryzyka ani nie zmienia baseline.
+Nazwy kont nie są dowodem uprawnień administratora. [Kontrakt](ueba.md).

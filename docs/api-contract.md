@@ -353,3 +353,18 @@ czas ASC/UUID, zachowany event_snapshot/event_sha256 i wszystkie odnośniki
 aktywnych alertów. Signed cursor wiąże użytkownika, ścieżkę, limit i fingerprint.
 DTO, index_status oraz kody 409 opisuje [kontrakt chronologii](attack-timeline.md).
 Zmiana fingerprintu wymaga odświeżenia; pending nie uruchamia backfill w GET.
+
+## UEBA — Etap 9
+
+`GET /entities/{entity_id}/ueba?day=YYYY-MM-DD&mode=live` porównuje zakończoną
+dobę UTC z 28 poprzednimi. Replay wymaga dokładnego dataset_id/run_id.
+Wymagane łącznie events:read, alerts:read, incidents:read; no-store, 30/min,
+SQL 3 s, najwyżej 2000 zdarzeń i 8 MiB dowodów. Odpowiedź zawiera okna,
+status kompletności/historii, wskaźniki, punktację, observed/baseline,
+wyjaśnienie oraz referencje dowodów. GET nie zapisuje ocen lub indeksu.
+Szczegóły i ograniczenia opisuje [kontrakt UEBA](ueba.md).
+
+`GET /entities/{entity_id}/ueba/events/{event_id}` z tym samym dniem/zakresem
+i wymaganym `document_sha256` zwraca zweryfikowany oryginał PostgreSQL po
+ponownym potwierdzeniu jego obecności w dowodach analizy. Niezgodność daje
+409 ueba_changed. Oba odczyty UEBA współdzielą limit i uprawnienia.

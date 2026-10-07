@@ -1,0 +1,42 @@
+.ueba-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+.ueba-indicators {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  list-style: none;
+  margin: 1rem 0;
+  padding: 0;
+}
+.ueba-indicators > li {
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.ueba-indicators h3 {
+  margin-top: 0;
+}
+.ueba-indicators details {
+  margin-top: 0.75rem;
+}
+.ueba-evidence {
+  padding-left: 1.25rem;
+}
+.ueba-evidence li {
+  margin: 1rem 0;
+}
+.ueba-evidence small {
+  display: block;
+}
+@media (max-width: 900px) {
+  .ueba-indicators {
+    grid-template-columns: 1fr;
+  }
+}

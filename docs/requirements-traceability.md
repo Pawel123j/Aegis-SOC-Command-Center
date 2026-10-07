@@ -12,6 +12,7 @@ Macierz zachowuje numerację 1–37 z wymagań użytkownika. Łączy każdy punk
 - **PHASE 3: ukończona** — sześć parserów, trwałe snapshoty i wyszukiwanie w ClickHouse potwierdzone testami; UI i dalsze adnotacje pozostają osobnym zakresem.
 - **Etap 7: ukończony lokalnie** — lokalne IOC i dopasowania mają kod/API/UI; 1966 testów backendu i 206 panelu PASS, migracje/start/restart sprawdzone. Zalogowany browser E2E, online audit i hostowane CI pozostają otwarte.
 - **Etap 8: ukończony lokalnie** — graficzna chronologia oryginalnych eventów sprawy; 2062 testy backendu i 238 panelu PASS. Uruchomienie, zachowanie danych i restart sprawdzone; wyniki i ograniczenia w validation-attack-timeline.md.
+- **Etap 9: ukończony lokalnie** — UEBA na żądanie: 28-dniowy baseline, jawna jakość danych, 6 wskaźników i oryginalne dowody; uprawnienia kont pozostają nieznane. 2181 testów backendu i 286 panelu PASS; validation-ueba.md.
 - **Wymóg procesu** — zasada obowiązuje od początku, ale jej zastosowanie musi być potwierdzane w każdym przyroście.
 
 Na tym etapie **żaden status w macierzy nie oznacza ukończenia działającej platformy**. Dotyczy to również obecności workflow: konfiguracja CI i rzeczywisty zielony przebieg na zdalnym repozytorium są odrębnymi dowodami. Po realizacji należy uzupełnić wiersze o konkretne pliki, testy, komendy i identyfikator zweryfikowanej wersji.
@@ -54,7 +55,7 @@ Na tym etapie **żaden status w macierzy nie oznacza ukończenia działającej p
 | 32 | Code Quality | 0–20 | Granice modułów, typy, dependency injection tam, gdzie potrzebne, małe funkcje i lint/type checks; review pod kątem God Classes, secrets, martwego kodu i pozornych implementacji TODO. Szkielet jawnie odróżniony od działającego kodu. | Wymóg procesu; kod i testy PHASE 1 zweryfikowane; dokładne kontrole w raporcie walidacji |
 | 33 | UX | 13, 18, 20 | Dark mode, priorytet czytelności, jasny kontekst ryzyka i nawigacja Alert → Events → User → Host → IOC → Incident; dostępność klawiatury/kontrast, filtry, loading/empty/error. Test przeglądarkowy zadania analityka na rzeczywistych danych. | Panel Alert→Incident, MITRE/risk/Sigma i profile encji; Etap 7 dodaje lokalny IOC→historia i event/alert→zachowany match proof, tekstowe URL i konflikt z zachowaniem szkicu. Automatyczna walidacja UI po Etapie 8: 238 PASS; zalogowany browser proof otwarty; Etap 8: graficzna chronologia, oryginalny log, pending i session-safe pagination |
 | 34 | Senior-level elements | 0–20 | ADR z trade-offami, failure model, trwały pipeline, detekcje/regresja, korelacja, IR, hunting, TI, SOAR, observability i secure SDLC. Prezentacja 30–60 min opiera się na działających scenariuszach i decyzjach, nie na liczbie technologii. | 14 ADR, trwały pipeline i wersjonowane dowody; ADR 0013 uzasadnia local-only IOC i opt-in risk v4 bez przepisywania v3. Lokalna bramka Etapu 7 PASS z ograniczeniami z raportu; pełne demo, hunting i SOAR przyszłe. ADR 0014 uzasadnia chronologię obserwacji i wspólną migawkę strony |
-| 35 | Implementation Strategy | Historyczne 0–20; bieżące 15 etapów | Historyczny implementation-plan.md i nowy soc-expansion-plan.md; przyrosty z test/lint/integracja/poprawki/dokumentacja/Conventional Commit. | PHASE 0–3 i Etapy 1–6 mają historyczne raporty; Etap 6: 1547 backend + 148 frontend + 31 skryptów PASS. Etap 7: 1966 backend + 206 panel PASS, lokalne migracje/start/restart sprawdzone; validation-intelligence.md. Etap 8: 2062 backend + 238 panel PASS, lokalne wdrożenie i restart sprawdzone; następny przyrost: UEBA |
+| 35 | Implementation Strategy | Historyczne 0–20; bieżące 15 etapów | Historyczny implementation-plan.md i nowy soc-expansion-plan.md; przyrosty z test/lint/integracja/poprawki/dokumentacja/Conventional Commit. | PHASE 0–3 i Etapy 1–6 mają historyczne raporty; Etap 6: 1547 backend + 148 frontend + 31 skryptów PASS. Etap 7: 1966 backend + 206 panel PASS, lokalne migracje/start/restart sprawdzone; validation-intelligence.md. Etap 8: 2062 backend + 238 panel PASS, lokalne wdrożenie i restart sprawdzone; Etap 9: 2181 backend + 286 panel PASS, wdrożenie i restart sprawdzone; następny przyrost: Mini SOAR |
 | 36 | Git | 0–20 | Conventional Commits, logiczny zakres zmian, kontrola diff i brak force push. Stan Git i tożsamość autora ustalone z rzeczywistego środowiska; brakujące ustawienia nie są zgadywane. Historia commitów jest dowodem realizacji, nie obietnicą. | Wymóg procesu; commit PHASE 0 istnieje; stan przyrostu PHASE 1 w raporcie walidacji |
 | 37 | Definition of Done | 20; dowody z 1–19 | Pełny checklist poniżej, wynik każdego punktu poparty testem, komendą, widokiem lub identyfikatorem CI dla audytowanej wersji. Żaden otwarty punkt nie może być zastąpiony samą dokumentacją lub mockupem. | Otwarte: fundament backendu istnieje, pełna platforma pozostaje nieukończona |
 
@@ -171,3 +172,13 @@ Macierz potwierdza lokalną regresję i wdrożenie Etapu 7. Nie oznacza
 ukończenia całego wymagania 37; browser E2E, online audit i hostowane CI
 pozostają otwarte. Ręczne powiązania incident_iocs, proposals
 workflow, zewnętrzne providery, hunting i SOAR pozostają dalszym zakresem.
+
+## Bieżący przyrost Etapu 9 — UEBA
+
+Wymagania nowego planu obejmują proste baseline i statystyki. Dostarczono
+porównanie doby UTC z 28 poprzednimi, sześć wskaźników z score, explanation,
+baseline i observed value, cold start oraz izolację replay. Konta administratora
+nie są rozpoznawane bez faktów uprawnień. Dwa odczyty API obsługują raport
+i ponownie zweryfikowany oryginał dowodu. 119 nowych testów backendu oraz
+48 panelu; pełna regresja 2181 + 286 PASS. [Kontrakt](ueba.md),
+[raport z granicami dowodu](validation-ueba.md).

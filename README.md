@@ -3,7 +3,7 @@
 Projekt portfolio Security Engineering: docelowo lokalna platforma mini-SIEM, SOAR,
 Incident Response i Threat Hunting, z demonstracją opartą na prawdziwym pipeline logów.
 
-**Stan: PHASE 0–3 i Etapy 1–8 ukończone lokalnie — 2026-10-06.**
+**Stan: PHASE 0–3 i Etapy 1–9 ukończone lokalnie — 2026-10-07.**
 Backend ma API źródeł, osobne tokeny ingestion, single/batch, idempotencję,
 PostgreSQL inbox/outbox, relay i worker z ograniczonym retry oraz kwarantanną.
 Sześć parserów tworzy niezmienne snapshoty w PostgreSQL, a osobny processor
@@ -44,7 +44,12 @@ aplikacja nie pobiera URL ani reputacji z zewnętrznych usług.
 Generator pozostaje zaplanowany. Rozbudowa przebiega według
 [audytu i nowego planu 15 etapów](docs/soc-expansion-plan.md).
 Zakres: [incydenty](docs/incidents.md), [pierwsze alerty i panel](docs/initial-soc.md).
-Wyniki bieżącego przyrostu: [walidacja Etapu 8](docs/validation-attack-timeline.md).
+Wyniki bieżącego przyrostu: [walidacja Etapu 9](docs/validation-ueba.md).
+Etap 9 dodaje [analizę zachowania użytkowników i hostów](docs/ueba.md):
+porównanie dnia z 28-dniową historią, score, wyjaśnienie i zweryfikowane
+dowody. Jawnie pokazuje brak historii oraz nieobsługiwane fakty uprawnień.
+2181 testów backendu i 286 panelu PASS; lokalne wdrożenie i restart sprawdzone.
+Historyczny wynik Etapu 8: [raport chronologii](docs/validation-attack-timeline.md).
 Etap 8 dodaje [chronologię zdarzeń sprawy](docs/attack-timeline.md), otwieranie
 oryginalnego logu i wszystkie odniesienia alertów. Stan na 2026-10-06:
 2062 testy backendu i 238 panelu PASS; lokalne uruchomienie, zachowanie danych
@@ -188,6 +193,7 @@ rozbudowy wyznacza [plan 15 etapów](docs/soc-expansion-plan.md).
 - [Obsługa incydentów i evidence](docs/incident-response.md).
 - [Lokalny katalog IOC i dowody dopasowania](docs/intelligence.md).
 - [Graficzna chronologia zdarzeń incydentu](docs/attack-timeline.md).
+- [Analiza zachowania użytkowników i hostów](docs/ueba.md).
 - [Threat Hunting](docs/threat-hunting.md).
 - [SOAR w trybie simulation](docs/soar.md).
 - [JWT, RBAC, audyt i model zagrożeń](docs/security.md).
@@ -203,12 +209,12 @@ i nowe konto administratora. Każdy scenariusz zostanie powiązany z testami reg
 
 Screenshoty rzeczywistego dashboardu trafią do `docs/assets/` w PHASE 13/18.
 Pełna definicja ukończenia pozostaje otwarta.
-Ukończony przyrost nowego planu: **Etap 8 — Attack Timeline**;
-2062 testy backendu i 238 panelu PASS, lokalne wdrożenie sprawdzone.
-Etapy 1–7 mają osobne raporty powyżej. Zalogowany test przeglądarkowy,
+Ukończony przyrost nowego planu: **Etap 9 — UEBA**;
+2181 testów backendu i 286 panelu PASS, lokalne wdrożenie sprawdzone.
+Etapy 1–8 mają osobne raporty powyżej. Zalogowany test przeglądarkowy,
 internetowy audyt zależności i hostowane CI pozostają otwarte, zgodnie z raportem.
-Bramkę bieżącego przyrostu opisuje [raport Etapu 8](docs/validation-attack-timeline.md).
-Następny przyrost: **UEBA**.
+Bramkę bieżącego przyrostu opisuje [raport Etapu 9](docs/validation-ueba.md).
+Następny przyrost: **Mini SOAR**.
 
 ## Zasady rozwoju
 

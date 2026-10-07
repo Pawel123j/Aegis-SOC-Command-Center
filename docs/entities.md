@@ -89,3 +89,11 @@ braku wcześniejszej aktywności. Nowe rekordy są indeksowane od razu.
 Wszystkie odczyty wymagają jednocześnie events:read, alerts:read i incidents:read.
 Backfill wymaga system:manage. Szczegółowy kontrakt i wyniki są w
 [API](api-contract.md) i [walidacji](validation-entities.md).
+
+## Analiza zachowania — Etap 9
+
+Profil użytkownika i hosta udostępnia przycisk „Analizuj dzień”. Osobny zakres
+obejmuje jedną zakończoną dobę UTC i 28 wcześniejszych dób. Score anomalii
+nie jest dotychczasowym ryzykiem profilu. Odczyt ma własny stan braku historii
+i indeksu; nie zmienia tożsamości ani nie łączy słabych identyfikatorów między
+hostami. [Wskaźniki, progi i dowody](ueba.md).

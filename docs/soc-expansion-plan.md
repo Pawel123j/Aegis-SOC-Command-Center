@@ -104,4 +104,10 @@ oryginalne dowody, wszystkie odniesienia alertów, scope i jawne pending.
 [walidacja Etapu 8](validation-attack-timeline.md) potwierdza lokalną bramkę.
 Stan na 2026-10-06: 2062 testy backendu i 238 panelu PASS;
 pełna regresja, uruchomienie i restart głównej instalacji sprawdzone.
-Kolejny przyrost: UEBA.
+Etap 9: [UEBA](ueba.md) porównuje zakończoną dobę UTC z 28 poprzednimi
+i pokazuje wyjaśnione odchylenia oraz zweryfikowane dowody. Cold start,
+niepełny indeks i brak faktów uprawnień pozostają jawne.
+[ADR 0015](adr/0015-observed-behavior-baselines.md),
+[walidacja Etapu 9](validation-ueba.md): 2181 testów backendu i 286 panelu PASS;
+lokalne wdrożenie, zachowanie danych i restart potwierdzone 2026-10-07.
+Kolejny przyrost: Mini SOAR.

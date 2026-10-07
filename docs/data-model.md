@@ -266,3 +266,12 @@ Istniejące IncidentAlert łączą sprawę z alertami, EntityAlertReceipt okreś
 gotowość indeksu, a AlertEventReference wskazuje event/hash. RawEvent oraz
 NormalizedEvent są źródłem oryginalnego dowodu. Nie ma nowej tabeli lub migracji;
 head pozostaje 0011_intelligence. [Zakres i weryfikacja](attack-timeline.md).
+
+## Projekcja zachowania profilu — Etap 9
+
+Raport UEBA jest obliczanym DTO, bez nowej tabeli lub migracji. Korzysta z
+EntityIdentity, EntityObservation, EntityIndexReceipt oraz oryginalnych
+RawEvent/NormalizedEvent. Zawiera wersję polityki, okna baseline/observation,
+stan historii i wskaźniki z wartościami porównania oraz referencjami dowodów.
+Ponowne zapytanie uwzględnia dostępne późne zdarzenia; raport nie jest trwałą
+historyczną oceną. [Szczegóły](ueba.md).

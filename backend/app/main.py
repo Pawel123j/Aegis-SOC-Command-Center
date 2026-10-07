@@ -31,6 +31,7 @@ from app.api import (
     risk,
     sigma,
     sources,
+    ueba,
     users,
 )
 from app.api.dependencies import Principal, require
@@ -113,6 +114,7 @@ def _create_app(settings: Settings | None = None) -> FastAPI:
         sigma.router,
         entities.router,
         intelligence.router,
+        ueba.router,
     ):
         application.include_router(router)
 

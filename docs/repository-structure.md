@@ -94,8 +94,8 @@ interakcję przeglądarki z API, włącznie z odmowami uprawnień.
 `compose.yaml`, Dockerfile backendu, pyproject/package.json, lockfile i migracje
 SQL należą do istniejącego runtime. Nowe moduły używają tego samego obrazu
 i migratora, zamiast tworzyć osobne usługi. `infra` oddziela konfigurację
-deploymentu od domeny. Bieżące wyniki Etapu 8 zapisuje
-[raport walidacji chronologii](validation-attack-timeline.md); wcześniejsze
+deploymentu od domeny. Bieżące wyniki Etapu 9 zapisuje
+[raport walidacji UEBA](validation-ueba.md); wcześniejsze
 wyniki pozostają w raportach właściwych etapów.
 
 ## Walidacja szkieletu
@@ -103,5 +103,9 @@ wyniki pozostają w raportach właściwych etapów.
 [Manifest](../scripts/repository_manifest.json) wymienia wymagane katalogi i dokumenty.
 [Walidator](../scripts/validate_repository.py) sprawdza je bez zewnętrznych bibliotek,
 wraz z numeracją 21 faz, 37 wymagań, co najmniej sześcioma ADR, linkami lokalnymi
-i formatem tekstu. Indeks obejmuje obecnie ADR 0001–0014.
+i formatem tekstu. Indeks obejmuje obecnie ADR 0001–0015.
 Nie pobiera stron z linków internetowych i nie testuje renderowania diagramów Mermaid.
+
+Moduł `backend/app/modules/ueba` zawiera odczyt, weryfikację i czyste statystyki
+aktywności encji. `backend/app/api/ueba.py` udostępnia analizę dnia, a
+`frontend/src/ueba` dołącza ją do istniejących profili. [Kontrakt](ueba.md).

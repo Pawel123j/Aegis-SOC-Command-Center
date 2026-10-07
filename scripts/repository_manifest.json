@@ -20,6 +20,7 @@
     "backend/app/modules/entities",
     "backend/app/modules/intelligence",
     "backend/app/modules/attack_timeline",
+    "backend/app/modules/ueba",
     "backend/app/modules/hunting",
     "backend/app/modules/soar",
     "backend/app/modules/audit",
@@ -94,6 +95,9 @@
     "docs/adr/0006-local-demo-and-safe-soar.md",
     "docs/adr/0012-observed-entity-profiles.md",
     "docs/adr/0013-local-intelligence.md",
-    "docs/adr/0014-observed-attack-timeline.md"
+    "docs/adr/0014-observed-attack-timeline.md",
+    "docs/ueba.md",
+    "docs/validation-ueba.md",
+    "docs/adr/0015-observed-behavior-baselines.md"
   ]
 }

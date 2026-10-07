@@ -20,6 +20,7 @@ nie usuwa się historii uzasadnień.
 | [0012](0012-observed-entity-profiles.md) | Konserwatywna tożsamość encji, append-only obserwacje i projekcja ryzyka alertu |
 | [0013](0013-local-intelligence.md) | Lokalny katalog IOC, niezmienne rewizje i pierwsze dopasowania; osobny wkład ryzyka v4 bez przepisywania v3 |
 | [0014](0014-observed-attack-timeline.md) | Chronologia zachowanych obserwacji sprawy, indeksowane dowody i spójne strony |
+| [0015](0015-observed-behavior-baselines.md) | Porównanie zakończonej doby UTC z historią, jawne braki danych i źródłowe dowody UEBA |
 
 Każdy nowy ADR zawiera: kontekst, decyzję, alternatywy, konsekwencje, dowód
 akceptacji i warunek ponownego rozważenia.

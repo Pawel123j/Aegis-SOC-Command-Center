@@ -30,7 +30,11 @@ deduplikację dowodów i przejście do oryginalnego logu. Stan na 2026-10-06:
 2062 testy backendu i 238 panelu PASS; pełna lokalna regresja oraz
 uruchomienie i restart głównej instalacji potwierdzone.
 [Raport Etapu 8](validation-attack-timeline.md) zawiera wyniki i granice dowodu.
-Następny przyrost to UEBA.
+Etap 9 dodaje [statystyczne UEBA](ueba.md): zakończona doba UTC względem
+28 poprzednich, jawny cold start, izolacja replay i oryginalne dowody.
+Stan na 2026-10-07: 2181 testów backendu i 286 panelu PASS, lokalne wdrożenie
+i restart sprawdzone. [Raport Etapu 9](validation-ueba.md).
+Następny przyrost to Mini SOAR.
 
 Plan odpowiada fazom 0–20 wskazanym w wymaganiach. Faza 0 dostarczyła analizę stanu, decyzje architektoniczne, szkielet repozytorium i dokumentację. Faza 1 dostarczyła zweryfikowany fundament backendu z integracją rzeczywistych usług (2026-09-28). SIEM, frontend i generator wymagają dalszych faz.
 
