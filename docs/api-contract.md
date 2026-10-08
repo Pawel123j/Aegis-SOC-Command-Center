@@ -8,7 +8,7 @@ Etap 8 dodaje odczyt chronologii dowodów sprawy; [jego raport](validation-attac
 zapisuje nową bramkę. Historyczne kontrole opisują raporty wcześniejszych etapów.
 Kod obejmuje `/auth`, `/users`, `/audit`, `/system/health`, źródła, przyjęcie
 eventów, status batcha, retry, normalized event search, alerts/detections,
-incidents, correlations, risk, mitre, sigma, entities, intelligence oraz
+incidents, correlations, risk, mitre, sigma, entities, intelligence, UEBA, SOAR oraz
 techniczne sondy/metryki.
 OpenAPI dla zaimplementowanych tras powstaje z modeli pod `/api/v1/openapi.json`.
 Zasoby oznaczone jako przyszłe poniżej nie są dostępne w tej implementacji.
@@ -108,8 +108,6 @@ punktów, policy/input hashes i odniesienie do poprzedniego obliczenia.
 | Rule authoring | POST `/detections`; wersjonowane definicje | Draft/version/import oprócz obecnego stałego katalogu |
 | Hunts | GET/POST `/hunts`; PATCH `/hunts/{id}`; POST `/hunts/{id}/runs`, `/hunts/{id}/bookmarks`, `/hunts/{id}/investigations`, `/hunts/{id}/draft-detections` | Saved query, evidence, investigation, draft rule |
 | Investigations | POST `/investigations/{id}/promote` | Jednorazowa, audytowana promocja do sprawy |
-| Playbooks | GET/POST `/playbooks`; POST `/playbooks/{id}/versions`, `/playbooks/{id}/publish`, `/playbooks/{id}/runs` | Publikowane wersje i wykonanie simulation |
-| SOAR runs | GET `/playbook-runs/{id}`; POST `/playbook-runs/{id}/cancel` | Historia kroków, prób i wyników |
 | SOC metrics | GET `/metrics`, `/dashboard` | JSON metryk domenowych, auth |
 | Demo | POST `/demo/runs`; GET `/demo/runs/{id}` | Admin/Manager, izolowany dataset i scenariusz |
 | Replay | POST `/replays`; GET `/replays/{id}` | Uprawniony, bounded, zamknięte wejście i snapshot wersji |
@@ -368,3 +366,53 @@ Szczegóły i ograniczenia opisuje [kontrakt UEBA](ueba.md).
 i wymaganym `document_sha256` zwraca zweryfikowany oryginał PostgreSQL po
 ponownym potwierdzeniu jego obecności w dowodach analizy. Niezgodność daje
 409 ueba_changed. Oba odczyty UEBA współdzielą limit i uprawnienia.
+
+## Mini SOAR — Etap 10
+
+Wdrożone operacje poniżej mają prefiks `/api/v1`:
+
+| Metoda / ścieżka | Kontrakt |
+| --- | --- |
+| GET `/playbooks/actions` | Dziewięć akcji, permissions, wersja silnika i limity |
+| GET `/playbook-targets/{alert_id}` | Zdarzenia dowodowe oraz dozwolone cele IP/host |
+| GET/POST `/playbooks` | Lista do 100 procedur / nowa definicja robocza |
+| GET/PATCH `/playbooks/{playbook_id}` | Szczegóły z ETag / zmiana `enabled` z If-Match |
+| POST `/playbooks/{playbook_id}/versions` | Nowa niezmienna rewizja; If-Match |
+| POST `/playbooks/{playbook_id}/publish` | Publikacja najnowszej rewizji; If-Match |
+| POST `/playbooks/{playbook_id}/runs` | Start z wymaganym Idempotency-Key; 201 lub 200 przy powtórzeniu |
+| GET `/playbook-runs` | Historia: live domyślnie, replay wymaga dataset_id/data_run_id; opcjonalny alert_id, kursor before, limit 1–50 |
+| GET `/playbook-runs/{run_id}` | Spójny odczyt kroków, prób i efektów |
+| POST `/playbook-runs/{run_id}/cancel` | Idempotentne anulowanie przez inicjatora lub zarządzającego |
+| GET `/soar-notifications` | Prywatna skrzynka inicjatora, kursor before i limit 1–50 |
+| POST `/soar-notifications/{notification_id}/read` | Idempotentne oznaczenie własnego powiadomienia |
+
+Przykład definicji (nie uruchamia procedury):
+
+```json
+{
+  "schema_version": 1,
+  "title": "Reakcja na podejrzany IP",
+  "description": "Analiza dowodu i plan blokady",
+  "steps": [
+    {"id": "ip", "action": "enrich_ip"},
+    {"id": "ti", "action": "check_threat_intelligence"},
+    {"id": "risk", "action": "calculate_risk"},
+    {"id": "case", "action": "create_incident"},
+    {"id": "notify", "action": "notify_analyst"},
+    {"id": "block", "action": "simulate_block_ip"}
+  ]
+}
+```
+
+Start: `revision`, `alert_id`, opcjonalne `event_id`, `ip_field` source lub
+destination, `execution_mode` wyłącznie simulation i opcjonalne `replay_of`.
+Publikacja: `{"revision":1}`. Zmiana dostępności: `{"enabled":false}`.
+Idempotency-Key: 16–128 znaków A–Z/a–z/0–9/underscore/myślnik.
+Ten sam klucz innego body daje 409; brak/niezgodny If-Match daje 428/412.
+Walidacja danych daje 422; nieopublikowana rewizja, false positive, limit
+kolejki, niespójny dowód lub niepoprawny replay — opisany kod 409.
+
+Odczyt wymaga playbooks:read, events:read, alerts:read, incidents:read,
+intelligence:read. Mutacje mają osobne manage/run oraz permissions akcji.
+Odczyty 120/min, mutacje 30/min; Cache-Control no-store. Definicja nie
+przyjmuje dynamicznych parametrów. Pełne zasady: [SOAR](soar.md).

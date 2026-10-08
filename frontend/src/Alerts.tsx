@@ -371,6 +371,7 @@ export function AlertDialog({
                   </>
                 )}
             </div>
+            <AlertSoar user={user} alertId={id} />
             <details>
               <summary>Snapshot reguły</summary>
               <JsonView value={resource.data.rule_snapshot} />
@@ -385,3 +386,4 @@ export function AlertDialog({
     </dialog>
   );
 }
+import { AlertSoar } from './soar/Soar';

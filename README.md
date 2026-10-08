@@ -3,7 +3,7 @@
 Projekt portfolio Security Engineering: docelowo lokalna platforma mini-SIEM, SOAR,
 Incident Response i Threat Hunting, z demonstracją opartą na prawdziwym pipeline logów.
 
-**Stan: PHASE 0–3 i Etapy 1–9 ukończone lokalnie — 2026-10-07.**
+**Stan: PHASE 0–3 i Etapy 1–10 ukończone lokalnie — 2026-10-08.**
 Backend ma API źródeł, osobne tokeny ingestion, single/batch, idempotencję,
 PostgreSQL inbox/outbox, relay i worker z ograniczonym retry oraz kwarantanną.
 Sześć parserów tworzy niezmienne snapshoty w PostgreSQL, a osobny processor
@@ -44,7 +44,12 @@ aplikacja nie pobiera URL ani reputacji z zewnętrznych usług.
 Generator pozostaje zaplanowany. Rozbudowa przebiega według
 [audytu i nowego planu 15 etapów](docs/soc-expansion-plan.md).
 Zakres: [incydenty](docs/incidents.md), [pierwsze alerty i panel](docs/initial-soc.md).
-Wyniki bieżącego przyrostu: [walidacja Etapu 9](docs/validation-ueba.md).
+Etap 10 dodaje [Mini SOAR](docs/soar.md): wersjonowane procedury z alertu,
+trwałe kroki i retry, lokalne incydenty/powiadomienia oraz symulację blokad,
+izolacji i webhooków. [Wyniki bieżącego przyrostu](docs/validation-soar.md).
+2286 testów backendu i 308 panelu PASS; migracja, wdrożenie, restart
+oraz zalogowany przebieg na odizolowanych danych sprawdzone.
+Kolejny etap to Dashboard. Historyczny wynik: [walidacja Etapu 9](docs/validation-ueba.md).
 Etap 9 dodaje [analizę zachowania użytkowników i hostów](docs/ueba.md):
 porównanie dnia z 28-dniową historią, score, wyjaśnienie i zweryfikowane
 dowody. Jawnie pokazuje brak historii oraz nieobsługiwane fakty uprawnień.

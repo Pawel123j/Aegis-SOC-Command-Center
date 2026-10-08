@@ -16,6 +16,8 @@ services:
     build: *offline-build
   correlator:
     build: *offline-build
+  soar:
+    build: *offline-build
   api:
     build: *offline-build
   worker:

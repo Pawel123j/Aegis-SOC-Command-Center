@@ -109,3 +109,12 @@ Nie pobiera stron z linków internetowych i nie testuje renderowania diagramów 
 Moduł `backend/app/modules/ueba` zawiera odczyt, weryfikację i czyste statystyki
 aktywności encji. `backend/app/api/ueba.py` udostępnia analizę dnia, a
 `frontend/src/ueba` dołącza ją do istniejących profili. [Kontrakt](ueba.md).
+
+## Etap 10 — aktualizacja 2026-10-08
+
+`backend/app/modules/soar` zawiera schemas/models/evidence/actions/service/
+processing/views, a `backend/app/api/soar.py` obsługuje kontrakt HTTP.
+`backend/app/soar.py` uruchamia osobny proces Compose. Migracja `0012_soar`
+jest bieżącym head. `frontend/src/soar` zawiera edytor, launcher, historię
+i powiadomienia. Testy domenowe są w dwóch `test_soar.py`, a panelu w
+`frontend/tests/soar.test.tsx`. [Dokumentacja](soar.md), [raport](validation-soar.md).

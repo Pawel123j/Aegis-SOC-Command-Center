@@ -4,6 +4,16 @@ type TokenSet = { access_token: string; csrf_token: string; expires_in: number }
 type MemorySession = TokenSet & { expires_at: number };
 type Subscriber = (kind: 'logout' | 'session') => void;
 const messages: Record<string, string> = {
+  soar_not_published: 'Ta wersja nie jest dostępna do uruchomienia. Odśwież listę procedur.',
+  soar_authority_revoked: 'Brakuje uprawnień do jednego z kroków tej procedury.',
+  soar_queue_full: 'Kolejka procedur jest pełna. Poczekaj na zakończenie wcześniejszych wykonań.',
+  soar_false_positive: 'Alert oznaczono jako fałszywy alarm. Wymaga ponownej oceny przed reakcją.',
+  soar_replay_invalid: 'Nie można ponowić tego wykonania z wybraną wersją i celem.',
+  soar_unchanged: 'Definicja jest identyczna. Zmień ją przed zapisaniem nowej wersji.',
+  soar_target_mismatch: 'Wybrane zdarzenie nie należy do tego alertu.',
+  soar_terminal: 'To wykonanie już się zakończyło. Jego historia pozostaje zachowana.',
+  soar_context_limit: 'Dowód przekracza limit procedury. Wybierz mniejszy zakres.',
+  soar_scope_invalid: 'Dane replay wymagają dokładnego zestawu i przebiegu danych.',
   unauthorized: 'Zaloguj się ponownie. Sesja wygasła lub dane logowania są niepoprawne.',
   forbidden: 'Twoja rola nie pozwala na tę czynność.',
   validation_error: 'Sprawdź wymagane pola i format danych.',

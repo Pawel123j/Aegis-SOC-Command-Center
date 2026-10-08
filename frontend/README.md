@@ -233,3 +233,10 @@ unieważnienie sesji na serwerze; awaria pozwala ponowić tę operację.
 Konfiguracja pnpm 11 jest w `pnpm-workspace.yaml`, w tym `storeDir` dla
 lokalnego cache; `.npmrc` służy w tej wersji tylko registry/auth.
 Źródło: [migracja pnpm 11](https://pnpm.io/blog/releases/11.0).
+
+Etap 10 dodaje `src/soar`: edytor uporządkowanych kroków, publikację
+niezmiennych wersji, uruchomienie w szczegółach alertu po przeglądzie planu,
+historię wykonań, próby i prywatną skrzynkę. Panel odróżnia lokalny zapis od
+symulacji infrastruktury. Przed każdą mutacją odświeża uprawnienia; spóźnione
+odpowiedzi poprzedniej sesji są odrzucane. 22 nowe testy obejmują te granice.
+[Użycie](../docs/soar.md), [odbiór](../docs/validation-soar.md).

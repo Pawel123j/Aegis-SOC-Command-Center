@@ -92,7 +92,8 @@ class BodyLimitMiddleware:
             if not message.get("more_body", False):
                 break
         body = b"".join(chunks)
-        if is_ingest or is_sigma or is_intelligence:
+        is_soar = scope["path"].startswith(("/api/v1/playbooks", "/api/v1/playbook-runs"))
+        if is_ingest or is_sigma or is_intelligence or is_soar:
             try:
                 validate_ingest_json(body)
             except (ValueError, RecursionError):

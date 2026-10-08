@@ -199,7 +199,7 @@ Starszy zakres uzupełnia ograniczony, audytowany backfill, bez zmiany źródła
 
 ## Lokalny katalog IOC i ledger dopasowań — Etap 7
 
-Migracja `0011_intelligence` jest head nowych źródeł. Dodaje cztery tabele:
+Migracja `0011_intelligence` była head Etapu 7; Etap 10 dodaje `0012_soar`. Dodaje cztery tabele:
 
 | Tabela | Dane i ograniczenia |
 | --- | --- |
@@ -236,7 +236,6 @@ Poniższa tabela obejmuje dalsze, jeszcze niewdrożone agregaty.
 | Incidents | incidents z version, incident_alerts, notes, evidence_snapshots, incident_iocs, timeline |
 | Context | Zweryfikowane assets/identities i dalsze enrichment_versions; lokalne iocs i match IOC opisano wyżej |
 | Hunting | saved_queries, bookmarks, investigations, investigation_events, draft_rules |
-| SOAR | playbooks, versions, runs, steps, attempts, notifications; unikalny execution key |
 | Governance | audit_log append-only, replay_runs, risk_policy_versions, mitre_catalog_versions |
 
 Relacje wewnątrz PostgreSQL mają FK; referencje do eventów w ClickHouse nie mogą mieć
@@ -275,3 +274,27 @@ RawEvent/NormalizedEvent. Zawiera wersję polityki, okna baseline/observation,
 stan historii i wskaźniki z wartościami porównania oraz referencjami dowodów.
 Ponowne zapytanie uwzględnia dostępne późne zdarzenia; raport nie jest trwałą
 historyczną oceną. [Szczegóły](ueba.md).
+
+## Procedury i wykonania — Etap 10
+
+Head `0012_soar` dodaje siedem tabel:
+
+| Tabela | Odpowiedzialność |
+| --- | --- |
+| playbooks | Dostępność, bieżąca i opublikowana rewizja, wersja zmian |
+| playbook_revisions | Niezmienny dokument, kanoniczny JSON, SHA-256 i wersja silnika |
+| playbook_runs | Alert/rewizja/inicjator, kontekst/hash, zakres live/replay, idempotencja, deadline i postęp |
+| playbook_steps | Kolejność/akcja, input hash, stan, liczba prób i dzierżawa |
+| playbook_attempts | Dopisywana historia zakończonych i wygasłych prób |
+| playbook_effects | Jeden niezmienny wynik/hash na step_id, atomowy z efektem lokalnym |
+| soar_notifications | Lokalny odbiorca, run/step, treść i odczyt |
+
+Rewizje, próby i efekty mają SELECT/INSERT bez UPDATE/DELETE dla runtime.
+Pozostałe tabele dopuszczają tylko wybrane aktualizowane kolumny; żaden grant
+nie pozwala usuwać historii. Trigger broni terminalnych stanów, a rewizja ma
+walidację kanonicznego JSON/hash. Unikalne klucze chronią operator/key,
+kolejność kroku, attempt number oraz efekt step. Aktywną próbę reprezentuje
+stan running z numerem i audytem; zakończenie dopisuje attempt.
+Downgrade odmawia usunięcia niepustego katalogu. Migracja istniejącej bazy
+nie tworzy procedur, użytkowników ani zmienionych danych poprzednich modułów.
+Semantyka transakcji i retry: [SOAR](soar.md).

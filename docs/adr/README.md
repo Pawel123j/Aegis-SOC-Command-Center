@@ -21,6 +21,7 @@ nie usuwa się historii uzasadnień.
 | [0013](0013-local-intelligence.md) | Lokalny katalog IOC, niezmienne rewizje i pierwsze dopasowania; osobny wkład ryzyka v4 bez przepisywania v3 |
 | [0014](0014-observed-attack-timeline.md) | Chronologia zachowanych obserwacji sprawy, indeksowane dowody i spójne strony |
 | [0015](0015-observed-behavior-baselines.md) | Porównanie zakończonej doby UTC z historią, jawne braki danych i źródłowe dowody UEBA |
+| [0016](0016-durable-local-playbooks.md) | Trwałe lokalne procedury z kolejką PostgreSQL, atomowe efekty i symulacja infrastruktury |
 
 Każdy nowy ADR zawiera: kontekst, decyzję, alternatywy, konsekwencje, dowód
 akceptacji i warunek ponownego rozważenia.

@@ -5,8 +5,9 @@ Kod obejmuje Argon2id, krótkie JWT, zapis i rotację sesji, CSRF/origin, permis
 audyt, limitowanie auth, walidację konfiguracji i bezpieczne błędy. Przeszło 230
 testów jednostkowych i 33 integracyjne, obejmujące auth/RBAC, cofanie sesji,
 granty audytu i współbieżne refresh/zmiany konta z rzeczywistą bazą. Szczegóły zawiera
-[raport walidacji](validation.md). Pozostałe kontrole pipeline, UI i SOAR pozostają
-wymaganiami przyszłych faz. Zakres pierwszego wydania to jedna organizacja SOC
+[historyczny raport](validation-phase1.md). Kontrole kolejnych przyrostów
+pipeline i UI opisuje [indeks walidacji](validation.md); Etap 10 obejmuje
+[SOAR](validation-soar.md). Dalsze bramki pozostają w planie. Zakres pierwszego wydania to jedna organizacja SOC
 i lokalne demo Docker Compose. Wystawienie do Internetu, SSO, MFA, wielodostępność
 i formalna zgodność nie są objęte tym modelem.
 
@@ -87,7 +88,7 @@ Kontrolowany scenariusz tworzy osobny `dataset_id` z `mode=replay` przez uprawni
 
 Kontrakty Pydantic odrzucają nieznane pola konfiguracji, niepoprawne typy i nadmierne długości. Batch ingestion ma planowany limit 500 eventów, 1 MiB całego requestu i 64 KiB pojedynczego eventu. Są to wartości startowe do pomiarów, a nie wynik benchmarku. Limity egzekwują proxy i API; odrzucenie zbyt dużego body następuje przed kosztownym parsowaniem. Archiwa i skompresowane body pozostają poza pierwszym zakresem.
 
-Startowe limity: logowanie 5 prób/minutę na parę konto/IP i 30/minutę na IP, refresh 30/minutę na sesję, ingestion 10 requestów/s na źródło, wyszukiwanie 30/minutę i 2 równoległe zapytania na użytkownika, SOAR 5 uruchomień/minutę na operatora. Odpowiedź 429 zawiera `Retry-After`. Identyfikator konta w kluczu limitera jest normalizowany i hashowany. Niedostępny limiter skutkuje 503 na kosztownych i auth endpointach, nie przejściem do trybu bez limitów. Limity ingestion, hunting i SOAR dotyczą przyszłych modułów.
+Startowe limity: logowanie 5 prób/minutę na parę konto/IP i 30/minutę na IP, refresh 30/minutę na sesję, ingestion 10 requestów/s na źródło, wyszukiwanie 30/minutę i 2 równoległe zapytania na użytkownika, SOAR 30 mutacji/minutę i 120 odczytów/minutę na operatora (Etap 10). Odpowiedź 429 zawiera `Retry-After`. Identyfikator konta w kluczu limitera jest normalizowany i hashowany. Niedostępny limiter skutkuje 503 na kosztownych i auth endpointach, nie przejściem do trybu bez limitów. Powyższe wartości ingestion/hunting są projektem; bieżący ingestion opisuje phase2-operations.md, a SOAR — soar.md.
 
 Lokalny runtime PHASE 1 uruchamia Uvicorn z `--no-proxy-headers`. Za reverse proxy
 limiter IP widzi wspólne IP proxy: klienci demo dzielą jego limit, a próby logowania
@@ -194,3 +195,19 @@ weryfikuje źródłowe dowody i tożsamość, izoluje replay, ogranicza okno, li
 zdarzeń, rozmiar i czas SQL. Brak historii lub indeksu pozostaje jawny.
 GET nie publikuje alertów, nie przelicza ryzyka ani nie zmienia baseline.
 Nazwy kont nie są dowodem uprawnień administratora. [Kontrakt](ueba.md).
+
+## Procedury reagowania — Etap 10
+
+Zamknięty JSON schema bez kodu, URL, shell, ścieżek i dowolnych parametrów.
+Target musi pochodzić z zachowanego dowodu alertu. Rewizja, zakres danych,
+hash oryginału, TI i ocena ryzyka są przypięte przy starcie. Wymagane są
+uprawnienia do odczytu wszystkich źródeł oraz osobne prawa do skutków akcji.
+Serwer odświeża uprawnienia po blokadzie i przed każdym efektem; UI odrzuca
+odpowiedzi poprzedniej sesji. Idempotencja jest związana z operatorem i body.
+
+Wszystkie działania infrastrukturalne pozostają simulation. Nowy IOC w live
+jest nieaktywny i ma nieznaną reputację; w replay nie zmienia katalogu.
+Powiadomienia są prywatne i lokalne. Efekt i audyt powstają razem, a historia
+rewizji, prób, wyników i terminalnych wykonań jest chroniona grantami/triggerami.
+Maksimum: 100 aktywnych run, 20 kroków, 3 próby, 10 minut. Ograniczenia i testy
+awarii, współbieżności oraz izolacji opisuje [raport](validation-soar.md).

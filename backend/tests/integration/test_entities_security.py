@@ -620,4 +620,4 @@ def test_empty_entity_schema_can_downgrade_and_upgrade_without_touching_existing
     assert all(value == 0 for value in counts(case).values())
     assert audit_count(case) == audits
     with case.database.runtime.connect() as db:
-        assert db.scalar(text("SELECT version_num FROM alembic_version")) == "0011_intelligence"
+        assert db.scalar(text("SELECT version_num FROM alembic_version")) == "0012_soar"

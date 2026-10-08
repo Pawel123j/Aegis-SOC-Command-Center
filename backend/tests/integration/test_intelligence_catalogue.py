@@ -227,7 +227,7 @@ def test_downgrade_refuses_nonempty_catalog_before_removing_seed(case: Case, adm
     assert "Intelligence history exists" in str(rejected.value)
     assert counts(case) == before and read(admin, f"/iocs/{item['id']}") == item
     with case.database.runtime.connect() as db:
-        assert db.scalar(text("SELECT version_num FROM alembic_version")) == "0011_intelligence"
+        assert db.scalar(text("SELECT version_num FROM alembic_version")) == "0012_soar"
         assert (
             db.scalar(
                 text("SELECT enabled FROM rule_deployments WHERE id='ti:malicious-indicator'")

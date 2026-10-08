@@ -1,0 +1,42 @@
+.soar-workspace {
+  display: grid;
+  gap: 1rem;
+}
+.soar-book,
+.soar-launcher,
+.soar-editor {
+  margin-block: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.soar-launcher label,
+.soar-editor > label {
+  display: block;
+  margin-block: 0.8rem;
+}
+.soar-launcher select,
+.soar-editor select,
+.soar-editor input {
+  max-width: 100%;
+}
+.soar-editor li {
+  margin-block: 0.7rem;
+}
+.soar-steps > li,
+.soar-history > li {
+  margin-block: 1rem;
+  padding: 0.8rem;
+  border-bottom: 1px solid var(--border);
+  overflow-wrap: anywhere;
+}
+.soar-history {
+  list-style: none;
+  padding: 0;
+}
+.soar-steps h4 {
+  margin-block: 0.5rem;
+}
+.soar-history small {
+  display: block;
+}

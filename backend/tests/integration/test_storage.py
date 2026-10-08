@@ -45,11 +45,11 @@ def test_migrations_round_trip_and_match_models(isolated_database: IsolatedDatab
             )
             assert compare_metadata(context, Base.metadata) == []
             assert connection.scalar(text("SELECT version_num FROM alembic_version")) == (
-                "0011_intelligence"
+                "0012_soar"
             )
         with isolated_database.runtime.connect() as connection:
             assert connection.scalar(text("SELECT version_num FROM alembic_version")) == (
-                "0011_intelligence"
+                "0012_soar"
             )
 
 

@@ -1,92 +1,117 @@
-# SOAR Playbook Engine
+# Mini SOAR — Etap 10
 
-Status: **projekt PHASE 0, bez implementacji**. Engine ma wykonywać trwały, odtwarzalny workflow na danych aplikacji. Wszystkie działania, które mogłyby zmienić rzeczywistą infrastrukturę, są wyłącznie symulacją. Nie powstaje ogólny runner komend.
+Stan implementacji: 2026-10-08. Ręcznie uruchamiane, wersjonowane procedury
+reagowania z trwałą historią w PostgreSQL. [Wyniki odbioru](validation-soar.md),
+[decyzja architektoniczna](adr/0016-durable-local-playbooks.md).
 
-## Model i granice zakresu
+## Praca w panelu
 
-Playbook v1 to skończona, sekwencyjna lista kroków ze znanego rejestru akcji. Maksymalnie 20 kroków, bez pętli, dowolnego kodu, szablonów wykonujących funkcje, skryptów shell i adresów webhook podanych przez użytkownika. Każda akcja ma typowany input/output, limit rozmiaru i udokumentowane efekty. Proste referencje do wyniku wcześniejszego kroku używają walidowanej ścieżki pola, nie `eval` ani Jinja wykonującej kod. Brakujący lub źle typowany output przerywa workflow czytelnym błędem.
+1. Kierownik SOC lub administrator otwiera **Procedury SOAR → Nowa procedura**.
+   Wybiera uporządkowane kroki, zapisuje wersję roboczą i osobno ją publikuje.
+2. W szczegółach alertu operator otwiera **Procedury SOAR dla alertu**,
+   wybiera opublikowaną wersję, źródłowe zdarzenie i stronę adresu IP.
+3. Panel pokazuje plan i lokalne skutki. Po potwierdzeniu planu operator
+   wybiera **Uruchom w trybie SIMULATION**.
+4. Szczegóły pokazują stan każdego kroku, czas, próby, wyniki i dowody.
+   Historia oraz prywatna skrzynka powiadomień są dostępne w module SOAR.
 
-| Encja PostgreSQL | Ważne pola i ograniczenia |
+Każdy run ma `execution_mode=simulation`. Oddzielne `mode=live/replay` oznacza
+pochodzenie danych. Symulacja infrastruktury może tworzyć rzeczywiste
+**lokalne** incydenty i powiadomienia; panel informuje o tym przed startem.
+Nie ma adaptera, ustawienia ani endpointu włączającego prawdziwą blokadę.
+Domyślny szkic zawiera sześć kroków analizy podejrzanego IP. Pusta instalacja
+nie otrzymuje automatycznie opublikowanych procedur ani wygenerowanych alertów.
+
+## Zamknięty rejestr akcji
+
+| Akcja | Rzeczywiste zachowanie |
 | --- | --- |
-| Playbook definition | ID, nazwa, opis, owner, status draft/published/disabled, audit |
-| Playbook version | Niezmienny dokument zwalidowanej listy kroków, version, checksum, opublikował/czas |
-| Playbook run | UUID, wersja playbooka, trigger/source ID, requested_by, `execution_mode=simulation`, stan, cancellation_requested, daty, correlation ID |
-| Step execution | Run ID, step ID, action/version, waiting/running/completed/failed, input hash, output, attempts, error code, next_attempt_at, lease/fencing token |
-| Step attempt | Niezmienny rekord próby, czas start/end, numer próby, wynik, zredagowany błąd |
-| Action effect | Unikalny klucz efektu `(run_id, step_id, action_version)`, wynik i ID obiektów utworzonych w aplikacji |
-| Outbox | Wiadomość o uruchomieniu następnego kroku zapisana w tej samej transakcji co stan |
+| `enrich_ip` | Lokalna walidacja i wersja adresu pochodzącego z dowodu; bez DNS/HTTP |
+| `check_threat_intelligence` | Przypięty wynik pierwszej analizy wybranego zdarzenia, zawężony do wybranego IP; brak analizy pozostaje `pending` |
+| `calculate_risk` | Zachowana ocena alertu, polityka i wyjaśnienie; bez dowolnego podnoszenia punktów; brak oceny jest jawny |
+| `create_incident` | Istniejąca otwarta sprawa lub utworzenie przez wspólną usługę incydentów; brak duplikatu przy ponowieniu |
+| `add_ioc` | W live nowy **nieaktywny** IP o nieznanej reputacji do przeglądu; istniejący wpis bez zmian; w replay tylko symulacja |
+| `notify_analyst` | Powiadomienie w prywatnej skrzynce inicjatora; bez email, Slack i innych odbiorców |
+| `simulate_block_ip` | Utrwalony plan blokady IP, bez połączenia z celem |
+| `simulate_isolate_host` | Utrwalony plan izolacji hosta, bez działania na urządzeniu |
+| `simulate_webhook` | Utrwalony plan; definicja nie przyjmuje adresu webhooka |
 
-Run zawsze wskazuje konkretną opublikowaną wersję. Edycja definicji tworzy nową wersję i nie zmienia działania już uruchomionego run. Celery/Redis dostarcza zawiadomienia; PostgreSQL przechowuje autorytatywny postęp. UI nigdy nie wyznacza stanu workflow tylko z Celery result backend.
+Brak IP/hosta daje jawne `not_applicable`. Zamknięty lub rozwiązany incydent
+wymaga decyzji operatora; procedura nie otwiera go i nie tworzy zamiennika.
+Reputacja IOC jest deklaracją źródła, a score nie potwierdza ataku.
 
-Run dziedziczy `dataset_id`, `mode=live/replay` i namespace źródłowego alertu/sprawy. Osobne pole `execution_mode=simulation` dotyczy polityki akcji SOAR i pozostaje obowiązkowe w obu kontekstach. Dla replay wejścia i wersje enrichment są przypięte do scenariusza; engine nie pobiera późniejszej reputacji IOC ani bieżącego czasu jako faktu detekcji. Czasy prób wykonania workflow pozostają rzeczywistymi czasami audytu. Efekty nie przechodzą z datasetu demo do live.
+## Definicja i dowód
 
-## Rejestr akcji
+Definicja to ściśle walidowany JSON, nie wykonywalny YAML lub skrypt.
+`schema_version` jest liczbą całkowitą 1. Dopuszczamy nazwę do 128 znaków,
+opis do 1024 i 1–20 kroków z unikalnym `id` oraz jedną dozwoloną akcją.
+Nie przyjmujemy parametrów akcji, kodu, URL, ścieżek, wyrażeń, interpolacji
+ani nieznanych pól. Powtórzone klucze JSON są odrzucane.
 
-| Akcja | Źródło i efekt | Reguła bezpieczeństwa |
-| --- | --- | --- |
-| `enrich_ip` | Walidacja/kanonizacja adresu i lokalna tabela fixture/context | Brak DNS, geolokalizacji online i HTTP |
-| `check_threat_intelligence` | Odczyt lokalnej wersji IOC i dopasowania | Brak VirusTotal/AbuseIPDB/OTX w MVP |
-| `calculate_risk` | Wywołanie deterministycznego silnika na utrwalonych wejściach | Zapisuje wersję i składniki; identyczne wejścia dają identyczny wynik |
-| `create_incident` | Wywołuje usługę spraw, zwraca istniejący lub nowy incident ID | Respektuje korelację i unikalność, bez jednego nowego incydentu na retry |
-| `notify_analyst` | Tworzy wpis w lokalnej skrzynce aplikacji | Brak e-mail, Slack, Teams i zewnętrznych webhook |
-| `simulate_block_ip` | Zapisuje co zostałoby zablokowane i dlaczego | `simulated=true`; brak zmiany firewalla |
-| `simulate_isolate_host` | Zapisuje plan izolacji i oczekiwany efekt | `simulated=true`; brak polecenia do EDR/hosta |
+Opublikowany dokument, jego hash i wersja silnika są niezmienne. Edycja tworzy
+nową rewizję i nie zmienia rozpoczętych wykonań. Start przyjmuje UUID alertu
+i opcjonalnego zdarzenia będącego jego dowodem, nigdy dowolny tekst adresu.
+Kontekst przypina zweryfikowany oryginał, jego hash, zakres danych, wynik TI
+i wyjaśnienie ryzyka. Limit kontekstu to 24 KiB; większy dowód jest odrzucany,
+bez cichego obcinania. Kanoniczny output akcji ma limit 32 KiB przed zapisem;
+dodatkowy limit bazy wynosi 64 KiB. Nie zapisujemy sekretów połączeń.
 
-Run oznaczony simulation może tworzyć rzeczywiste obiekty **w aplikacji**: incydent, ocenę ryzyka, audit i lokalne powiadomienie. Interfejs rozróżnia te efekty od mock zmian infrastruktury. Parametr `execution_mode=live` jest niedozwolony, także dla Admina; `mode=live` może oznaczać wyłącznie namespace danych wejściowych. Nie ma przełącznika środowiska, który potajemnie zmienia mock w realny connector. Każda przyszła integracja wymaga nowego ADR, uprawnień i kontraktu adaptera.
+## Trwałość, retry i anulowanie
 
-## Przykład: Brute Force Response
+Osobny proces `python -m app.soar` pobiera gotowe kroki z PostgreSQL.
+Ten zakres używa trwałej kolejki w bazie, zgodnie z ADR 0016; nie ma drugiego
+transportu Celery/outbox dla SOAR. Proces nie potrzebuje publicznej sieci.
 
-```mermaid
-flowchart LR
-    A[Zatwierdzony alert brute force] --> B[enrich_ip]
-    B --> C[check_threat_intelligence]
-    C --> D[calculate_risk]
-    D --> E[create_incident lub powiązanie istniejącego]
-    E --> F[notify_analyst w aplikacji]
-```
+1. API zatwierdza run, kroki `waiting`, kontekst i audyt w jednej transakcji.
+   Wymagany `Idempotency-Key` chroni start tego samego operatora; ten sam
+   request zwraca istniejący run, zmieniony request daje 409.
+2. Proces przejmuje jeden gotowy krok, zapisuje `running`, numer próby oraz
+   30-sekundową dzierżawę. Osobna transakcja wykonania ponownie sprawdza
+   konto, rolę, wymagane permissions, procedurę, alert, deadline i dzierżawę.
+3. Lokalny efekt, unikalny ledger kroku, wynik próby, audyt i gotowość kolejnego
+   kroku zatwierdzane są razem. Końcowe sprawdzenie czasu następuje po flush.
+4. Przerwanie przed commitem cofa efekty. Przerwanie po commicie nie powtarza
+   ukończonego kroku. Wygasła dzierżawa jest odzyskiwana z kolejnym numerem
+   próby; poprzedni wykonawca nie może zatwierdzić wyniku.
 
-W pierwszej wersji operator uruchamia zatwierdzony playbook z widoku alertu/incydentu. Publikacja playbooka jest zastrzeżona dla Manager/Admin, wykonanie opublikowanej wersji dla Analyst/Manager/Admin. Automatyczny trigger po typie alertu może zostać dodany po testach pętli i limitów; nie jest niejawnie włączony przez import definicji. Klucz automatycznego triggera, jeżeli powstanie, ma unikalność `(alert_id, playbook_version_id, trigger_policy_version)`.
+Maksymalnie trzy próby na krok; po błędzie chwilowym oczekiwanie 5 i 20 s.
+Błędna definicja, utrata uprawnień, uszkodzony dowód i nieprawidłowy target
+nie podlegają retry. Deadline całego wykonania to 10 minut. Limit katalogu
+wynosi 100 procedur, 20 rewizji na procedurę oraz 100 aktywnych wykonań.
 
-`create_incident` najpierw używa istniejącego powiązania alertu z otwartą sprawą, a w przeciwnym razie tej samej usługi korelacji/tworzenia co pozostały pipeline. Nie implementuje konkurencyjnej logiki grupowania. Jeśli sprawa jest zamknięta, stosuje reguły nowej sprawy powiązanej opisane w [incident-response.md](incident-response.md). Dwie równoległe ścieżki utworzenia wymagają wspólnego unikalnego klucza korelacji i obsługi konfliktu transakcyjnego.
+Stany run: `queued`, `running`, `completed`, `failed`, `cancelled`.
+Stany kroku: `waiting`, `running`, `completed`, `failed`. Anulowanie
+serializuje się z zatwierdzeniem efektu; wcześniejsze efekty pozostają.
+Nierozpoczęte kroki mają `not_executed_reason`, widoczny jako niewykonanie.
+Historia terminalna, próby i efekty są chronione również w bazie.
 
-## Stany i semantyka retry
+Ponowienie nieudanego/anulowanego przebiegu tworzy **nowy** run z `replay_of`,
+tym samym alertem, rewizją, zdarzeniem i stroną IP. Wersja musi nadal być
+opublikowana. Panel ponownie pokazuje plan. Nowe lokalne powiadomienie jest
+jawnym skutkiem ponowienia, natomiast incydent zachowuje deduplikację.
 
-Stan run: `queued`, `running`, `completed`, `failed`, `cancelled`. Stany kroku wymagane przez projekt: `waiting`, `running`, `completed`, `failed`.
+## Uprawnienia i granice
 
-1. API zapisuje run, kroki `waiting`, audit oraz outbox w jednej transakcji. `POST` przyjmuje idempotency key; powtórzenie z innym body daje 409, z tym samym zwraca istniejący run.
-2. Dispatcher wysyła do Celery tylko ID; zatwierdzenie wysyłki może się powtórzyć. Worker atomowo przejmuje gotowy krok przez warunek stanu i lease, zwiększając fencing token.
-3. Przed rozpoczęciem sprawdza anulowanie, uprawnienie inicjatora, aktywność konta, publikację/wyłączenie playbooka oraz schema version. Odebranie uprawnień w trakcie pracy zatrzymuje kolejne kroki.
-4. Efekt lokalny, zapis `action_effect`, ukończenie kroku, audit i outbox kolejnego kroku powstają w tej samej transakcji PostgreSQL. Stary worker nie może zatwierdzić efektu po utracie lease: transakcja weryfikuje bieżący fencing token.
-5. Jeśli worker padnie po commicie przed ACK, ponowne wykonanie odczytuje istniejący efekt i output. Nie tworzy nowego incydentu/powiadomienia. Jeżeli padnie przed commitem, brak efektu pozwala na bezpieczne ponowienie.
-6. Reconciler okresowo znajduje `waiting` gotowe do uruchomienia i `running` z wygasłym lease. Nie polega na istnieniu wiadomości w Redis; po restarcie publikuje brakujące zawiadomienia przez outbox.
+Odczyt wymaga łącznie `playbooks:read`, `events:read`, `alerts:read`,
+`incidents:read`, `intelligence:read`; wykonanie dodatkowo `playbooks:run`.
+Tworzenie incydentu wymaga `incidents:edit`, a dodanie IOC
+`intelligence:manage`. Zarządzanie i publikacja wymagają `playbooks:manage`.
+Anulować może inicjator z prawem uruchamiania lub zarządzający procedurami.
+Zmiany konta i uruchomienia stosują wspólną blokadę autoryzacji przed
+blokadami wierszy. UI odświeża uprawnienia przed mutacją i usuwa dane przy
+zmianie sesji; serwer pozostaje źródłem decyzji dostępu.
 
-Nie obiecujemy exactly-once dostarczania wiadomości. Gwarancją docelową jest at-least-once delivery plus pojedynczy utrwalony efekt lokalny dzięki kluczom i transakcjom. Dokumentacja [Celery Tasks](https://docs.celeryq.dev/en/stable/userguide/tasks.html) opisuje możliwość wielokrotnego uruchomienia i ograniczenia `acks_late`; samo późne ACK nie implementuje idempotencji ani trwałego workflow.
+Odczyty mają limit 120/min, mutacje 30/min na operatora. Lista wykonań
+domyślnie obejmuje live; replay wymaga dokładnych `dataset_id` i niezerowego
+`data_run_id`. Limit strony to 50, kursor jest związany z zakresem. Skrzynka
+pokazuje wyłącznie powiadomienia odbiorcy. Odczyty mają `Cache-Control: no-store`.
 
-Błąd chwilowy ma maksymalnie 3 próby łącznie, domyślnie z odstępami 5 s i 20 s oraz ograniczonym jitter. Niepoprawny input, brak permission i nieznana akcja są błędami trwałymi bez retry. Błąd próby zapisuje się w `step_attempt`; krok wraca do `waiting` z `next_attempt_at` i `last_error`, jeżeli pozostał retry budget. Stan `failed` oznacza wyczerpany limit lub błąd trwały. Timeout kroku: 30 s; deadline całego run: 10 min. Timeout nie jest dowodem braku efektu, dlatego wznowienie najpierw sprawdza effect ledger.
+Nie ma automatycznych triggerów, pętli/warunków, zewnętrznych providerów,
+arbitralnej zmiany ryzyka ani rzeczywistych działań infrastrukturalnych.
+Awaria PostgreSQL zatrzymuje pracę bez utraty zatwierdzonej historii.
+Kontrola integralności/granty nie chronią przed właścicielem bazy, który
+świadomie wyłączy zabezpieczenia. Migracja `0012_soar` blokuje downgrade,
+jeżeli istnieją procedury, aby nie usuwać historii.
 
-Run z błędem jest terminalny; ponowna próba z UI tworzy nowy run z `replay_of` i wyraźnym podglądem planowanych efektów. Usługa domenowa nadal stosuje deduplikację incydentów. Celowe nowe lokalne powiadomienie po ręcznym replay jest osobnym efektem nowego run i musi być jawnie oznaczone jako powtórzenie. Nie przestawiamy ukończonych kroków starej historii na waiting.
-
-## Anulowanie i awarie
-
-Anulowanie jest poleceniem domenowym z audytem, a nie `terminate` dowolnego procesu Celery. Ustawia `cancellation_requested` i blokuje przyjmowanie następnych kroków. Worker sprawdza flagę przed zatwierdzeniem efektu; serializacja na run rozstrzyga wyścig commit–cancel. Jeżeli efekt zatwierdzono wcześniej, zostaje on zachowany i widoczny. Engine nie obiecuje wycofania wcześniejszych skutków.
-
-Po zakończeniu aktywnej próby run przechodzi do `cancelled`. Nierozpoczęte kroki pozostają `waiting` z `not_executed_reason=run_cancelled`; UI pokazuje je jako niewykonane, a reconciler filtruje terminalne run. To pozwala zachować cztery stany kroku bez mylenia anulowania z awarią. Powtórzenie cancel jest idempotentne. Zakończony run nie może być anulowany wstecz.
-
-Awaria Redis nie usuwa historii ani zaakceptowanego run; wskaźnik kolejki pokazuje opóźnienie. Awaria PostgreSQL nie pozwala rozpocząć ani potwierdzić efektu. Awaria ClickHouse może uniemożliwić enrichment wymagający analityki, ale nie zamienia braku danych w „brak zagrożenia”. Output opisuje `unavailable` albo trwały/ponawialny błąd, zgodnie z kontraktem akcji.
-
-## API, UX i audyt
-
-Planowane endpointy: `GET/POST /api/v1/playbooks`, `POST /playbooks/{id}/versions`, `POST /playbooks/{id}/publish`, `POST /playbooks/{id}/runs`, `GET /playbook-runs/{id}`, `POST /playbook-runs/{id}/cancel`. Wszystkie względne ścieżki mają prefiks `/api/v1`. Wersje draft wymagają walidacji wszystkich kroków przed publikacją; nie można uruchomić nieopublikowanego YAML.
-
-UI pokazuje nazwę i wersję, `SIMULATION`, inicjatora, target alert/incident, postęp i czas każdego kroku, numery prób, bezpieczny input/output, lokalne efekty i przyczynę zatrzymania. Audit zapisuje definicję/publikację/start/cancel i każdą zmianę kroku. Surowe sekrety, pełne tokeny i dane połączenia nie trafiają do output. Max output: 64 KiB/krok; większy wynik wymaga kontrolowanego evidence, bez cichego obcięcia dowodu.
-
-## Kryteria odbioru
-
-1. Pięć kroków przykładowego playbooka wykonuje się na prawdziwych obiektach pipeline, a wynik i audit pozostają po restarcie API/worker/Redis.
-2. Test zabija worker przed efektem, po efekcie/commicie i przed ACK; po rekoncyliacji istnieje jeden lokalny efekt kroku.
-3. Dwaj workerzy na ten sam krok nie zatwierdzają podwójnego efektu. Worker z wygasłym fencing tokenem nie może go zapisać.
-4. Błąd chwilowy respektuje limit prób, błąd trwały nie jest ponawiany, a terminalny run nie zostaje podjęty przez reconciler.
-5. Cancel przed startem, podczas próby i po commicie ma opisane, powtarzalne wyniki; wcześniejsze efekty nie znikają z historii.
-6. Zmiana definicji w czasie run nie zmienia jego wersji. Odebranie permission lub wyłączenie playbooka zatrzymuje kolejne kroki.
-7. `execution_mode=live`, nieznana akcja, shell, dynamiczny import, endpoint HTTP i path traversal w definicji są odrzucone przed utworzeniem run.
-8. Test z adresem IOC wskazującym localhost/metadata/publiczny host potwierdza brak DNS/HTTP/połączenia do celu. Powiadomienie powstaje wyłącznie w lokalnej skrzynce aplikacji.
+Testy i wyniki: [raport Etapu 10](validation-soar.md). Kolejny etap:
+Dashboard — zbiorczy widok rzeczywistych danych SOC.

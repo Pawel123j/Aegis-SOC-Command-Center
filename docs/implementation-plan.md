@@ -34,7 +34,10 @@ Etap 9 dodaje [statystyczne UEBA](ueba.md): zakończona doba UTC względem
 28 poprzednich, jawny cold start, izolacja replay i oryginalne dowody.
 Stan na 2026-10-07: 2181 testów backendu i 286 panelu PASS, lokalne wdrożenie
 i restart sprawdzone. [Raport Etapu 9](validation-ueba.md).
-Następny przyrost to Mini SOAR.
+Etap 10 implementuje [Mini SOAR](soar.md): dziewięć zamkniętych akcji,
+wersjonowanie, trwałe wykonania, retry i prywatną skrzynkę. Infrastruktura
+pozostaje symulowana. [Raport Etapu 10](validation-soar.md) zapisuje odbiór.
+Następny przyrost to Dashboard.
 
 Plan odpowiada fazom 0–20 wskazanym w wymaganiach. Faza 0 dostarczyła analizę stanu, decyzje architektoniczne, szkielet repozytorium i dokumentację. Faza 1 dostarczyła zweryfikowany fundament backendu z integracją rzeczywistych usług (2026-09-28). SIEM, frontend i generator wymagają dalszych faz.
 
@@ -318,6 +321,12 @@ inicjalizacji schematów API. Szczegóły i ograniczenia: [walidacja](validation
 **Ukończenie:** analityk może przejść od hipotezy do dowodów, investigation i testowanego szkicu reguły przez API; brak automatycznego aktywowania niesprawdzonej detekcji.
 
 ## PHASE 12 — SOAR
+
+Aktualizacja 2026-10-08: zakres lokalnych, sekwencyjnych playbooków realizuje
+Etap 10. Implementacja używa kolejki PostgreSQL i osobnego procesu `soar`,
+zgodnie z [ADR 0016](adr/0016-durable-local-playbooks.md). Ryzyko odczytuje
+przypiętą ocenę; automatyczne triggery, warunki i zewnętrzne adaptery pozostają
+poza tym przyrostem. [Zakres i wyniki](validation-soar.md).
 
 **Zależności:** 7, 9, 10; incident, scoring, IOC i trwały model pracy z fazy 2.
 

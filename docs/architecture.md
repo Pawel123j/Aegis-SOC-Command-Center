@@ -15,7 +15,9 @@ High/Critical w jednej transakcji. Finalizację opisuje
 [ADR 0008](adr/0008-temporal-correlation.md), a wykonane kontrole
 [raport Etapu 2](validation-correlation.md).
 Poniższe diagramy i zakres dalszych modułów zachowują architekturę docelową
-PHASE 0; SOAR, graf/merge i generator pozostają projektem.
+PHASE 0; graf/merge i generator pozostają projektem. Etap 10 implementuje
+lokalne procedury SOAR z własnym procesem i kolejką PostgreSQL; szczegóły
+poniżej oraz w [ADR 0016](adr/0016-durable-local-playbooks.md).
 Ocena ryzyka jest czystym modułem wywoływanym przy zapisie alertów i zmianach
 dowodów sprawy, bez osobnej usługi. Niezmienne obliczenia, bieżąca projekcja
 i audyt mają jedną transakcję; odczyt nie przelicza stanu.
@@ -250,3 +252,17 @@ Moduł UEBA porównuje wybraną zakończoną dobę UTC z 28 wcześniejszymi doba
 na żądanie zachowuje izolację źródła i replay, pokazuje brak dostatecznej
 historii i nie zmienia istniejących ocen ryzyka. [Kontrakt](ueba.md),
 [ADR 0015](adr/0015-observed-behavior-baselines.md).
+
+## Trwałe procedury reagowania — Etap 10
+
+API przypina opublikowaną rewizję, kontekst zweryfikowanego alertu i kroki.
+Osobny `soar` działa w wewnętrznej sieci backend, bez publicznych portów.
+Kolejka oraz gotowość kolejnego kroku należą do PostgreSQL; ten przyrost nie
+wykorzystuje Celery/Redis do dostarczania komend SOAR. Rejestr akcji nie zawiera
+adapterów sieciowych. Wspólna blokada autoryzacji poprzedza blokady run/step.
+Efekt, ledger, próba, audit i postęp są atomowe; dzierżawa i numer próby chronią
+przed zatwierdzeniem przez poprzedniego wykonawcę. Restart odzyskuje pracę.
+
+Definicja/revision i dowody są niezmienne; wyłączenie procedury lub cofnięcie
+uprawnień blokuje kolejne kroki. Cancel zachowuje wcześniejsze efekty.
+Ręczny replay jest nowym run. [Kontrakt](soar.md), [walidacja](validation-soar.md).

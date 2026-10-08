@@ -47,7 +47,8 @@
     "infra/proxy",
     "infra/observability",
     "docs/assets",
-    ".github/workflows"
+    ".github/workflows",
+    "frontend/src/soar"
   ],
   "required_files": [
     "README.md",
@@ -98,6 +99,8 @@
     "docs/adr/0014-observed-attack-timeline.md",
     "docs/ueba.md",
     "docs/validation-ueba.md",
-    "docs/adr/0015-observed-behavior-baselines.md"
+    "docs/adr/0015-observed-behavior-baselines.md",
+    "docs/validation-soar.md",
+    "docs/adr/0016-durable-local-playbooks.md"
   ]
 }

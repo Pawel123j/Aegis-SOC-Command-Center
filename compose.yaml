@@ -13,7 +13,7 @@ x-app-environment: &app-environment
   AEGIS_CORRELATION_BATCH_SIZE: ${AEGIS_CORRELATION_BATCH_SIZE:-25}
 
 x-app: &app
-  image: aegis-soc-backend:ueba-stage9
+  image: aegis-soc-backend:soar-stage10
   build:
     context: ./backend
     target: runtime
@@ -173,6 +173,13 @@ services:
       migrator: {condition: service_completed_successfully}
     restart: unless-stopped
 
+  soar:
+    <<: *app
+    command: [python, -m, app.soar]
+    depends_on:
+      migrator: {condition: service_completed_successfully}
+    restart: unless-stopped
+
   proxy:
     image: nginx:1.30.5-alpine
     user: "101:101"
@@ -192,7 +199,7 @@ services:
 
   tests:
     <<: *app
-    image: aegis-soc-backend-test:ueba-stage9
+    image: aegis-soc-backend-test:soar-stage10
     build:
       context: ./backend
       target: test

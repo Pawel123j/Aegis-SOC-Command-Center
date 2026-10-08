@@ -50,7 +50,7 @@ kwalifikującą się ocenę alertu; nie tworzy nowego score ani polityki encji.
 False positive nie uczestniczą w ryzyku i kandydackich skojarzeniach MITRE.
 [Kontrakt i ograniczenia](../docs/entities.md),
 [stan walidacji Etapu 6](../docs/validation-entities.md).
-Etap 7 dodaje `app.modules.intelligence` i head `0011_intelligence` wymagany
+Etap 7 dodaje `app.modules.intelligence` i ówczesny head `0011_intelligence` wymagany
 przez readiness nowych źródeł. Cztery tabele przechowują tożsamości IOC,
 niezmienne rewizje, receipts pierwszej analizy oraz dokładne field matches.
 Dziesięć metod `/api/v1/intelligence` obsługuje katalog, wersjonowaną zmianę
@@ -110,3 +110,9 @@ Normalizacja, wyszukiwanie i odzyskiwanie projekcji:
 [instrukcja operacyjna PHASE 3](../docs/phase3-operations.md).
 Zakres dalszych prac: [plan](../docs/implementation-plan.md).
 Odpowiedzialność katalogów: [struktura](../docs/repository-structure.md).
+
+Etap 10 dodaje `app.modules.soar`, router i `python -m app.soar`,
+head `0012_soar` oraz siedem tabel procedur/wykonań/prób/efektów/skrzynki.
+Proces czyta kolejkę PostgreSQL; dziewięć lokalnych lub symulowanych akcji
+nie ma adapterów HTTP/DNS/shell. [Kontrakt](../docs/soar.md),
+[wyniki odbioru](../docs/validation-soar.md).

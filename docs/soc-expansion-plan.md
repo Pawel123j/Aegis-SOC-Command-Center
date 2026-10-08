@@ -110,4 +110,9 @@ niepełny indeks i brak faktów uprawnień pozostają jawne.
 [ADR 0015](adr/0015-observed-behavior-baselines.md),
 [walidacja Etapu 9](validation-ueba.md): 2181 testów backendu i 286 panelu PASS;
 lokalne wdrożenie, zachowanie danych i restart potwierdzone 2026-10-07.
-Kolejny przyrost: Mini SOAR.
+Etap 10: [Mini SOAR](soar.md) dodaje wersje procedur, ręczny start z alertu,
+trwałe run/step/attempt/effect, trzy próby i odzyskiwanie po przerwaniu.
+Dziewięć akcji obejmuje lokalne incydenty, IOC do przeglądu i prywatne
+powiadomienia; blokada IP, izolacja hosta i webhook zawsze są symulacją.
+[Walidacja Etapu 10](validation-soar.md) opisuje rzeczywiste kontrole.
+Kolejny przyrost: Dashboard.

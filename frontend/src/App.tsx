@@ -17,6 +17,8 @@ import { Entities } from './entities/Entities';
 import type { InitialEntityProfile } from './entities/Entities';
 import { canReadEntities } from './entities/permissions';
 import { Intelligence } from './intelligence/Intelligence';
+import { Soar } from './soar/Soar';
+import { canReadSoar } from './soar/types';
 
 type View =
   | 'overview'
@@ -27,6 +29,7 @@ type View =
   | 'mitre'
   | 'entities'
   | 'intelligence'
+  | 'soar'
   | 'sources'
   | 'system';
 const links: { id: View; name: string; icon: string; permission?: string }[] = [
@@ -38,6 +41,7 @@ const links: { id: View; name: string; icon: string; permission?: string }[] = [
   { id: 'mitre', name: 'MITRE ATT&CK', icon: '▦' },
   { id: 'entities', name: 'Profile encji', icon: '◫' },
   { id: 'intelligence', name: 'Threat Intelligence', icon: '◌', permission: 'intelligence:read' },
+  { id: 'soar', name: 'Procedury SOAR', icon: '↪' },
   { id: 'sources', name: 'Źródła logów', icon: '⇄', permission: 'sources:manage' },
   { id: 'system', name: 'Stan systemu', icon: '▥', permission: 'system:read' },
 ];
@@ -186,7 +190,9 @@ export function App() {
                 ? canReadMitreCoverage(user)
                 : item.id === 'entities'
                   ? canReadEntities(user)
-                  : !item.permission || allowed(item.permission),
+                  : item.id === 'soar'
+                    ? canReadSoar(user.permissions)
+                    : !item.permission || allowed(item.permission),
             )
             .map((item) => (
               <button
@@ -267,6 +273,9 @@ export function App() {
           )}
           {view === 'mitre' && canReadMitreCoverage(user) && <MitreCoverage user={user} />}
           {view === 'intelligence' && allowed('intelligence:read') && <Intelligence user={user} />}
+          {view === 'soar' && canReadSoar(user.permissions) && (
+            <Soar key={authorityVersion} user={user} />
+          )}
           {view === 'entities' && canReadEntities(user) && (
             <Entities
               key={authorityVersion}
