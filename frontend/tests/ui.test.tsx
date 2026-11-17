@@ -1,3 +1,4 @@
+import { dashboardFixture } from './dashboardFixtures';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { App } from '../src/App';
@@ -10,10 +11,12 @@ const reader: Me = {
   id: 'reader',
   username: 'reader',
   role: 'read_only',
-  permissions: ['events:read', 'alerts:read', 'detections:read'],
+  permissions: ['events:read', 'alerts:read', 'incidents:read', 'detections:read'],
 };
 beforeEach(() => {
-  vi.spyOn(api, 'get').mockResolvedValue({ items: [], total: 0, next_cursor: null });
+  vi.spyOn(api, 'get').mockImplementation(async (path) =>
+    path.startsWith('/dashboard') ? dashboardFixture : { items: [], total: 0, next_cursor: null },
+  );
   vi.spyOn(api, 'post').mockResolvedValue({ items: [], total: 0, next_cursor: null });
   vi.spyOn(api, 'subscribe').mockReturnValue(() => undefined);
 });
@@ -39,7 +42,7 @@ it('read-only navigation exposes available data and no management sections', asy
   await screen.findByRole('navigation', { name: 'Menu główne' });
   expect(screen.queryByRole('button', { name: /Źródła logów/ })).not.toBeInTheDocument();
   expect(screen.queryByRole('button', { name: /Stan systemu/ })).not.toBeInTheDocument();
-  expect(await screen.findByText('Archiwum jest puste')).toBeInTheDocument();
+  expect(await screen.findByText('Zdarzenia · 24 h')).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: /Zdarzenia/ }));
   expect(await screen.findByLabelText('Zapytanie')).toBeInTheDocument();
   expect(await screen.findByText('Nie znaleziono zdarzeń')).toBeInTheDocument();

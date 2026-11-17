@@ -1,3 +1,4 @@
+import { dashboardFixture } from './dashboardFixtures';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { api, ApiError } from '../src/api';
@@ -27,6 +28,7 @@ beforeEach(() => {
     throw new Error(`Unexpected request: ${path}`);
   });
   vi.spyOn(api, 'get').mockImplementation(async (path) => {
+    if (path.startsWith('/dashboard')) return dashboardFixture;
     if (path === '/risk/policy') return riskPolicy;
     if (path.startsWith(`/alerts/${alert.id}/risk`))
       return { current: riskCalculation, history: [riskCalculation], history_truncated: false };
@@ -319,7 +321,7 @@ it('discards in-flight risk data when authentication authority changes', async (
     resolve({ current: riskCalculation, history: [riskCalculation], history_truncated: true }),
   );
   await waitFor(() =>
-    expect(screen.getByRole('heading', { name: 'Obraz sytuacji' })).toBeInTheDocument(),
+    expect(screen.getByRole('heading', { name: 'Obraz sytuacji SOC' })).toBeInTheDocument(),
   );
   expect(screen.queryByText('Historia ocen ryzyka')).not.toBeInTheDocument();
 });

@@ -1,3 +1,4 @@
+import { dashboardFixture } from './dashboardFixtures';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { api, ApiError } from '../src/api';
@@ -15,6 +16,7 @@ import { incidentMitreMapping, mitreCoverage, mitreMapping, mitreReader } from '
 
 beforeEach(() => {
   vi.spyOn(api, 'get').mockImplementation(async (path) => {
+    if (path.startsWith('/dashboard')) return dashboardFixture;
     if (path.startsWith('/mitre/coverage?')) return mitreCoverage;
     if (path.startsWith('/alerts?')) return { items: [alert], total: 1, next_cursor: null };
     if (path === `/alerts/${alert.id}`) return { ...alertDetail, mitre_mapping: mitreMapping };

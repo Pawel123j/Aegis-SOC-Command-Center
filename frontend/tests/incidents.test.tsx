@@ -1,3 +1,4 @@
+import { dashboardFixture } from './dashboardFixtures';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { api, ApiError } from '../src/api';
@@ -31,6 +32,7 @@ beforeEach(() => {
     throw new Error(`Unexpected request: ${path}`);
   });
   vi.spyOn(api, 'get').mockImplementation(async (path) => {
+    if (path.startsWith('/dashboard')) return dashboardFixture;
     if (path.includes('/timeline?'))
       return { items: incident.timeline, next_cursor: null, total: incident.timeline.length };
     if (path.includes('/notes?'))
@@ -98,7 +100,7 @@ it('preserves incident drafts on a same-user cross-tab refresh and clears them o
   me = reader;
   await act(async () => subscribe.mock.calls[0][0]('session'));
   expect(screen.queryByLabelText('Tytuł incydentu')).not.toBeInTheDocument();
-  expect(screen.getByRole('heading', { name: 'Obraz sytuacji' })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'Obraz sytuacji SOC' })).toBeInTheDocument();
 });
 
 it('selects live alerts from multiple pages without pagination submitting the create form', async () => {

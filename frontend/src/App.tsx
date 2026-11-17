@@ -1,16 +1,16 @@
-import { time, useResource } from './utilities';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { api } from './api';
-import { Badge, Empty, ErrorNotice, Loading, Metric, Panel } from './components';
-import type { Alert, Me, Page, SearchResult, SecurityEvent } from './types';
+import { ErrorNotice, Loading } from './components';
+import type { Alert, Me, SecurityEvent } from './types';
 import { Events, EventDetail } from './Events';
 import { Sources } from './Sources';
 import { System } from './System';
 import { Alerts } from './Alerts';
 import { Detections } from './detections/Detections';
 import { Incidents } from './incidents/Incidents';
-import { RiskScore } from './risk/RiskScore';
+import { Dashboard } from './dashboard/Dashboard';
+import { canReadDashboard } from './dashboard/types';
 import { MitreCoverage } from './mitre/MitreCoverage';
 import { canReadMitreCoverage } from './mitre/permissions';
 import { Entities } from './entities/Entities';
@@ -186,13 +186,15 @@ export function App() {
         <nav aria-label="Menu główne">
           {links
             .filter((item) =>
-              item.id === 'mitre'
-                ? canReadMitreCoverage(user)
-                : item.id === 'entities'
-                  ? canReadEntities(user)
-                  : item.id === 'soar'
-                    ? canReadSoar(user.permissions)
-                    : !item.permission || allowed(item.permission),
+              item.id === 'overview'
+                ? canReadDashboard(user)
+                : item.id === 'mitre'
+                  ? canReadMitreCoverage(user)
+                  : item.id === 'entities'
+                    ? canReadEntities(user)
+                    : item.id === 'soar'
+                      ? canReadSoar(user.permissions)
+                      : !item.permission || allowed(item.permission),
             )
             .map((item) => (
               <button
@@ -238,12 +240,24 @@ export function App() {
         </header>
         <main id="main" tabIndex={-1}>
           <ErrorNotice error={startError} />
-          {view === 'overview' && (
-            <Overview
-              onEvent={setSelected}
+          {view === 'overview' && canReadDashboard(user) && (
+            <Dashboard
+              key={authorityVersion}
+              onIncidents={() => setView('incidents')}
               onEvents={() => setView('events')}
               onAlerts={() => setView('alerts')}
             />
+          )}
+          {view === 'overview' && !canReadDashboard(user) && (
+            <div className="intro">
+              <div>
+                <h2>Obraz sytuacji SOC</h2>
+                <p>
+                  Dashboard wymaga dostępu do zdarzeń, alertów, incydentów i reguł. Wybierz dostępny
+                  moduł z menu.
+                </p>
+              </div>
+            </div>
           )}
           {view === 'events' && allowed('events:read') && (
             <Events key={query} initialQuery={query} onEvent={setSelected} />
@@ -426,141 +440,5 @@ export function Login({
         </div>
       </section>
     </div>
-  );
-}
-
-function Overview({
-  onEvent,
-  onEvents,
-  onAlerts,
-}: {
-  onEvent: (event: SecurityEvent) => void;
-  onEvents: () => void;
-  onAlerts: () => void;
-}) {
-  const loader = useCallback(async () => {
-    const [events, alerts] = await Promise.allSettled([
-      api.post<SearchResult>('/events/search', { limit: 6 }),
-      api.get<Page<Alert>>('/alerts?limit=6&status=new'),
-    ]);
-    return {
-      events: events.status === 'fulfilled' ? events.value : null,
-      eventError: events.status === 'rejected' ? (events.reason as unknown) : null,
-      alerts: alerts.status === 'fulfilled' ? alerts.value : null,
-      alertError: alerts.status === 'rejected' ? (alerts.reason as unknown) : null,
-    };
-  }, []);
-  const resource = useResource(loader);
-  return (
-    <>
-      <div className="intro">
-        <div>
-          <h2>Obraz sytuacji</h2>
-          <p>Sprawdź najnowszą aktywność i alerty wymagające uwagi.</p>
-        </div>
-        <button
-          onClick={() => {
-            void resource.reload();
-          }}
-          disabled={resource.pending}
-        >
-          Odśwież
-        </button>
-      </div>
-      <div className="metrics">
-        <Metric
-          label="Zdarzenia · ostatnie 24 h"
-          value={resource.data?.events?.total}
-          note="Znormalizowane rekordy w archiwum"
-        />
-        <Metric
-          label="Nowe alerty"
-          value={resource.data?.alerts?.total}
-          note="Cały dostępny zakres czasu"
-        />
-        <Metric label="Zakres zdarzeń" value="24 godziny" note="Domyślne okno Event Explorer" />
-        <Metric
-          label="Skala ryzyka"
-          value="0–100"
-          note="Punkty i uzasadnienie przy każdym alercie"
-        />
-      </div>
-      {resource.pending && <Loading />}
-      <ErrorNotice error={resource.error} />
-      <div className="overview-grid">
-        <Panel
-          title="Najnowsze zdarzenia"
-          aside={
-            <button className="quiet" onClick={onEvents}>
-              Wszystkie →
-            </button>
-          }
-        >
-          <ErrorNotice error={resource.data?.eventError} />
-          {resource.data?.events &&
-            (resource.data.events.items.length ? (
-              <div className="activity-list">
-                {resource.data.events.items.map((item) => (
-                  <button className="activity" key={item.event_id} onClick={() => onEvent(item)}>
-                    <span className="activity-icon">⌕</span>
-                    <span>
-                      <strong>{item.event.action}</strong>
-                      <small>
-                        {item.source.name} · {item.host.name ?? item.source.ip ?? 'Brak encji'}
-                      </small>
-                    </span>
-                    <span>
-                      <Badge tone={item.event.outcome}>{item.event.outcome}</Badge>
-                      <small>{time(item.timestamp)}</small>
-                    </span>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <Empty title="Archiwum jest puste">
-                Dodaj źródło i prześlij logi. Przetworzone zdarzenia pojawią się tutaj.
-              </Empty>
-            ))}
-        </Panel>
-        <Panel
-          title="Alerty wymagające uwagi"
-          aside={
-            <button className="quiet" onClick={onAlerts}>
-              Otwórz →
-            </button>
-          }
-        >
-          <ErrorNotice error={resource.data?.alertError} />
-          {resource.data?.alerts &&
-            (resource.data.alerts.items.length ? (
-              <div className="activity-list">
-                {resource.data.alerts.items.map((item) => (
-                  <button className="activity" key={item.id} onClick={onAlerts}>
-                    <span className="activity-icon alert-icon">!</span>
-                    <span>
-                      <strong>{item.title}</strong>
-                      <small>{item.rule_id}</small>
-                    </span>
-                    <span>
-                      <Badge tone={item.severity}>{item.severity}</Badge>
-                      <small>
-                        <RiskScore score={item.risk_score} level={item.risk_level} />
-                      </small>
-                    </span>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <Empty title="Brak nowych alertów">
-                W tym momencie żadna aktywna reguła nie zgłosiła alertu do analizy.
-              </Empty>
-            ))}
-        </Panel>
-      </div>
-      <div className="notice">
-        <strong>Każdy alert ma źródło.</strong> Otwórz szczegóły, aby sprawdzić regułę,
-        zaobserwowane pola i zachowany dowód zdarzenia.
-      </div>
-    </>
   );
 }

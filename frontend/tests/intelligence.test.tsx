@@ -1,3 +1,4 @@
+import { dashboardFixture } from './dashboardFixtures';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { api, ApiError } from '../src/api';
@@ -36,6 +37,7 @@ beforeEach(() => {
     throw new Error(`Unexpected test request: ${path}`);
   });
   vi.spyOn(api, 'get').mockImplementation(async (path) => {
+    if (path.startsWith('/dashboard')) return dashboardFixture;
     if (path === '/auth/me') return intelligenceManager;
     if (path === `/intelligence/iocs/${ioc.id}`)
       return { ...ioc, version: 3, revision: 3, source: 'Nowsze źródło' };

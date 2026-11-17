@@ -4,6 +4,9 @@ type TokenSet = { access_token: string; csrf_token: string; expires_in: number }
 type MemorySession = TokenSet & { expires_at: number };
 type Subscriber = (kind: 'logout' | 'session') => void;
 const messages: Record<string, string> = {
+  invalid_dashboard_window: 'Wybierz prawidłowy koniec okna w przeszłości (UTC).',
+  dashboard_index_integrity: 'Indeks encji jest niespójny. Dashboard wymaga sprawdzenia danych.',
+  dashboard_mapping_integrity: 'Zachowane mapowania MITRE wymagają sprawdzenia danych.',
   soar_not_published: 'Ta wersja nie jest dostępna do uruchomienia. Odśwież listę procedur.',
   soar_authority_revoked: 'Brakuje uprawnień do jednego z kroków tej procedury.',
   soar_queue_full: 'Kolejka procedur jest pełna. Poczekaj na zakończenie wcześniejszych wykonań.',

@@ -1,3 +1,4 @@
+import { dashboardFixture } from './dashboardFixtures';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { api, ApiError } from '../src/api';
@@ -25,6 +26,7 @@ beforeEach(() => {
     throw new Error(`Unexpected request: ${path}`);
   });
   vi.spyOn(api, 'get').mockImplementation(async (path) => {
+    if (path.startsWith('/dashboard')) return dashboardFixture;
     if (path === '/auth/me') return correlationAnalyst;
     if (path === '/correlations') return { items: [correlationRule], next_cursor: null };
     if (path === '/correlations/status') return { counts: {}, scopes: [], scopes_truncated: false };
@@ -352,7 +354,7 @@ it('clears preserved proof when current authority fails before a different user 
   });
   fireEvent.change(screen.getByLabelText('Hasło'), { target: { value: 'a-long-test-password' } });
   fireEvent.click(screen.getByRole('button', { name: 'Zaloguj się' }));
-  expect(await screen.findByRole('heading', { name: 'Obraz sytuacji' })).toBeInTheDocument();
+  expect(await screen.findByRole('heading', { name: 'Obraz sytuacji SOC' })).toBeInTheDocument();
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 });
 
