@@ -42,7 +42,12 @@ def view(principal: Login, **params: Any) -> dict[str, Any]:
 
 
 def signals(case: Case, admin: Login, count: int = 1) -> list[Alert]:
-    normalize_events(case, admin, [powershell() for _ in range(count)])
+    # powershell() carries a fixed 2026-10-01 timestamp. The default coverage window is the
+    # last 30 days, so tests reading it with default parameters began failing on 2026-10-31.
+    # Use a recent event time, as test_live_and_exact_replay_dataset_run_counts_stay_isolated
+    # already does.
+    recent = (utcnow() - timedelta(minutes=1)).isoformat()
+    normalize_events(case, admin, [dict(powershell(), timestamp=recent) for _ in range(count)])
     assert detect_once(processing_database(case), case.database.settings)["alerts"] == count
     records = alerts(case)
     assert len(records) == count

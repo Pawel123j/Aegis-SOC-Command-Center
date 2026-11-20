@@ -250,10 +250,11 @@ def test_tactics_count_alerts_once_and_preserve_unassessed_risk(case: Case, admi
     detect_once(processing_database(case), case.database.settings)
     alert = alerts(case)[0]
     with Session(case.database.owner) as db:
-        db.add(AlertMitreMapping(alert_id=alert.id, technique_id="T1059", tactic_id="TA0002"))
+        db.add(AlertMitreMapping(alert_id=alert.id, technique_id="T1059.001", tactic_id="TA0002"))
         db.execute(
             text(
-                "UPDATE alerts SET risk_score=NULL,risk_level=NULL,risk_calculation_id=NULL WHERE id=:id"
+                "UPDATE alerts SET risk_score=NULL,risk_level=NULL,risk_calculation_id=NULL "
+                "WHERE id=:id"
             ),
             {"id": alert.id},
         )
