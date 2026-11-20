@@ -5,7 +5,7 @@ from typing import Any
 from uuid import uuid4
 
 import pytest
-from sqlalchemy import text
+from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
 from app.modules.dashboard.queries import dashboard
@@ -250,7 +250,14 @@ def test_tactics_count_alerts_once_and_preserve_unassessed_risk(case: Case, admi
     detect_once(processing_database(case), case.database.settings)
     alert = alerts(case)[0]
     with Session(case.database.owner) as db:
-        db.add(AlertMitreMapping(alert_id=alert.id, technique_id="T1059.001", tactic_id="TA0002"))
+        # Detection already froze the MITRE snapshot and its normalized rows
+        # (PowerShell -> T1059.001 / TA0002); inserting the same row again would
+        # violate the primary key, and other techniques are rejected by the
+        # snapshot trigger. Assert the recorded mapping instead.
+        mapped = db.scalars(
+            select(AlertMitreMapping.tactic_id).where(AlertMitreMapping.alert_id == alert.id)
+        ).all()
+        assert "TA0002" in mapped
         db.execute(
             text(
                 "UPDATE alerts SET risk_score=NULL,risk_level=NULL,risk_calculation_id=NULL "
