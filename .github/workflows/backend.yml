@@ -65,7 +65,7 @@ jobs:
       - run: docker compose config --quiet
       - run: docker compose build api && docker compose --profile test build tests
       - run: docker compose up -d --wait
-      - run: curl --fail --silent http://localhost:8080/health && curl --fail --silent http://localhost:8080/ready
+      - run: curl --fail --silent --retry 15 --retry-delay 2 --retry-all-errors http://localhost:8080/health && curl --fail --silent --retry 15 --retry-delay 2 --retry-all-errors http://localhost:8080/ready
       - run: docker compose --profile test run --rm tests
       - name: Service status on failure
         if: failure()
