@@ -253,7 +253,8 @@ def test_tactics_count_alerts_once_and_preserve_unassessed_risk(case: Case, admi
         db.add(AlertMitreMapping(alert_id=alert.id, technique_id="T1059", tactic_id="TA0002"))
         db.execute(
             text(
-                "UPDATE alerts SET risk_score=NULL,risk_level=NULL,risk_calculation_id=NULL WHERE id=:id"
+                "UPDATE alerts SET risk_score=NULL,risk_level=NULL,risk_calculation_id=NULL "
+                "WHERE id=:id"
             ),
             {"id": alert.id},
         )
