@@ -640,8 +640,11 @@ it('opens an event profile through the app with the authoritative ID and removes
       : { items: [], total: 0, next_cursor: null },
   );
   render(<App />);
+  // The app opens on the overview, not on the event list (see ui.test.tsx); navigate first.
+  fireEvent.click(await screen.findByRole('button', { name: /Zdarzenia/ }));
   await screen.findByText(original.event.action);
-  fireEvent.click(screen.getByRole('button', { name: new RegExp(original.event.action) }));
+  // The row's action is plain text; the event is opened with the row's "Szczegóły" button.
+  fireEvent.click(screen.getByRole('button', { name: 'Szczegóły' }));
   fireEvent.click(await screen.findByRole('button', { name: /Konto LAB/ }));
   await screen.findByRole('heading', { name: entitySummary.label });
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
